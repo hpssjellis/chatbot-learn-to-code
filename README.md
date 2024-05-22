@@ -25,7 +25,7 @@ The problem with all these charts is that we don't have control of them, whereas
 
 Let's try this, go to the index webpage at and start learning about ploty.js
 
-
+https://hpssjellis.github.io/chatbot-learn-to-code/public/index.html
 
 
 
