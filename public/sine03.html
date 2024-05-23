@@ -12,19 +12,19 @@
         <label for="equation">Enter the equation (e.g., Math.sin(x * (Math.PI / 180)):</label>
         <input type="text" id="myEquation" value="Math.sin( x * (Math.PI / 180) )">
         
-        <label for="xRange">Generate x values:</label>
+        <label for="xRange">Generate x values:</label><br>
         <input type="number" id="xStart" placeholder="Start (e.g., 0)" value="0">
         <input type="number" id="xEnd" placeholder="End (e.g., 360)" value="360">
-        <input type="number" id="xStep" placeholder="Step (e.g., 30)" value="10">
+        <input type="number" id="xStep" placeholder="Step (e.g., 30)" value="10"><br>
         <input type="button" value="Generate X Values" onclick="generateXValues()">
         
-        <label for="xData">x values (degrees, comma separated):</label>
-        <textarea id="myXData"></textarea>
+        <label for="xData">x values (degrees, comma separated):</label><br>
+        <textarea id="myXData"></textarea><br>
         
-        <label for="yData">y values (generated automatically):</label>
-        <textarea id="myYData" readonly></textarea>
+        <label for="yData">y values (generated automatically):</label><br>
+        <textarea id="myYData" readonly></textarea><br>
         
-        <input type="button" value="Generate Plot" onclick="generatePlot()">
+        <input type="button" value="Generate Plot" onclick="generatePlot()"><br>
         
         <div id="myPlot" style="height: 500px;"></div>
     </div>
