@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log-Log Graph with Plotly</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+    <div id="myPlot" style="width:100%;height:600px;"></div>
+    <input type="button" value="Plot Log-Log Graph" onclick="plotLogLogGraph()">
+
+    <script>
+        function plotLogLogGraph() {
+            // Sinusoidal equation constants
+            const A1 = 1, w1 = 100, b1 = 0;
+            const A2 = 0, w2 = 1, b2 = 0; // Setting A2, w2, b2 to zero to remove their influence
+            const A3 = 0, w3 = 1, b3 = 0; // Setting A3, w3, b3 to zero to remove their influence
+            const C = 0;
+
+            // Generate x and y data
+            const xValues = [];
+            const yValues = [];
+            for (let x = 1; x <= 10000; x++) {
+                const y = A1 * Math.sin((x - b1) * Math.PI / w1) + A2 * Math.sin((x - b2) * Math.PI / w2) + A3 * Math.sin((x - b3) * Math.PI / w3) + C;
+                if (y > 0) { // Only include positive y values for log scale
+                    xValues.push(x);
+                    yValues.push(y);
+                }
+            }
+
+            // Plotly data
+            const data = [{
+                x: xValues,
+                y: yValues,
+                mode: 'lines',
+                type: 'scatter'
+            }];
+
+            // Plotly layout
+            const layout = {
+                title: 'Log-Log Graph',
+                xaxis: {
+                    type: 'log',
+                    title: 'X Axis (log scale)'
+                },
+                yaxis: {
+                    type: 'log',
+                    title: 'Y Axis (log scale)'
+                }
+            };
+
+            // Plot the graph
+            Plotly.newPlot('myPlot', data, layout);
+        }
+    </script>
+</body>
+</html>
