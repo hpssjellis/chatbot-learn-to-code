@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log-Log Graph</title>
+</head>
+<body>
+    <canvas id="myCanvas" width="800" height="600" style="border:1px solid #000000;"></canvas>
+    <br>
+    <input type="button" value="Plot Log-Log Graph" onclick="plotLogLogGraph()">
+
+    <script>
+        function plotLogLogGraph() {
+            const canvas = document.getElementById('myCanvas');
+            const ctx = canvas.getContext('2d');
+
+            // Clear the canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Set up the graph boundaries
+            const xMin = 1;
+            const xMax = 10000;
+            const yMin = 1;
+            const yMax = 10000000;
+
+            // Transform function for log-log scale
+            function logTransform(value, minValue, maxValue, canvasSize) {
+                return (Math.log(value) - Math.log(minValue)) / (Math.log(maxValue) - Math.log(minValue)) * canvasSize;
+            }
+
+            // Sinusoidal equation constants
+            const A1 = 1, w1 = 1, b1 = 1;
+            const A2 = 0.5, w2 = 0.5, b2 = 2;
+            const A3 = 0.2, w3 = 0.2, b3 = 3;
+            const C = 1;
+
+            // Plot the graph
+            ctx.beginPath();
+            for (let x = xMin; x <= xMax; x++) {
+                const y = A1 * Math.sin((x - b1) * Math.PI / w1) + A2 * Math.sin((x - b2) * Math.PI / w2) + A3 * Math.sin((x - b3) * Math.PI / w3) + C;
+                if (y > 0) {
+                    const logX = logTransform(x, xMin, xMax, canvas.width);
+                    const logY = canvas.height - logTransform(y, yMin, yMax, canvas.height); // Invert y-axis
+                    if (x === xMin) {
+                        ctx.moveTo(logX, logY);
+                    } else {
+                        ctx.lineTo(logX, logY);
+                    }
+                }
+            }
+            ctx.stroke();
+        }
+    </script>
+</body>
+</html>
