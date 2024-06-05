@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+
+<div id="sinusoidalPlot"></div>
+
+<script>
+    // Parameters for the sinusoidal curve
+    var amplitude = 1;
+    var wavelength = 1;
+    var phaseShift = 0;
+    var verticalShift = 0;
+
+    // Generate x values
+    var xValues = [];
+    for (var x = 0; x <= 2 * Math.PI; x += 0.01) {
+        xValues.push(x);
+    }
+
+    // Generate y values
+    var yValues = xValues.map(function(x) {
+        return amplitude * Math.sin((360 / wavelength) * (x - phaseShift)) + verticalShift;
+    });
+
+    // Create the data array
+    var data = [{
+        x: xValues,
+        y: yValues,
+        type: 'scatter'
+    }];
+
+    // Define the layout
+    var layout = {
+        title: 'Sinusoidal Curve',
+        xaxis: {
+            title: 'x'
+        },
+        yaxis: {
+            title: 'y'
+        }
+    };
+
+    // Plot the graph
+    Plotly.newPlot('sinusoidalPlot', data, layout);
+</script>
+
+</body>
+</html>
