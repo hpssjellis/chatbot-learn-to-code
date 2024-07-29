@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sinusoidal Curve Fitting</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/9.5.0/math.min.js"></script>
+</head>
+<body>
+    <h1>Sinusoidal Curve Fitting</h1>
+    <input type="file" id="fileInput">
+    <input type="button" value="Fit Sinusoidal Curve" onclick="fitCurve()">
+    <div id="plot"></div>
+
+    <script>
+        function parseCSV(file, callback) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const csvData = event.target.result;
+                const lines = csvData.split('\n');
+                const result = [];
+                for (const line of lines) {
+                    const [x, y] = line.split(',');
+                    result.push({ x: parseFloat(x), y: parseFloat(y) });
+                }
+                callback(result);
+            };
+            reader.readAsText(file);
+        }
+
+        function sinusoidal(x, A, w, b, C) {
+            return A * Math.sin(w * x + b) + C;
+        }
+
+        function fitCurve() {
+            const fileInput = document.getElementById('fileInput');
+            if (!fileInput.files.length) {
+                alert('Please select a CSV file.');
+                return;
+            }
+            
+            parseCSV(fileInput.files[0], (data) => {
+                const xData = data.map(point => point.x);
+                const yData = data.map(point => point.y);
+
+                const initialGuess = [1, 1, 0, 0];
+                const [A, w, b, C] = math.lsqfit(xData, yData, initialGuess, sinusoidal);
+
+                const yFit = xData.map(x => sinusoidal(x, A, w, b, C));
+
+                Plotly.newPlot('plot', [
+                    {
+                        x: xData,
+                        y: yData,
+                        mode: 'markers',
+                        name: 'Data'
+                    },
+                    {
+                        x: xData,
+                        y: yFit,
+                        mode: 'lines',
+                        name: 'Fitted Curve'
+                    }
+                ]);
+
+                console.log(`Amplitude (A): ${A}`);
+                console.log(`Angular frequency (w): ${w}`);
+                console.log(`Phase shift (b): ${b}`);
+                console.log(`Vertical shift (C): ${C}`);
+            });
+        }
+
+        // Define the least squares fitting function using math.js
+        math.import({
+            lsqfit: function(xData, yData, initialGuess, func) {
+                const len = xData.length;
+                let [A, w, b, C] = initialGuess;
+
+                function residual(params) {
+                    const [A, w, b, C] = params;
+                    let error = 0;
+                    for (let i = 0; i < len; i++) {
+                        const fitValue = func(xData[i], A, w, b, C);
+                        error += Math.pow(yData[i] - fitValue, 2);
+                    }
+                    return error;
+                }
+
+                const options = {
+                    bounds: [
+                        [0, 0, -Infinity, -Infinity], // lower bounds
+                        [Infinity, Infinity, Infinity, Infinity] // upper bounds
+                    ]
+                };
+
+                const result = math.optimize(residual, initialGuess, options);
+                return result;
+            }
+        });
+    </script>
+</body>
+</html>
+
+
