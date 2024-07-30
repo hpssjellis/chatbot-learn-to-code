@@ -72,7 +72,7 @@
         }
 
         async function loadBitcoinData() {
-            myDayCount = parseInt(getDocumentById('myDays').value)
+            myDayCount = parseInt(getElementById('myDays').value)
             const url = 'https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=' + myDayCount;
             try {
                 const response = await fetch(url);
