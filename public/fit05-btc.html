@@ -13,6 +13,7 @@
     <input type="file" id="fileInput">
     <input type="button" value="Fit Sinusoidal Curve" onclick="fitCurve()">
     <input type="button" value="Load Bitcoin Data" onclick="loadBitcoinData()">
+    <input id="myDays" type=text value=30><br>
     <div id="plot"></div>
 
     <script>
@@ -71,7 +72,8 @@
         }
 
         async function loadBitcoinData() {
-            const url = 'https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=30';
+            myDayCount = parseInt(getDocumentById('myDays').value)
+            const url = 'https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=' + myDayCount;
             try {
                 const response = await fetch(url);
                 const data = await response.json();
