@@ -12,7 +12,7 @@
     <h1>Sinusoidal Curve Fitting and Bitcoin Data</h1>
     <input type="file" id="fileInput">
     <input type="button" value="Fit Sinusoidal Curve" onclick="fitCurve()">
-    <input type="button" value="Load Bitcoin Data" onclick="loadBitcoinData()">
+    <input type="button" value="Load Bitcoin Data" onclick="loadBitcoinData(1000)">
     <div id="plot"></div>
 
     <script>
@@ -70,7 +70,7 @@
             return [A, w, b, C];
         }
 
-        async function loadBitcoinData() {
+        async function loadBitcoinData(max) {
             const url = 'https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=max';
             try {
                 const response = await fetch(url);
