@@ -17,6 +17,10 @@
     <div id="plot"></div>
 
     <script>
+
+
+        // globals
+        let xData, yData = [];
         function parseCSV(file, callback) {
             const reader = new FileReader();
             reader.onload = function(event) {
@@ -85,6 +89,8 @@
                 const dates = prices.map(entry => new Date(entry.date).getTime()); // Convert to timestamp
                 const pricesLog = prices.map(entry => Math.log(entry.price));
                 const datesLog = dates.map(date => Math.log(date));
+                xData = pricesLog;
+                yData = datesLog;
 
                 const { A, w, b, C } = fitCurve(datesLog, pricesLog);
                 const yFit = datesLog.map(date => sinusoidal(date, A, w, b, C));
