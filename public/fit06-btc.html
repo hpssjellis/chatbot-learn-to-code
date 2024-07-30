@@ -11,16 +11,16 @@
 <body>
     <h1>Sinusoidal Curve Fitting and Bitcoin Data</h1>
     <input type="file" id="fileInput">
-    <input type="button" value="Fit Sinusoidal Curve" onclick="fitCurve()">
     <input type="button" value="Load Bitcoin Data" onclick="loadBitcoinData()">
-    <input id="myDays" size=6 type=text value=30><br>
+    <input id="myDays" size=6 type=text value=30>
+    <input type="button" value="Fit Sinusoidal Curve" onclick="fitCurve()"><br>
     <div id="plot"></div>
 
     <script>
 
 
         // globals
-        let xData, yData = [];
+       // let xData, yData = [];
 
         
         function parseCSV(file, callback) {
@@ -108,8 +108,8 @@
                 const dates = prices.map(entry => new Date(entry.date).getTime()); // Convert to timestamp
                 const pricesLog = prices.map(entry => Math.log(entry.price));
                 const datesLog = dates.map(date => Math.log(date));
-                xData = pricesLog;
-                yData = datesLog;
+              //  xData = pricesLog;
+              //  yData = datesLog;
 
                 const { A, w, b, C } = fitCurve(datesLog, pricesLog);
                 const yFit = datesLog.map(date => sinusoidal(date, A, w, b, C));
@@ -156,8 +156,8 @@
 
 
 
-            console.log(`fitCurve(xData, yData)`);
-            fitCurve(xData, yData) 
+          //  console.log(`fitCurve(xData, yData)`);
+          //  fitCurve(xData, yData) 
         }
     </script>
 </body>
