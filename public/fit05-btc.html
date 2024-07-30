@@ -13,7 +13,7 @@
     <input type="file" id="fileInput">
     <input type="button" value="Fit Sinusoidal Curve" onclick="fitCurve()">
     <input type="button" value="Load Bitcoin Data" onclick="loadBitcoinData()">
-    <input id="myDays" type=text value=30><br>
+    <input id="myDays" size=6 type=text value=30><br>
     <div id="plot"></div>
 
     <script>
@@ -21,6 +21,8 @@
 
         // globals
         let xData, yData = [];
+
+        
         function parseCSV(file, callback) {
             const reader = new FileReader();
             reader.onload = function(event) {
@@ -49,6 +51,8 @@
 
         function gradientDescent(xData, yData, initialGuess, func, learningRate = 0.01, iterations = 1000) {
             let [A, w, b, C] = initialGuess;
+            console.log('initialGuess');
+            console.log(initialGuess);
             const N = xData.length;
 
             for (let iter = 0; iter < iterations; iter++) {
