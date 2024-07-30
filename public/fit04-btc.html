@@ -71,7 +71,7 @@
         }
 
         async function loadBitcoinData() {
-            const url = 'https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days='30;
+            const url = 'https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=30';
             try {
                 const response = await fetch(url);
                 const data = await response.json();
