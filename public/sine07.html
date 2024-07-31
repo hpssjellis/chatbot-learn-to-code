@@ -1,0 +1,257 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plotly Sinusoidal Graph in Degrees</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        textarea {
+            width: 100%;
+            height: 100px;
+        }
+        input[type="text"], input[type="number"] {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin: 5px 0;
+        }
+        input[type="button"] {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Sinusoidal Plot Generator in Degrees</h1>
+        <label for="equation">Enter the equation (e.g., Math.sin(toRadians(x))):</label>
+        <input type="text" id="myEquation" value="0.4*Math.sin(toRadians(x/2)) + 0.1*Math.sin(toRadians(x/3)) + 0.2*Math.sin(toRadians(x/20)) ">
+        
+        <label for="xRange">Generate x values:</label>
+        <input type="number" id="xStart" placeholder="Start (e.g., 0)" value="0">
+        <input type="number" id="xEnd" placeholder="End (e.g., 360)" value="5000">
+        <input type="number" id="xStep" placeholder="Step (e.g., 30)" value="3">
+        <input type="button" value="Generate X Values" onclick="generateXValues()">
+        
+        <label for="xData">x values (degrees, comma separated):</label>
+        <textarea id="myXData"></textarea>
+      
+        <input type="button" value="Generate Plot" onclick="generatePlot()">
+        
+        <label for="yData">y values (generated automatically):</label>
+        <textarea id="myYData" readonly></textarea>
+        
+        
+        <label for="fileName">File name:</label>
+        <input type="text" id="fileName" value="sine01-csv.csv">
+        
+        <input type="button" value="Save as CSV" onclick="saveAsCSV()">
+
+        <input type="button" value="Gradient Descent" onclick="fitCurve()">
+        
+        
+        <div id="myPlot" style="height: 500px;"></div>
+    </div>
+    
+    <script>
+        function toRadians(degrees) {
+            return degrees * (Math.PI / 180);
+        }
+
+        function generateXValues() {
+            const start = parseFloat(document.getElementById('xStart').value);
+            const end = parseFloat(document.getElementById('xEnd').value);
+            const step = parseFloat(document.getElementById('xStep').value);
+            
+            if (isNaN(start) || isNaN(end) || isNaN(step)) {
+                alert('Please enter valid numbers for start, end, and step.');
+                return;
+            }
+            
+            let xValues = [];
+            for (let x = start; x <= end; x += step) {
+                xValues.push(x);
+            }
+            
+            document.getElementById('myXData').value = xValues.join(', ');
+        }
+
+        function generatePlot() {
+            const myEquation = document.getElementById('myEquation').value;
+            const myXData = document.getElementById('myXData').value.split(',').map(Number);
+            
+            let myYData = [];
+            try {
+                myYData = myXData.map(x => eval(myEquation));
+            } catch (error) {
+                alert('Invalid equation. Please check your input.');
+                return;
+            }
+            
+            document.getElementById('myYData').value = myYData.join(', ');
+            
+            const trace = {
+                x: myXData,
+                y: myYData,
+                mode: 'lines+markers',
+                type: 'scatter'
+            };
+            
+            const layout = {
+                title: 'Sinusoidal Graph in Degrees',
+                xaxis: { title: 'X (Degrees)' },
+                yaxis: { title: 'Y' }
+            };
+            
+            Plotly.newPlot('myPlot', [trace], layout);
+        }
+        
+        function saveAsCSV() {
+            const xData = document.getElementById('myXData').value.split(',').map(Number);
+            const yData = document.getElementById('myYData').value.split(',').map(Number);
+            const fileName = document.getElementById('fileName').value;
+
+            if (xData.length !== yData.length) {
+                alert('X and Y data lengths do not match.');
+                return;
+            }
+
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "X,Y\n";
+            xData.forEach((x, index) => {
+                csvContent += `${x},${yData[index]}\n`;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement('a');
+            link.setAttribute('href', encodedUri);
+            link.setAttribute('download', fileName);
+            document.body.appendChild(link); // Required for Firefox
+            link.click();
+        }
+
+////// Fit functions
+
+           function sinusoidal(x, A, w, b, C) {
+            return A * Math.sin(w * x + b) + C;
+        }
+
+
+      /*
+        function fitCurve() {
+            
+            const xData = document.getElementById('myXData').value.split(',').map(Number);
+            const yData = document.getElementById('myYData').value.split(',').map(Number);
+            const initialGuess = [1, 1, 0, 0];
+            const [A, w, b, C] = gradientDescent(xData, yData, initialGuess, sinusoidal);
+            console.log(`  A: ${A}, w: ${w}, b: ${b}, C: ${C}    `)
+
+            return { A, w, b, C };
+        }
+
+      */
+
+      
+
+
+function fitCurve() {
+    const xData = document.getElementById('myXData').value.split(',').map(Number);
+    const yData = document.getElementById('myYData').value.split(',').map(Number);
+    const initialGuess = [1, 1, 0, 0];
+    const [A, w, b, C] = gradientDescent(xData, yData, initialGuess, sinusoidal);
+
+    console.log(`A: ${A}, w: ${w}, b: ${b}, C: ${C}`);
+
+    // Generate y values for the fitted curve
+    const fittedYData = xData.map(x => sinusoidal(x, A, w, b, C));
+
+    // Plot the original data and fitted curve
+    const originalTrace = {
+        x: xData,
+        y: yData,
+        mode: 'markers',
+        type: 'scatter',
+        name: 'Original Data'
+    };
+
+    const fittedTrace = {
+        x: xData,
+        y: fittedYData,
+        mode: 'lines',
+        type: 'scatter',
+        name: 'Fitted Curve'
+    };
+
+    const layout = {
+        title: 'Sinusoidal Curve Fitting',
+        xaxis: { title: 'X (Degrees)' },
+        yaxis: { title: 'Y' }
+    };
+
+    Plotly.newPlot('myPlot', [originalTrace, fittedTrace], layout);
+}
+
+        function gradientDescent(xData, yData, initialGuess, func, learningRate = 0.01, iterations = 1000) {
+            let [A, w, b, C] = initialGuess;
+            console.log('initialGuess');
+            console.log(initialGuess);
+
+
+
+
+                console.log(`xData.length`);
+                console.log(xData.length);
+                console.log(`xData`);
+                console.log(xData);
+                
+                console.log(`yData.length`);
+                console.log(yData.length);
+                console.log(`yData`);
+                console.log(yData);
+
+            
+            const N = xData.length;
+
+            for (let iter = 0; iter < iterations; iter++) {
+                let dA = 0, dw = 0, db = 0, dC = 0;
+
+                for (let i = 0; i < N; i++) {
+                    const x = xData[i];
+                    const y = yData[i];
+                    const yFit = func(x, A, w, b, C);
+                    const error = yFit - y;
+
+                    dA += error * Math.sin(w * x + b);
+                    dw += error * A * x * Math.cos(w * x + b);
+                    db += error * A * Math.cos(w * x + b);
+                    dC += error;
+                    console.log(`#:${i}/${N}, error: ${error.toFixed(4)}`);
+                }
+
+                A -= learningRate * dA / N;
+                w -= learningRate * dw / N;
+                b -= learningRate * db / N;
+                C -= learningRate * dC / N;
+            }
+
+            return [A, w, b, C];
+        }
+
+
+
+
+        
+    </script>
+</body>
+</html>
