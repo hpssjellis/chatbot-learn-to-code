@@ -14,7 +14,7 @@
     <div class="container">
         <h1>Sinusoidal Plot Generator in Degrees</h1>
         <label for="equation">Enter the equation (e.g., Math.sin(toRadians(x))):</label>
-        <input type="text" id="myEquation" value="0.4*Math.sin(toRadians(x/2)) + 0.1*Math.sin(toRadians(x/3)) + 0.2*Math.sin(toRadians(x/20)) ">
+        <input type="text" id="myEquation" value="0.4*Math.sin(toRadians(x/2)) + 0.1*Math.sin(toRadians(x/3)) + 0.2*Math.sin(toRadians(x/20)) "><br>
         Gradient Descent, Learning Rate: <input id="myLearningRate" type=text value="0.01"><br>
         Gradient Descent Iterations <input id="myIterations" type=text value="1000"><br>
 
@@ -23,23 +23,23 @@
         <input type="number" id="xStart" placeholder="Start (e.g., 0)" value="0">
         <input type="number" id="xEnd" placeholder="End (e.g., 360)" value="5000">
         <input type="number" id="xStep" placeholder="Step (e.g., 30)" value="3">
-        <input type="button" value="Generate X Values" onclick="generateXValues()">
+        <input type="button" value="Generate X Values" onclick="generateXValues()"><br>
         
         <label for="xData">x values (degrees, comma separated):</label>
-        <textarea id="myXData"></textarea>
+        <textarea id="myXData"></textarea><br>
       
         <input type="button" value="Generate Plot" onclick="generatePlot()">
         
         <label for="yData">y values (generated automatically):</label>
-        <textarea id="myYData" readonly></textarea>
+        <textarea id="myYData" readonly></textarea><br>
         
         
         <label for="fileName">File name:</label>
-        <input type="text" id="fileName" value="sine01-csv.csv">
+        <input type="text" id="fileName" value="sine01-csv.csv">br>
         
         <input type="button" value="Save as CSV" onclick="saveAsCSV()">
 
-        <input type="button" value="Gradient Descent" onclick="fitCurve()">
+        <input type="button" value="Gradient Descent" onclick="fitCurve()"><br>
         
         
         <div id="myPlot" style="height: 500px;"></div>
