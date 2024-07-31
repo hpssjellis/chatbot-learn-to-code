@@ -236,7 +236,7 @@ function fitCurve() {
                     dw += error * A * x * Math.cos(w * x + b);
                     db += error * A * Math.cos(w * x + b);
                     dC += error;
-                    console.log(`#:${i}/${N}, error: ${error.toFixed(4)}`);
+                  //  console.log(`#:${i}/${N}, error: ${error.toFixed(4)}`);
                 }
 
                 A -= learningRate * dA / N;
