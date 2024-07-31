@@ -1,0 +1,209 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plotly Sinusoidal Graph in Degrees</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+        }
+        textarea {
+            width: 100%;
+            height: 100px;
+        }
+        input[type="text"], input[type="number"] {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin: 5px 0;
+        }
+        input[type="button"] {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Sinusoidal Plot Generator in Degrees</h1>
+        <label for="equation">Enter the equation (e.g., Math.sin(toRadians(x))):</label>
+        <input type="text" id="myEquation" value="Math.sin(toRadians(x))">
+        
+        <label for="xRange">Generate x values:</label>
+        <input type="number" id="xStart" placeholder="Start (e.g., 0)" value="0">
+        <input type="number" id="xEnd" placeholder="End (e.g., 360)" value="360">
+        <input type="number" id="xStep" placeholder="Step (e.g., 30)" value="10">
+        <input type="button" value="Generate X Values" onclick="generateXValues()">
+        
+        <label for="xData">x values (degrees, comma separated):</label>
+        <textarea id="myXData"></textarea>
+        
+        <label for="yData">y values (generated automatically):</label>
+        <textarea id="myYData" readonly></textarea>
+        
+        <input type="button" value="Generate Plot" onclick="generatePlot()">
+        
+        <label for="fileName">File name:</label>
+        <input type="text" id="fileName" value="sine01-csv.csv">
+        
+        <input type="button" value="Save as CSV" onclick="saveAsCSV()">
+        
+        <div id="myPlot" style="height: 500px;"></div>
+    </div>
+    
+    <script>
+        function toRadians(degrees) {
+            return degrees * (Math.PI / 180);
+        }
+
+        function generateXValues() {
+            const start = parseFloat(document.getElementById('xStart').value);
+            const end = parseFloat(document.getElementById('xEnd').value);
+            const step = parseFloat(document.getElementById('xStep').value);
+            
+            if (isNaN(start) || isNaN(end) || isNaN(step)) {
+                alert('Please enter valid numbers for start, end, and step.');
+                return;
+            }
+            
+            let xValues = [];
+            for (let x = start; x <= end; x += step) {
+                xValues.push(x);
+            }
+            
+            document.getElementById('myXData').value = xValues.join(', ');
+        }
+
+        function gradientDescent(xValues, yValues, iterations = 1000, learningRate = 0.01) {
+            // Initialize parameters
+            let A1 = Math.random();
+            let A2 = Math.random();
+            let A3 = Math.random();
+            let w1 = Math.random();
+            let w2 = Math.random();
+            let w3 = Math.random();
+            let C = Math.random();
+            
+            function model(x, A1, A2, A3, w1, w2, w3, C) {
+                return A1 * Math.sin(toRadians(w1 * x)) + A2 * Math.sin(toRadians(w2 * x)) + A3 * Math.sin(toRadians(w3 * x)) + C;
+            }
+            
+            function computeCost() {
+                let totalError = 0;
+                for (let i = 0; i < xValues.length; i++) {
+                    const prediction = model(xValues[i], A1, A2, A3, w1, w2, w3, C);
+                    totalError += Math.pow(prediction - yValues[i], 2);
+                }
+                return totalError / xValues.length;
+            }
+            
+            function updateParameters() {
+                // Gradient calculation (simplified)
+                let gradients = { A1: 0, A2: 0, A3: 0, w1: 0, w2: 0, w3: 0, C: 0 };
+                for (let i = 0; i < xValues.length; i++) {
+                    const prediction = model(xValues[i], A1, A2, A3, w1, w2, w3, C);
+                    const error = prediction - yValues[i];
+                    gradients.A1 += error * Math.sin(toRadians(w1 * xValues[i]));
+                    gradients.A2 += error * Math.sin(toRadians(w2 * xValues[i]));
+                    gradients.A3 += error * Math.sin(toRadians(w3 * xValues[i]));
+                    gradients.w1 += error * A1 * xValues[i] * Math.cos(toRadians(w1 * xValues[i]));
+                    gradients.w2 += error * A2 * xValues[i] * Math.cos(toRadians(w2 * xValues[i]));
+                    gradients.w3 += error * A3 * xValues[i] * Math.cos(toRadians(w3 * xValues[i]));
+                    gradients.C += error;
+                }
+                
+                A1 -= learningRate * gradients.A1 / xValues.length;
+                A2 -= learningRate * gradients.A2 / xValues.length;
+                A3 -= learningRate * gradients.A3 / xValues.length;
+                w1 -= learningRate * gradients.w1 / xValues.length;
+                w2 -= learningRate * gradients.w2 / xValues.length;
+                w3 -= learningRate * gradients.w3 / xValues.length;
+                C -= learningRate * gradients.C / xValues.length;
+            }
+            
+            for (let i = 0; i < iterations; i++) {
+                updateParameters();
+            }
+            
+            return { A1, A2, A3, w1, w2, w3, C };
+        }
+
+        function generatePlot() {
+            const myEquation = document.getElementById('myEquation').value;
+            const myXData = document.getElementById('myXData').value.split(',').map(Number);
+            
+            let myYData = [];
+            try {
+                myYData = myXData.map(x => eval(myEquation));
+            } catch (error) {
+                alert('Invalid equation. Please check your input.');
+                return;
+            }
+            
+            document.getElementById('myYData').value = myYData.join(', ');
+            
+            // Gradient Descent Fit
+            const fitParams = gradientDescent(myXData, myYData);
+            
+            function fitModel(x) {
+                return fitParams.A1 * Math.sin(toRadians(fitParams.w1 * x)) +
+                       fitParams.A2 * Math.sin(toRadians(fitParams.w2 * x)) +
+                       fitParams.A3 * Math.sin(toRadians(fitParams.w3 * x)) +
+                       fitParams.C;
+            }
+            
+            const fitYData = myXData.map(x => fitModel(x));
+            
+            const trace1 = {
+                x: myXData,
+                y: myYData,
+                mode: 'markers',
+                type: 'scatter',
+                name: 'Original Data'
+            };
+            
+            const trace2 = {
+                x: myXData,
+                y: fitYData,
+                mode: 'lines',
+                type: 'scatter',
+                name: 'Fitted Curve'
+            };
+            
+            const layout = {
+                title: 'Sinusoidal Graph in Degrees',
+                xaxis: { title: 'X (Degrees)' },
+                yaxis: { title: 'Y' }
+            };
+            
+            Plotly.newPlot('myPlot', [trace1, trace2], layout);
+        }
+        
+        function saveAsCSV() {
+            const xData = document.getElementById('myXData').value.split(',').map(Number);
+            const yData = document.getElementById('myYData').value.split(',').map(Number);
+            const fileName = document.getElementById('fileName').value;
+
+            if (xData.length !== yData.length) {
+                alert('X and Y data lengths do not match.');
+                return;
+            }
+
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "X,Y\n";
+            xData.forEach((x, index) => {
+                csvContent += `${x},${yData[index]}\n`;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement('a');
+            link.setAttribute('href
