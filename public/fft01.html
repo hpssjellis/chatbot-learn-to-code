@@ -1,0 +1,41 @@
+
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>FFT Bitcoin Data Plot</title>
+    <script src="https://cdn.jsdelivr.net/npm/fft.js"></script>
+</head>
+<body>
+    <input type="button" value="Load Data" onclick="loadData()">
+    <canvas id="plot" width="800" height="400"></canvas>
+    <script>
+        async function loadData() {
+            // Fetch Bitcoin data (replace with your data source)
+            const response = await fetch('bitcoin_data.json');
+            const data = await response.json();
+            const prices = data.prices; // Example structure, adjust as needed
+
+            // Perform FFT
+            const fft = new FFT(prices.length);
+            const fftData = fft.createComplexArray();
+            fft.realTransform(fftData, prices);
+            fft.completeSpectrum(fftData);
+
+            // Extract magnitudes for plotting
+            const magnitudes = fftData.map((value, index) => Math.sqrt(value[0]**2 + value[1]**2));
+
+            // Plot results
+            const canvas = document.getElementById('plot');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.beginPath();
+            magnitudes.forEach((value, index) => {
+                ctx.lineTo(index * (canvas.width / magnitudes.length), canvas.height - value);
+            });
+            ctx.stroke();
+        }
+    </script>
+</body>
+</html>
