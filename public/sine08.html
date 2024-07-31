@@ -15,8 +15,7 @@
         <h1>Sinusoidal Plot Generator in Degrees</h1>
         <label for="equation">Enter the equation (e.g., Math.sin(toRadians(x))):</label>
         <input type="text" id="myEquation" value="0.4*Math.sin(toRadians(x/2)) + 0.1*Math.sin(toRadians(x/3)) + 0.2*Math.sin(toRadians(x/20)) "><br>
-        Gradient Descent, Learning Rate: <input id="myLearningRate" type=text value="0.01"><br>
-        Gradient Descent Iterations <input id="myIterations" type=text value="1000"><br>
+
 
         
         <label for="xRange">Generate x values:</label>
@@ -37,7 +36,9 @@
         <label for="fileName">File name:</label>
         <input type="text" id="fileName" value="sine01-csv.csv"><br>
         
-        <input type="button" value="Save as CSV" onclick="saveAsCSV()">
+        <input type="button" value="Save as CSV" onclick="saveAsCSV()"><br>
+        Gradient Descent, Learning Rate: <input id="myLearningRate" type=text value="0.003"><br>
+        Gradient Descent Iterations <input id="myIterations" type=text value="1000"><br>
 
         <input type="button" value="Gradient Descent" onclick="fitCurve()"><br>
         
