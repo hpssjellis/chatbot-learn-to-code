@@ -114,7 +114,7 @@
 
         
         async function loadBitcoinData() {
-            const url = 'https://api.coindesk.com/v1/bpi/historical/close.json';
+            const url = 'https://api.coindesk.com/v1/bpi/historical/close.json?start=2019-08-10&end=2020-08-10';
             try {
                 const response = await fetch(url);
                 const data = await response.json();
