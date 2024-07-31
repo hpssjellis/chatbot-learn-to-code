@@ -153,6 +153,7 @@
             const yData = document.getElementById('myYData').value.split(',').map(Number);
             const initialGuess = [1, 1, 0, 0];
             const [A, w, b, C] = gradientDescent(xData, yData, initialGuess, sinusoidal);
+            console.log(`  A: ${A}, w: ${w}, b: ${b}, C: ${C}    `)
 
             return { A, w, b, C };
         }
