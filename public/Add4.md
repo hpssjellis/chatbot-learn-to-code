@@ -1,5 +1,8 @@
 
 
+
+coinDesk  limited range??    https://api.coindesk.com/v1/bpi/historical/close.json?start=2019-08-10&end=2020-08-10
+
 CoinGecko (Simple)URL: https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=1
 
 CoinGecko FREE ACCOUNT ONLY 365 DAYS (Date Range)URL: https://api.coingecko.com/api/v3/coins/bitcoin/market_chart/range?vs_currency=usd&from=1674854400&to=1682534400
