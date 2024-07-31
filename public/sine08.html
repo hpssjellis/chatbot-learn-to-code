@@ -125,7 +125,7 @@
 ////// Fit functions
         function gradientDescent(xData, yData, initialGuess, func, learningRate = 0.01, iterations = 1000) {
             learningRate = parseFloat(document.getElementById('myLearningRate').value);
-            iterations = parseInt(document.getElementById('myIterations'.value);
+            iterations = parseInt(document.getElementById('myIterations').value);
             console.log(`learningRate: ${learningRate},  iterations: ${iterations} `);
             let [A, w, b, C] = initialGuess;
             console.log('initialGuess');
