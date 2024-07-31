@@ -1,0 +1,123 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sinusoidal Curve Fitting and Bitcoin Data</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/9.5.0/math.min.js"></script>
+</head>
+<body>
+    <h1>Sinusoidal Curve Fitting and Bitcoin Data</h1>
+    <input type="file" id="fileInput">
+    <input type="button" value="Fit Sinusoidal Curve" onclick="fitCurve()">
+    <input type="button" value="Load Bitcoin Data" onclick="loadBitcoinData()">
+    <div id="plot"></div>
+
+    <script>
+        function parseCSV(file, callback) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const csvData = event.target.result;
+                const lines = csvData.split('\n');
+                const result = [];
+                for (const line of lines) {
+                    const [x, y] = line.split(',');
+                    result.push({ x: parseFloat(x), y: parseFloat(y) });
+                }
+                callback(result);
+            };
+            reader.readAsText(file);
+        }
+
+        function sinusoidal(x, A, w, b, C) {
+            return A * Math.sin(w * x + b) + C;
+        }
+
+        function fitCurve(xData, yData) {
+            const initialGuess = [1, 1, 0, 0];
+            const [A, w, b, C] = gradientDescent(xData, yData, initialGuess, sinusoidal);
+
+            return { A, w, b, C };
+        }
+
+        function gradientDescent(xData, yData, initialGuess, func, learningRate = 0.01, iterations = 1000) {
+            let [A, w, b, C] = initialGuess;
+            const N = xData.length;
+
+            for (let iter = 0; iter < iterations; iter++) {
+                let dA = 0, dw = 0, db = 0, dC = 0;
+
+                for (let i = 0; i < N; i++) {
+                    const x = xData[i];
+                    const y = yData[i];
+                    const yFit = func(x, A, w, b, C);
+                    const error = yFit - y;
+
+                    dA += error * Math.sin(w * x + b);
+                    dw += error * A * x * Math.cos(w * x + b);
+                    db += error * A * Math.cos(w * x + b);
+                    dC += error;
+                }
+
+                A -= learningRate * dA / N;
+                w -= learningRate * dw / N;
+                b -= learningRate * db / N;
+                C -= learningRate * dC / N;
+            }
+
+            return [A, w, b, C];
+        }
+
+        async function loadBitcoinData() {
+            const url = 'https://api.coindesk.com/v1/bpi/historical/close.json';
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                const prices = data.prices.map(price => ({
+                    date: new Date(price[0]).toISOString().slice(0, 10),
+                    price: price[1]
+                }));
+
+                const dates = prices.map(entry => new Date(entry.date).getTime()); // Convert to timestamp
+                const pricesLog = prices.map(entry => Math.log(entry.price));
+                const datesLog = dates.map(date => Math.log(date));
+
+                const { A, w, b, C } = fitCurve(datesLog, pricesLog);
+                const yFit = datesLog.map(date => sinusoidal(date, A, w, b, C));
+
+                Plotly.newPlot('plot', [
+                    {
+                        x: dates,
+                        y: prices,
+                        mode: 'lines+markers',
+                        name: 'Bitcoin Price'
+                    },
+                    {
+                        x: datesLog,
+                        y: pricesLog,
+                        mode: 'lines+markers',
+                        name: 'Log of Bitcoin Price'
+                    },
+                    {
+                        x: datesLog,
+                        y: yFit,
+                        mode: 'lines',
+                        name: 'Fitted Sinusoidal Curve'
+                    }
+                ]);
+
+                console.log(`Amplitude (A): ${A}`);
+                console.log(`Angular frequency (w): ${w}`);
+                console.log(`Phase shift (b): ${b}`);
+                console.log(`Vertical shift (C): ${C}`);
+                console.log('Bitcoin Data Loaded and Plot Updated.');
+            } catch (error) {
+                console.error('Error loading Bitcoin data:', error);
+            }
+        }
+    </script>
+</body>
+</html>
+
