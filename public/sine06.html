@@ -57,6 +57,9 @@
         <input type="text" id="fileName" value="sine01-csv.csv">
         
         <input type="button" value="Save as CSV" onclick="saveAsCSV()">
+
+        <input type="button" value="Gradient Descent" onclick="fitCurve()">
+        
         
         <div id="myPlot" style="height: 500px;"></div>
     </div>
@@ -137,6 +140,73 @@
             document.body.appendChild(link); // Required for Firefox
             link.click();
         }
+
+////// Fit functions
+
+           function sinusoidal(x, A, w, b, C) {
+            return A * Math.sin(w * x + b) + C;
+        }
+
+        function fitCurve() {
+            
+            const xData = document.getElementById('myXData').value.split(',').map(Number);
+            const yData = document.getElementById('myYData').value.split(',').map(Number);
+            const initialGuess = [1, 1, 0, 0];
+            const [A, w, b, C] = gradientDescent(xData, yData, initialGuess, sinusoidal);
+
+            return { A, w, b, C };
+        }
+
+        function gradientDescent(xData, yData, initialGuess, func, learningRate = 0.01, iterations = 1000) {
+            let [A, w, b, C] = initialGuess;
+            console.log('initialGuess');
+            console.log(initialGuess);
+
+
+
+
+                console.log(`xData.length`);
+                console.log(xData.length);
+                console.log(`xData`);
+                console.log(xData);
+                
+                console.log(`yData.length`);
+                console.log(yData.length);
+                console.log(`yData`);
+                console.log(yData);
+
+            
+            const N = xData.length;
+
+            for (let iter = 0; iter < iterations; iter++) {
+                let dA = 0, dw = 0, db = 0, dC = 0;
+
+                for (let i = 0; i < N; i++) {
+                    const x = xData[i];
+                    const y = yData[i];
+                    const yFit = func(x, A, w, b, C);
+                    const error = yFit - y;
+
+                    dA += error * Math.sin(w * x + b);
+                    dw += error * A * x * Math.cos(w * x + b);
+                    db += error * A * Math.cos(w * x + b);
+                    dC += error;
+                    console.log(`#${N}: error ${error}`);
+                }
+
+                A -= learningRate * dA / N;
+                w -= learningRate * dw / N;
+                b -= learningRate * db / N;
+                C -= learningRate * dC / N;
+            }
+
+            return [A, w, b, C];
+        }
+
+
+
+
+        
     </script>
 </body>
 </html>
