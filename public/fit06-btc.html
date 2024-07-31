@@ -83,6 +83,7 @@
                     dw += error * A * x * Math.cos(w * x + b);
                     db += error * A * Math.cos(w * x + b);
                     dC += error;
+                    console.log(`#${N}: error ${error}`);
                 }
 
                 A -= learningRate * dA / N;
