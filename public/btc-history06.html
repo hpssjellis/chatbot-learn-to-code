@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BTC Monthly Averages</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+    <h2>Bitcoin Monthly Averages (BTC/USDT)</h2>
+    <div id="myPlot" style="width: 100%; height: 600px;"></div>
+
+    <script>
+        // Fetch BTC/USDT monthly data from Binance API
+        async function getMonthlyData() {
+            const url = 'https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1w&limit=1000';
+            const response = await fetch(url);
+            const data = await response.json();
+            
+            const months = [];
+            const monthlyAvg = [];
+
+            // Process each month's data
+            data.forEach((monthData) => {
+                const openTime = monthData[0];  // Timestamp for the start of the month
+                const openPrice = parseFloat(monthData[1]);
+                const highPrice = parseFloat(monthData[2]);
+                const lowPrice = parseFloat(monthData[3]);
+                const closePrice = parseFloat(monthData[4]);
+
+                const avgPrice = (openPrice + highPrice + lowPrice + closePrice) / 4;
+                const date = new Date(openTime);
+
+                // Format the month as YYYY-MM
+                const formattedDate = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+                months.push(formattedDate);
+                monthlyAvg.push(avgPrice);
+            });
+
+            return { months, monthlyAvg };
+        }
+
+        // Function to plot the graph using Plotly.js
+        async function plotData() {
+            const btcData = await getMonthlyData();
+
+            const trace = {
+                x: btcData.months,
+                y: btcData.monthlyAvg,
+                type: 'scatter',
+                mode: 'lines+markers',
+                marker: { color: 'blue' },
+                line: { shape: 'linear' }
+            };
+
+            const layout = {
+                title: 'Bitcoin Monthly Average Prices',
+                xaxis: { title: 'Month' },
+                yaxis: { title: 'Average Price (USD)' }
+            };
+
+            Plotly.newPlot('myPlot', [trace], layout);
+        }
+
+        // Run the plotting function
+        plotData();
+    </script>
+</body>
+</html>
