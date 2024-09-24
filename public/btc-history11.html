@@ -188,6 +188,8 @@
             reader.readAsText(file);
         }
 
+
+        /*
         // Parse CSV file data
         function parseCSV(csv) {
             const lines = csv.split("\n");
@@ -204,6 +206,9 @@
 
             return { weeks, weeklyAvg };
         }
+
+
+        */
 
         // Initialize the page by plotting the BTC data
         async function runGetURL() {
@@ -243,7 +248,7 @@
     }
 
     // Example usage with data, both x and y axes set to log scale
-    async function loadAndPlotLogData(x,y) {
+    async function loadAndPlotLogData(x, y) {
         const response = await fetch('btc_weekly_averages.csv');
         const csvData = await response.text();
         const parsedData = parseCSV(csvData);
