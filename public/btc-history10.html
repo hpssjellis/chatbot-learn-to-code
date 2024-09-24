@@ -31,16 +31,8 @@
         loadCSVFromFile()
     }"><br>
     <input type="button" value="Log x and y" onclick="{
-        plotLogarithmic(parsedData, true, true)
-    }">
-      <input type="button" value="Log  y" onclick="{
-        plotLogarithmic(parsedData, false, true)
-    }">
-      <input type="button" value="Log x" onclick="{
-        plotLogarithmic(parsedData, true, false)
-    }">
-    <input type="button" value="reg" onclick="{
-        plotLogarithmic(parsedData, false, false)
+       // plotLogarithmic(parsedData, true, true)
+        loadAndPlotLogData()
     }">
 
 
@@ -246,7 +238,7 @@
     }
 
     // Call the function to load data and plot with logarithmic scaling
-    loadAndPlotLogData();
+//    loadAndPlotLogData();
 </script>
 
 </body>
