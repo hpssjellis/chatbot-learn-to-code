@@ -8,22 +8,27 @@
 </head>
 <body>
     <h2>Bitcoin Weekly Averages (BTC/USDT)</h2>
-
-    <input type="button" value="BTC-weekly" onclick="{
-        myUrlLink =  'https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1w&limit=1000'
-        runGetURL()
-    }">
+    
     <input type="button" value="BTC-daily" onclick="{
         myUrlLink =  'https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1d&limit=2000'
        runGetURL()
     }">
+    <input type="button" value="BTC-weekly" onclick="{
+        myUrlLink =  'https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1w&limit=1000'
+        runGetURL()
+    }">
+
     <input type="button" value="Download Historical Data as CSV" onclick="saveDataToCSV()">
     <input type="file" id="fileInput" onchange="uploadDataToGraph()">
-    <input type="button" value="Run Saved" onclick="{
+    
+    <input type="button" value="Run Daily Saved" onclick="{
+        myInFile = 'btc_weekly_daily.csv'
+        loadCSVFromFile()
+    }">
+    <input type="button" value="Run Weekly Saved" onclick="{
         myInFile = 'btc_weekly_averages.csv'
         loadCSVFromFile()
     }">
-
     
     <div id="myPlot" style="width: 100%; height: 600px;"></div>
 
