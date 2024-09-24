@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BTC Historical Data Graph and CSV</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+    <h2>Bitcoin Weekly Averages (BTC/USDT)</h2>
+    <div id="myPlot" style="width: 100%; height: 600px;"></div>
+
+    <input type="button" value="URL Graph" onclick="{
+        btcData = await getWeeklyData();
+        plotData(btcData);
+    }">
+    <input type="button" value="Download Historical Data as CSV" onclick="saveDataToCSV()">
+    <input type="file" id="fileInput" onchange="uploadDataToGraph()">
+    <input type="button" value="Run Saved" onclick="{
+        myInFile = 'btc_weekly_averages.csv'
+        loadCSVFromFile()
+    }">
+    
+    <script>
+        let btcData = null;
+        let myInFile = ''
+        
+     
+
+         async function loadCSVFromFile() {
+        const response = await fetch(myInFile);
+        const csvData = await response.text();
+        const parsedData = parseCSV(csvData);
+        plotData(parsedData);
+    }
+
+    // Function to parse the CSV file content
+    function parseCSV(csv) {
+        const lines = csv.split("\n");
+        const weeks = [];
+        const weeklyAvg = [];
+
+        for (let i = 1; i < lines.length; i++) { // Skip headers
+            const row = lines[i].split(",");
+            if (row.length === 2) {
+                weeks.push(row[0]);
+                weeklyAvg.push(parseFloat(row[1]));
+            }
+        }
+
+        return { weeks, weeklyAvg };
+    }
+
+    // Plot the graph using Plotly.js
+    function plotData(data) {
+        const trace = {
+            x: data.weeks,
+            y: data.weeklyAvg,
+            type: 'scatter',
+            mode: 'lines+markers',
+            marker: { color: 'blue' },
+            line: { shape: 'linear' }
+        };
+
+        const layout = {
+            title: 'Bitcoin Weekly Average Prices (from CSV)',
+            xaxis: { title: 'Week' },
+            yaxis: { title: 'Average Price (USD)' }
+        };
+
+        Plotly.newPlot('myPlot', [trace], layout);
+    }
+
+        // Fetch BTC/USDT weekly data from Binance API
+        async function getWeeklyData() {
+            const url = 'https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1w&limit=1000';
+            const response = await fetch(url);
+            const data = await response.json();
+
+            const weeks = [];
+            const weeklyAvg = [];
+
+            // Process each week's data
+            data.forEach((weekData) => {
+                const openTime = weekData[0];  // Timestamp for the start of the week
+                const openPrice = parseFloat(weekData[1]);
+                const highPrice = parseFloat(weekData[2]);
+                const lowPrice = parseFloat(weekData[3]);
+                const closePrice = parseFloat(weekData[4]);
+
+                const avgPrice = (openPrice + highPrice + lowPrice + closePrice) / 4;
+                const date = new Date(openTime);
+
+                // Format the date as YYYY-MM-DD
+                const formattedDate = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
+                weeks.push(formattedDate);
+                weeklyAvg.push(avgPrice);
+            });
+
+            return { weeks, weeklyAvg };
+        }
+
+        // Plot the graph using Plotly.js
+        async function plotData(data) {
+            const trace = {
+                x: data.weeks,
+                y: data.weeklyAvg,
+                type: 'scatter',
+                mode: 'lines+markers',
+                marker: { color: 'blue' },
+                line: { shape: 'linear' }
+            };
+
+            const layout = {
+                title: 'Bitcoin Weekly Average Prices',
+                xaxis: { title: 'Week' },
+                yaxis: { title: 'Average Price (USD)' }
+            };
+
+            Plotly.newPlot('myPlot', [trace], layout);
+        }
+
+        // Save data to CSV file
+        function saveDataToCSV() {
+            const rows = [['Date', 'Weekly Average']];  // CSV headers
+            for (let i = 0; i < btcData.weeks.length; i++) {
+                rows.push([btcData.weeks[i], btcData.weeklyAvg[i]]);
+            }
+            
+            let csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "btc_weekly_averages.csv");
+            document.body.appendChild(link); // Required for Firefox
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Upload CSV data to the graph
+        function uploadDataToGraph() {
+            const fileInput = document.getElementById("fileInput");
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function(event) {
+                const csvData = event.target.result;
+                const parsedData = parseCSV(csvData);
+                plotData(parsedData);
+            };
+
+            reader.readAsText(file);
+        }
+
+        // Parse CSV file data
+        function parseCSV(csv) {
+            const lines = csv.split("\n");
+            const weeks = [];
+            const weeklyAvg = [];
+
+            for (let i = 1; i < lines.length; i++) { // Skip headers
+                const row = lines[i].split(",");
+                if (row.length === 2) {
+                    weeks.push(row[0]);
+                    weeklyAvg.push(parseFloat(row[1]));
+                }
+            }
+
+            return { weeks, weeklyAvg };
+        }
+
+        // Initialize the page by plotting the BTC data
+        async function init() {
+            btcData = await getWeeklyData();
+            plotData(btcData);
+        }
+
+        // Run the init function on page load
+       // init();
+    </script>
+</body>
+</html>
