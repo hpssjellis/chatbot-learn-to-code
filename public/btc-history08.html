@@ -17,15 +17,18 @@
     <input type="button" value="Download Historical Data as CSV" onclick="saveDataToCSV()">
     <input type="file" id="fileInput" onchange="uploadDataToGraph()">
     <input type="button" value="Run Saved" onclick="{
+        myInFile = 'btc_weekly_averages.csv'
         openFromSaved()
     }">
     
     <script>
         let btcData = null;
-async function openFromSaved() {
+        let myInFile = ''
+        
+        async function openFromSaved() {
 
-   alert()
-}      
+           alert()
+        }      
 
         // Fetch BTC/USDT weekly data from Binance API
         async function getWeeklyData() {
