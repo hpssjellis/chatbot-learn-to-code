@@ -31,8 +31,16 @@
         loadCSVFromFile()
     }"><br>
     <input type="button" value="Log x and y" onclick="{
-       // plotLogarithmic(parsedData, true, true)
-        loadAndPlotLogData()
+        loadAndPlotLogData(true, true)
+    }">
+        <input type="button" value="Log x " onclick="{
+        loadAndPlotLogData(true, false)
+    }">
+        <input type="button" value="Log y" onclick="{
+        loadAndPlotLogData(false, true)
+    }">
+        <input type="button" value="Regular" onclick="{
+        loadAndPlotLogData(false, false)
     }">
 
 
@@ -53,8 +61,8 @@
         const response = await fetch(myInFile);
         const csvData = await response.text();
         const parsedData = parseCSV(csvData);
-        //plotData(parsedData);
-        plotLogarithmic(parsedData);
+        plotData(parsedData);
+       // plotLogarithmic(parsedData);
     }
 
     // Function to parse the CSV file content
@@ -124,6 +132,7 @@
             return { weeks, weeklyAvg };
         }
 
+        /*
         // Plot the graph using Plotly.js
         async function plotData(data) {
             const trace = {
@@ -144,6 +153,8 @@
             Plotly.newPlot('myPlot', [trace], layout);
         }
 
+
+        */
         // Save data to CSV file
         function saveDataToCSV() {
             const rows = [['Date', 'Weekly Average']];  // CSV headers
@@ -170,8 +181,8 @@
             reader.onload = function(event) {
                 const csvData = event.target.result;
                 const parsedData = parseCSV(csvData);
-               // plotData(parsedData);
-                plotLogarithmic(parsedData);
+                plotData(parsedData);
+              //  plotLogarithmic(parsedData);
             };
 
             reader.readAsText(file);
@@ -197,10 +208,11 @@
         // Initialize the page by plotting the BTC data
         async function runGetURL() {
             btcData = await getWeeklyData();
-          //  plotData(btcData);
-            plotLogarithmic(btcData);
+            plotData(btcData);
+          //  plotLogarithmic(btcData);
         }
 
+        
         // Run the init function on page load
        // init();
 
@@ -231,13 +243,13 @@
     }
 
     // Example usage with data, both x and y axes set to log scale
-    async function loadAndPlotLogData() {
+    async function loadAndPlotLogData(x,y) {
         const response = await fetch('btc_weekly_averages.csv');
         const csvData = await response.text();
         const parsedData = parseCSV(csvData);
 
         // Plot the data with both x and y axes in log scale
-        plotLogarithmic(parsedData, true, true);
+        plotLogarithmic(parsedData, x, y);
     }
 
     // Call the function to load data and plot with logarithmic scaling
