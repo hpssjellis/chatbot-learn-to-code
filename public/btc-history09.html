@@ -11,13 +11,11 @@
 
     <input type="button" value="BTC-weekly" onclick="{
         myUrlLink =  'https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1w&limit=1000'
-        btcData = await getWeeklyData();
-        plotData(btcData);
+        runGetURL()
     }">
     <input type="button" value="BTC-daily" onclick="{
         myUrlLink =  'https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1d&limit=2000'
-        btcData = await getWeeklyData();
-        plotData(btcData);
+       runGetURL()
     }">
     <input type="button" value="Download Historical Data as CSV" onclick="saveDataToCSV()">
     <input type="file" id="fileInput" onchange="uploadDataToGraph()">
@@ -182,7 +180,7 @@
         }
 
         // Initialize the page by plotting the BTC data
-        async function init() {
+        async function runGetURL() {
             btcData = await getWeeklyData();
             plotData(btcData);
         }
