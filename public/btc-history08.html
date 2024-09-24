@@ -18,17 +18,58 @@
     <input type="file" id="fileInput" onchange="uploadDataToGraph()">
     <input type="button" value="Run Saved" onclick="{
         myInFile = 'btc_weekly_averages.csv'
-        openFromSaved()
+        loadCSVFromFile()
     }">
     
     <script>
         let btcData = null;
         let myInFile = ''
         
-        async function openFromSaved() {
+     
 
-           alert()
-        }      
+         async function loadCSVFromFile() {
+        const response = await fetch(myInFile);
+        const csvData = await response.text();
+        const parsedData = parseCSV(csvData);
+        plotData(parsedData);
+    }
+
+    // Function to parse the CSV file content
+    function parseCSV(csv) {
+        const lines = csv.split("\n");
+        const weeks = [];
+        const weeklyAvg = [];
+
+        for (let i = 1; i < lines.length; i++) { // Skip headers
+            const row = lines[i].split(",");
+            if (row.length === 2) {
+                weeks.push(row[0]);
+                weeklyAvg.push(parseFloat(row[1]));
+            }
+        }
+
+        return { weeks, weeklyAvg };
+    }
+
+    // Plot the graph using Plotly.js
+    function plotData(data) {
+        const trace = {
+            x: data.weeks,
+            y: data.weeklyAvg,
+            type: 'scatter',
+            mode: 'lines+markers',
+            marker: { color: 'blue' },
+            line: { shape: 'linear' }
+        };
+
+        const layout = {
+            title: 'Bitcoin Weekly Average Prices (from CSV)',
+            xaxis: { title: 'Week' },
+            yaxis: { title: 'Average Price (USD)' }
+        };
+
+        Plotly.newPlot('myPlot', [trace], layout);
+    }
 
         // Fetch BTC/USDT weekly data from Binance API
         async function getWeeklyData() {
