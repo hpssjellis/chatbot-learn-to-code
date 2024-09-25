@@ -61,7 +61,7 @@
     
     
     <script>
-        let btcData = null;
+     //   let btcData = null;
         let myInFile = ''
         let myUrlLink = ''
         let parsedData = ''
@@ -200,8 +200,8 @@
         // Save data to CSV file
         function saveDataToCSV() {
             const rows = [['Date', 'Weekly Average']];  // CSV headers
-            for (let i = 0; i < btcData.weeks.length; i++) {
-                rows.push([btcData.weeks[i], btcData.weeklyAvg[i]]);
+            for (let i = 0; i < parsedData.weeks.length; i++) {
+                rows.push([parsedData.weeks[i], parsedData.weeklyAvg[i]]);
             }
             
             let csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
