@@ -54,13 +54,14 @@
         let btcData = null;
         let myInFile = ''
         let myUrlLink = ''
+        let parsedData = ''
         
      
 
          async function loadCSVFromFile() {
         const response = await fetch(myInFile);
         const csvData = await response.text();
-        const parsedData = parseCSV(csvData);
+        parsedData = parseCSV(csvData);
         plotData(parsedData);
        // plotLogarithmic(parsedData);
     }
@@ -180,7 +181,7 @@
 
             reader.onload = function(event) {
                 const csvData = event.target.result;
-                const parsedData = parseCSV(csvData);
+                parsedData = parseCSV(csvData);
                 plotData(parsedData);
               //  plotLogarithmic(parsedData);
             };
@@ -251,7 +252,7 @@
     async function loadAndPlotLogData(x, y) {
         const response = await fetch('btc_weekly_averages.csv');
         const csvData = await response.text();
-        const parsedData = parseCSV(csvData);
+        parsedData = parseCSV(csvData);
 
         // Plot the data with both x and y axes in log scale
         plotLogarithmic(parsedData, x, y);
