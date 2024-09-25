@@ -36,21 +36,21 @@
     }"><br>
     <input type="button" value="Log x and y" onclick="{
        // loadAndPlotLogData(true, true)
-        runAll()
+        runAll(true, true)
     }">
         <input type="button" value="Log x " onclick="{
        // loadAndPlotLogData(true, false)
-            runAll()
+            runAll(true, false)
     }">
         <input type="button" value="Log y" onclick="{
        // loadAndPlotLogData(false, true)
-            runAll()
+            runAll(false, true)
     }">
         <input type="button" value="Regular" onclick="{
         console.log('Parsed Data:', parsedData);  // Ensure parsedData is populated
 
         //loadAndPlotLogData(false, false)
-            runAll()
+            runAll(false, false)
     }">
 
 
@@ -88,7 +88,7 @@
                 // weeks.push(row[0]);
                 // Convert date string to Unix timestamp
                 const timestamp = new Date(row[0]).getTime();
-                weeks.push(timestamp);
+                weeks.push(timestamp - 1500000000000); //adjust for the start of BTC
                 weeklyAvg.push(parseFloat(row[1]));
             }
         }
@@ -97,8 +97,7 @@
     }
 
     // Plot the graph using Plotly.js
-    function plotData(data) {
-        let xLog = false;
+    function plotData(data, xLog = true, yLog = true) {
         const trace = {
             x: data.weeks,
             y: data.weeklyAvg,
@@ -259,14 +258,14 @@
         //    plotData(btcData);
 
            parsedData = await getWeeklyData();
-            plotData(parsedData);
+            plotData(parsedData, false, false);
             
           //  plotLogarithmic(btcData);
         }
 
-        async function runAll() {
+        async function runAll(x, y) {
            
-            plotData(parsedData);
+            plotData(parsedData, x, y);
           //  plotLogarithmic(btcData);
         }
 
