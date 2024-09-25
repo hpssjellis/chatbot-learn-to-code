@@ -88,7 +88,7 @@
                 // weeks.push(row[0]);
                 // Convert date string to Unix timestamp
                 const timestamp = new Date(row[0]).getTime();
-                weeks.push(timestamp - 1500000000000); //adjust for the start of BTC
+                weeks.push(timestamp - 1502582400000); //adjust for the start of BTC
                 weeklyAvg.push(parseFloat(row[1]));
             }
         }
@@ -167,7 +167,7 @@
               //  weeklyAvg.push(avgPrice);
                         // Convert the date to Unix timestamp (milliseconds since January 1, 1970)
                 const timestamp = date.getTime();
-                weeks.push(timestamp);
+                weeks.push(timestamp - 1502582400000);
                 weeklyAvg.push(avgPrice);
             });
 
