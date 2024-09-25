@@ -91,6 +91,31 @@
 
     // Plot the graph using Plotly.js
     function plotData(data) {
+        let xLog = true;
+        const trace = {
+            x: data.weeks,
+            y: data.weeklyAvg,
+            type: 'scatter',
+            mode: 'lines+markers',
+            marker: { color: 'blue' },
+            line: { shape: 'linear' }
+        };
+
+        const layout = {
+            title: 'Bitcoin Weekly Average Prices (may have logs)',
+            xaxis: { title: 'Week',  type: xLog ? 'log' : 'linear' },
+            yaxis: { title: 'Average Price (USD)' }
+        };
+
+        Plotly.newPlot('myPlot', [trace], layout);
+    }
+
+
+
+        /*
+
+    // Plot the graph using Plotly.js
+    function plotData(data) {
         const trace = {
             x: data.weeks,
             y: data.weeklyAvg,
@@ -108,7 +133,7 @@
 
         Plotly.newPlot('myPlot', [trace], layout);
     }
-
+        */
         // Fetch BTC/USDT weekly data from Binance API
         async function getWeeklyData() {
           //  const url = 'https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1w&limit=1000'; //myUrlLink
