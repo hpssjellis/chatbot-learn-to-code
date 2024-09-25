@@ -72,7 +72,7 @@
         const response = await fetch(myInFile);
         const csvData = await response.text();
         parsedData = parseCSV(csvData);
-        plotData(parsedData);
+        plotData(parsedData, false, false);
        // plotLogarithmic(parsedData);
     }
 
