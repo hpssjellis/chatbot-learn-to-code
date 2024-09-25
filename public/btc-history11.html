@@ -13,10 +13,14 @@
     <input type="button" value="BTC-daily" onclick="{
         myUrlLink =  'https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1d&limit=4000'
        runGetURL()
+       console.log('Parsed Data:', parsedData);  // Ensure parsedData is populated
+
     }">
     <input type="button" value="BTC-weekly" onclick="{
         myUrlLink =  'https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1w&limit=1000'
         runGetURL()
+        console.log('Parsed Data:', parsedData);  // Ensure parsedData is populated
+
     }">
 
     <input type="button" value="Download Historical Data as CSV" onclick="saveDataToCSV()">
@@ -40,6 +44,8 @@
         loadAndPlotLogData(false, true)
     }">
         <input type="button" value="Regular" onclick="{
+        console.log('Parsed Data:', parsedData);  // Ensure parsedData is populated
+
         loadAndPlotLogData(false, false)
     }">
 
@@ -253,6 +259,7 @@
       //  const response = await fetch('btc_weekly_averages.csv');
       //  const csvData = await response.text();
        // parsedData = parseCSV(csvData);
+        console.log('Parsed Data:', parsedData);  // Ensure parsedData is populated
 
         // Plot the data with both x and y axes in log scale
         plotLogarithmic(parsedData, x, y);
