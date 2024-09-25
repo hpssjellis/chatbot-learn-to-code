@@ -76,7 +76,18 @@
         let myInFile = ''
         let myUrlLink = ''
         let parsedData = ''
+        const year2000 = new Date('2000-01-01').getTime();
+
         
+// Function to normalize dates relative to January 1, 2000
+function normalizeDatesTo2000(dates) {
+    return dates.map(timestamp => (timestamp - year2000) / (1000 * 60 * 60 * 24));  // Convert milliseconds to days
+}
+
+// Function to convert normalized date values to logarithmic values
+function logTransformDates(dates) {
+    return dates.map(dayDiff => Math.log(dayDiff));
+}
      
 
          async function loadCSVFromFile() {
@@ -84,7 +95,7 @@
         const csvData = await response.text();
         parsedData = parseCSV(csvData);
         plotData(parsedData, false, false);
-       // plotLogarithmic(parsedData);
+
     }
 
     // Function to parse the CSV file content
@@ -96,10 +107,9 @@
         for (let i = 1; i < lines.length; i++) { // Skip headers
             const row = lines[i].split(",");
             if (row.length === 2) {
-                // weeks.push(row[0]);
-                // Convert date string to Unix timestamp
+
                 const timestamp = new Date(row[0]).getTime();
-                weeks.push(timestamp - 1502582400000); //adjust for the start of BTC
+                weeks.push((timestamp - year2000) / (1000 * 60 * 60 * 24));  // Convert milliseconds to days
                 weeklyAvg.push(parseFloat(row[1]));
             }
         }
@@ -129,28 +139,7 @@
 
 
 
-        /*
 
-    // Plot the graph using Plotly.js
-    function plotData(data) {
-        const trace = {
-            x: data.weeks,
-            y: data.weeklyAvg,
-            type: 'scatter',
-            mode: 'lines+markers',
-            marker: { color: 'blue' },
-            line: { shape: 'linear' }
-        };
-
-        const layout = {
-            title: 'Bitcoin Weekly Average Prices (from CSV)',
-            xaxis: { title: 'Week' },
-            yaxis: { title: 'Average Price (USD)' }
-        };
-
-        Plotly.newPlot('myPlot', [trace], layout);
-    }
-        */
         // Fetch BTC/USDT weekly data from Binance API
         async function getWeeklyData() {
           //  const url = 'https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1w&limit=1000'; //myUrlLink
@@ -172,42 +161,16 @@
                 const avgPrice = (openPrice + highPrice + lowPrice + closePrice) / 4;
                 const date = new Date(openTime);
 
-                // Format the date as YYYY-MM-DD
-               // const formattedDate = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
-               // weeks.push(formattedDate);
-              //  weeklyAvg.push(avgPrice);
-                        // Convert the date to Unix timestamp (milliseconds since January 1, 1970)
+
                 const timestamp = date.getTime();
-                weeks.push(timestamp - 1502582400000);
+                weeks.push(timestamp - 1502582400000);  // date of first entry
                 weeklyAvg.push(avgPrice);
             });
 
             return { weeks, weeklyAvg };
         }
 
-        /*
-        // Plot the graph using Plotly.js
-        async function plotData(data) {
-            const trace = {
-                x: data.weeks,
-                y: data.weeklyAvg,
-                type: 'scatter',
-                mode: 'lines+markers',
-                marker: { color: 'blue' },
-                line: { shape: 'linear' }
-            };
 
-            const layout = {
-                title: 'Bitcoin Weekly Average Prices',
-                xaxis: { title: 'Week' },
-                yaxis: { title: 'Average Price (USD)' }
-            };
-
-            Plotly.newPlot('myPlot', [trace], layout);
-        }
-
-
-        */
         // Save data to CSV file
         function saveDataToCSV() {
             const rows = [['Date', 'Weekly Average']];  // CSV headers
@@ -242,26 +205,6 @@
         }
 
 
-        /*
-        // Parse CSV file data
-        function parseCSV(csv) {
-            const lines = csv.split("\n");
-            const weeks = [];
-            const weeklyAvg = [];
-
-            for (let i = 1; i < lines.length; i++) { // Skip headers
-                const row = lines[i].split(",");
-                if (row.length === 2) {
-                    weeks.push(row[0]);
-                    weeklyAvg.push(parseFloat(row[1]));
-                }
-            }
-
-            return { weeks, weeklyAvg };
-        }
-
-
-        */
 
         // Initialize the page by plotting the BTC data
         async function runGetURL() {
@@ -280,53 +223,8 @@
           //  plotLogarithmic(btcData);
         }
 
-        
-        // Run the init function on page load
-       // init();
+  
 
-
-        /*
-    // Function to plot data with both axes in logarithmic scale
-    function plotLogarithmic(data, xLog = true, yLog = true) {
-        const trace = {
-            x: data.weeks,
-            y: data.weeklyAvg,
-            type: 'scatter',
-            mode: 'lines+markers',
-            marker: { color: 'blue' },
-            line: { shape: 'linear' }
-        };
-
-        const layout = {
-            title: 'Bitcoin Weekly Average Prices (Logarithmic)',
-            xaxis: {
-                title: 'Week',
-                type: xLog ? 'log' : 'linear' // X-axis log scale if xLog is true
-            },
-            yaxis: {
-                title: 'Average Price (USD)',
-                type: yLog ? 'log' : 'linear' // Y-axis log scale if yLog is true
-            }
-        };
-
-        Plotly.newPlot('myPlot', [trace], layout);
-    }
-
-    // Example usage with data, both x and y axes set to log scale
-    async function loadAndPlotLogData(x, y) {
-      //  const response = await fetch('btc_weekly_averages.csv');
-      //  const csvData = await response.text();
-       // parsedData = parseCSV(csvData);
-        console.log('Parsed Data:', parsedData);  // Ensure parsedData is populated
-
-        // Plot the data with both x and y axes in log scale
-        plotLogarithmic(parsedData, x, y);
-    }
-
-        */
-
-    // Call the function to load data and plot with logarithmic scaling
-//    loadAndPlotLogData();
 </script>
 
 </body>
