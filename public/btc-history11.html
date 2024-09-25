@@ -250,9 +250,9 @@
 
     // Example usage with data, both x and y axes set to log scale
     async function loadAndPlotLogData(x, y) {
-        const response = await fetch('btc_weekly_averages.csv');
-        const csvData = await response.text();
-        parsedData = parseCSV(csvData);
+      //  const response = await fetch('btc_weekly_averages.csv');
+      //  const csvData = await response.text();
+       // parsedData = parseCSV(csvData);
 
         // Plot the data with both x and y axes in log scale
         plotLogarithmic(parsedData, x, y);
