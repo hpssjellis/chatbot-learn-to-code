@@ -85,7 +85,10 @@
         for (let i = 1; i < lines.length; i++) { // Skip headers
             const row = lines[i].split(",");
             if (row.length === 2) {
-                weeks.push(row[0]);
+                // weeks.push(row[0]);
+                // Convert date string to Unix timestamp
+                const timestamp = new Date(row[0]).getTime();
+                weeks.push(timestamp);
                 weeklyAvg.push(parseFloat(row[1]));
             }
         }
@@ -160,8 +163,12 @@
                 const date = new Date(openTime);
 
                 // Format the date as YYYY-MM-DD
-                const formattedDate = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
-                weeks.push(formattedDate);
+               // const formattedDate = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
+               // weeks.push(formattedDate);
+              //  weeklyAvg.push(avgPrice);
+                        // Convert the date to Unix timestamp (milliseconds since January 1, 1970)
+                const timestamp = date.getTime();
+                weeks.push(timestamp);
                 weeklyAvg.push(avgPrice);
             });
 
