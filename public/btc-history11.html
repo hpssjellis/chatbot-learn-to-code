@@ -35,18 +35,22 @@
         loadCSVFromFile()
     }"><br>
     <input type="button" value="Log x and y" onclick="{
-        loadAndPlotLogData(true, true)
+       // loadAndPlotLogData(true, true)
+        runAll()
     }">
         <input type="button" value="Log x " onclick="{
-        loadAndPlotLogData(true, false)
+       // loadAndPlotLogData(true, false)
+            runAll()
     }">
         <input type="button" value="Log y" onclick="{
-        loadAndPlotLogData(false, true)
+       // loadAndPlotLogData(false, true)
+            runAll()
     }">
         <input type="button" value="Regular" onclick="{
         console.log('Parsed Data:', parsedData);  // Ensure parsedData is populated
 
-        loadAndPlotLogData(false, false)
+        //loadAndPlotLogData(false, false)
+            runAll()
     }">
 
 
@@ -103,8 +107,8 @@
 
         const layout = {
             title: 'Bitcoin Weekly Average Prices (may have logs)',
-            xaxis: { title: 'Week',  type: xLog ? 'log' : 'linear' },
-            yaxis: { title: 'Average Price (USD)' }
+            xaxis: { title: 'Week',  type: xLog ? 'log' : 'linear' , autorange: true },
+            yaxis: { title: 'Average Price (USD)', autorange: true  }
         };
 
         Plotly.newPlot('myPlot', [trace], layout);
@@ -246,6 +250,12 @@
         async function runGetURL() {
             btcData = await getWeeklyData();
             plotData(btcData);
+          //  plotLogarithmic(btcData);
+        }
+
+        async function runAll() {
+           
+            plotData(parsedData);
           //  plotLogarithmic(btcData);
         }
 
