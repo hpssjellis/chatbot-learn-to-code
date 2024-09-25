@@ -98,7 +98,7 @@
 
     // Plot the graph using Plotly.js
     function plotData(data) {
-        let xLog = true;
+        let xLog = false;
         const trace = {
             x: data.weeks,
             y: data.weeklyAvg,
@@ -255,8 +255,12 @@
 
         // Initialize the page by plotting the BTC data
         async function runGetURL() {
-            btcData = await getWeeklyData();
-            plotData(btcData);
+         //   btcData = await getWeeklyData();
+        //    plotData(btcData);
+
+           parsedData = await getWeeklyData();
+            plotData(parsedData);
+            
           //  plotLogarithmic(btcData);
         }
 
@@ -270,6 +274,8 @@
         // Run the init function on page load
        // init();
 
+
+        /*
     // Function to plot data with both axes in logarithmic scale
     function plotLogarithmic(data, xLog = true, yLog = true) {
         const trace = {
@@ -306,6 +312,8 @@
         // Plot the data with both x and y axes in log scale
         plotLogarithmic(parsedData, x, y);
     }
+
+        */
 
     // Call the function to load data and plot with logarithmic scaling
 //    loadAndPlotLogData();
