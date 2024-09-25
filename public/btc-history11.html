@@ -110,7 +110,7 @@
         const layout = {
             title: 'Bitcoin Weekly Average Prices (may have logs)',
             xaxis: { title: 'Week',  type: xLog ? 'log' : 'linear' , autorange: true },
-            yaxis: { title: 'Average Price (USD)', autorange: true  }
+            yaxis: { title: 'Average Price (USD)',  type: yLog ? 'log' : 'linear' , autorange: true  }
         };
 
         Plotly.newPlot('myPlot', [trace], layout);
