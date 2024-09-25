@@ -24,7 +24,8 @@
     }">
 
     <input type="button" value="Download Historical Data as CSV" onclick="saveDataToCSV()">
-    <input type="file" id="fileInput" onchange="uploadDataToGraph()">
+    <input type="file" id="fileInput" onchange="uploadDataToGraph()"><br>
+    
     
     <input type="button" value="Run Daily Saved" onclick="{
         myInFile = 'btc_daily_averages.csv'
@@ -33,7 +34,17 @@
     <input type="button" value="Run Weekly Saved" onclick="{
         myInFile = 'btc_weekly_averages.csv'
         loadCSVFromFile()
-    }"><br>
+    }">   
+    <input type="button" value="Run Daily Converted" onclick="{
+        myInFile = 'btc_converted-daily.csv'
+        loadCSVFromFile()
+    }">
+    <input type="button" value="Run Weekly Converted" onclick="{
+        myInFile = 'btc_converted-weekly.csv'
+        loadCSVFromFile()
+    }"><br><br>
+
+    
     <input type="button" value="Log x and y" onclick="{
        // loadAndPlotLogData(true, true)
         runAll(true, true)
