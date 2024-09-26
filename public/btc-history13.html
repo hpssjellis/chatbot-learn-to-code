@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BTC Historical Data Graph and CSV</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+    <h2>Bitcoin Weekly Averages (BTC/USDT)</h2>
+    
+    <input type="button" value="BTC-daily" onclick="{
+        myUrlLink = 'https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1d&limit=4000';
+        runGetURL();
+    }">
+    <input type="button" value="BTC-weekly" onclick="{
+        myUrlLink = 'https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1w&limit=1000';
+        runGetURL();
+    }">
+
+    <input type="button" value="Download Historical Data as CSV" onclick="saveDataToCSV()">
+    <input type="file" id="fileInput" onchange="uploadDataToGraph()"><br>
+    
+    <input type="button" value="Run Daily Saved" onclick="{
+        myInFile = 'btc_daily_averages.csv';
+        loadCSVFromFile();
+    }">
+    <input type="button" value="Run Weekly Saved" onclick="{
+        myInFile = 'btc_weekly_averages.csv';
+        loadCSVFromFile();
+    }">
+
+    <br><br>
+
+    <input type="button" value="Log x and y" onclick="runAll(true, true)">
+    <input type="button" value="Log x" onclick="runAll(true, false)">
+    <input type="button" value="Log y" onclick="runAll(false, true)">
+    <input type="button" value="Regular" onclick="runAll(false, false)">
+
+    <div id="myPlot" style="width: 100%; height: 600px;"></div>
+
+    <script>
+        let myInFile = '';
+        let myUrlLink = '';
+        let parsedData = '';
+
+        async function loadCSVFromFile() {
+            const response = await fetch(myInFile);
+            const csvData = await response.text();
+            parsedData = parseCSV(csvData);
+            plotData(parsedData, false, false);
+        }
+
+        // Function to parse the CSV file content
+        function parseCSV(csv) {
+            const lines = csv.split("\n");
+            const dates = [];
+            const weeklyAvg = [];
+
+            for (let i = 1; i < lines.length; i++) { // Skip headers
+                const row = lines[i].split(",");
+                if (row.length === 2) {
+                    const dateStr = row[0];  // Keep as date string
+                    dates.push(dateStr);
+                    weeklyAvg.push(parseFloat(row[1]));
+                }
+            }
+
+            return { dates, weeklyAvg };
+        }
+
+        // Plot the graph using Plotly.js
+        function plotData(data, xLog = false, yLog = false) {
+            const trace = {
+                x: data.dates,  // Dates as strings
+                y: data.weeklyAvg,
+                type: 'scatter',
+                mode: 'lines+markers',
+                marker: { color: 'blue' },
+                line: { shape: 'linear' }
+            };
+
+            const layout = {
+                title: 'Bitcoin Weekly Average Prices (may have logs)',
+                xaxis: { title: 'Date',  type: xLog ? 'log' : 'linear', autorange: true },
+                yaxis: { title: 'Average Price (USD)',  type: yLog ? 'log' : 'linear', autorange: true }
+            };
+
+            Plotly.newPlot('myPlot', [trace], layout);
+        }
+
+        // Fetch BTC/USDT weekly data from Binance API
+        async function getWeeklyData() {
+            const url = myUrlLink;
+            const response = await fetch(url);
+            const data = await response.json();
+
+            const dates = [];
+            const weeklyAvg = [];
+
+            // Process each week's data
+            data.forEach((weekData) => {
+                const openTime = weekData[0];  // Timestamp for the start of the week
+                const openPrice = parseFloat(weekData[1]);
+                const highPrice = parseFloat(weekData[2]);
+                const lowPrice = parseFloat(weekData[3]);
+                const closePrice = parseFloat(weekData[4]);
+
+                const avgPrice = (openPrice + highPrice + lowPrice + closePrice) / 4;
+                const date = new Date(openTime).toISOString().split('T')[0];  // Convert to ISO date string
+                dates.push(date);  // Use the date string directly
+                weeklyAvg.push(avgPrice);
+            });
+
+            return { dates, weeklyAvg };
+        }
+
+        // Save data to CSV file
+        function saveDataToCSV() {
+            const rows = [['Date', 'Weekly Average']];  // CSV headers
+            for (let i = 0; i < parsedData.dates.length; i++) {
+                rows.push([parsedData.dates[i], parsedData.weeklyAvg[i]]);
+            }
+            
+            let csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "btc_weekly_averages.csv");
+            document.body.appendChild(link); // Required for Firefox
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Upload CSV data to the graph
+        function uploadDataToGraph() {
+            const fileInput = document.getElementById("fileInput");
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function(event) {
+                const csvData = event.target.result;
+                parsedData = parseCSV(csvData);
+                plotData(parsedData);
+            };
+
+            reader.readAsText(file);
+        }
+
+        // Initialize the page by plotting the BTC data
+        async function runGetURL() {
+            parsedData = await getWeeklyData();
+            plotData(parsedData, false, false);
+        }
+
+        async function runAll(x, y) {
+            plotData(parsedData, x, y);
+        }
+
+    </script>
+</body>
+</html>
