@@ -111,14 +111,15 @@ function generatePlot() {
     
     const layout = {
         title: 'Sinusoidal Graph with Dates',
-    xaxis: {
-        title: 'Date',
-        tickformat: '%Y-%m',  // Show both year and month
-        tickangle: -45,       // Rotate the labels to avoid overlap
-        tickmode: 'auto',     // Adjust ticks automatically based on available space
-        nticks: 20,           // Optional: sets the maximum number of ticks to display
-        rangeslider: {        // Optional: add a range slider for better zoom control
-            visible: true
+        xaxis: {
+            title: 'Date',
+            tickformat: '%Y-%m',  // Show both year and month
+            tickangle: -45,       // Rotate the labels to avoid overlap
+            tickmode: 'auto',     // Adjust ticks automatically based on available space
+            nticks: 20,           // Optional: sets the maximum number of ticks to display
+            rangeslider: {        // Optional: add a range slider for better zoom control
+                visible: true
+            }
         },
         yaxis: { title: 'Y',  }
     };
@@ -432,7 +433,8 @@ Plotly.newPlot('myChart', [{
         nticks: 20,           // Optional: sets the maximum number of ticks to display
         rangeslider: {        // Optional: add a range slider for better zoom control
             visible: true
-        },
+        }
+    },
     yaxis: {
         title: 'Y Axis Title' // Optional: label for Y axis
     }
