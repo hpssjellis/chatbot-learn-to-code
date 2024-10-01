@@ -182,6 +182,12 @@ function generatePlot() {
             link.click();
         }
 
+
+
+
+
+        /*
+
 ////// Fit functions
         function gradientDescent(xData, yData, initialGuess, func, learningRate = 0.01, iterations = 1000) {
             learningRate = parseFloat(document.getElementById('myLearningRate').value);
@@ -276,6 +282,127 @@ function fitCurve() {
 
     Plotly.newPlot('myPlot', [originalTrace, fittedTrace], layout);
 }
+
+
+
+        */
+
+
+
+
+        // Function to calculate y_fit based on the new sinusoidal model
+function myYFit(A1, w1, b1, A2, w2, b2, C, x) {
+    return A1 * Math.sin(w1 * x + b1) + A2 * Math.sin(w2 * x + b2) + C;
+}
+
+// Cost function to calculate the mean squared error
+function myCostFunction(params, data) {
+    let totalError = 0;
+    for (let i = 0; i < data.length; i++) {
+        let x = data[i].x;
+        let y_true = data[i].y;
+        let y_pred = myYFit(params.A1, params.w1, params.b1, params.A2, params.w2, params.b2, params.C, x);
+        totalError += Math.pow(y_true - y_pred, 2); // Squared error
+    }
+    return totalError / data.length; // Mean squared error
+}
+
+// Gradient descent function to update the parameters and update Plotly chart
+async function myGradientDescent(data, params, learningRate, iterations) {
+    for (let i = 0; i < iterations; i++) {
+        let gradients = {
+            A1: 0, w1: 0, b1: 0,
+            A2: 0, w2: 0, b2: 0,
+            C: 0
+        };
+        for (let j = 0; j < data.length; j++) {
+            let x = data[j].x;
+            let y_true = data[j].y;
+            let y_pred = myYFit(params.A1, params.w1, params.b1, params.A2, params.w2, params.b2, params.C, x);
+
+            // Gradients (partial derivatives) for each parameter
+            gradients.A1 += -2 * (y_true - y_pred) * Math.sin(params.w1 * x + params.b1);
+            gradients.w1 += -2 * (y_true - y_pred) * params.A1 * x * Math.cos(params.w1 * x + params.b1);
+            gradients.b1 += -2 * (y_true - y_pred) * params.A1 * Math.cos(params.w1 * x + params.b1);
+
+            gradients.A2 += -2 * (y_true - y_pred) * Math.sin(params.w2 * x + params.b2);
+            gradients.w2 += -2 * (y_true - y_pred) * params.A2 * x * Math.cos(params.w2 * x + params.b2);
+            gradients.b2 += -2 * (y_true - y_pred) * params.A2 * Math.cos(params.w2 * x + params.b2);
+
+            gradients.C += -2 * (y_true - y_pred);
+        }
+
+        // Update each parameter using the calculated gradients
+        params.A1 -= (learningRate / data.length) * gradients.A1;
+        params.w1 -= (learningRate / data.length) * gradients.w1;
+        params.b1 -= (learningRate / data.length) * gradients.b1;
+        params.A2 -= (learningRate / data.length) * gradients.A2;
+        params.w2 -= (learningRate / data.length) * gradients.w2;
+        params.b2 -= (learningRate / data.length) * gradients.b2;
+        params.C -= (learningRate / data.length) * gradients.C;
+
+        // Optionally update the plot every 100 iterations
+        if (i % 100 === 0) {
+            await updatePlotlyChart(params, data);
+        }
+    }
+
+    // Final update to the chart
+    await updatePlotlyChart(params, data);
+}
+
+// Update the Plotly chart
+async function updatePlotlyChart(params, data) {
+    let x_values = data.map(point => point.x);
+    let y_fit_values = x_values.map(x => myYFit(params.A1, params.w1, params.b1, params.A2, params.w2, params.b2, params.C, x));
+
+    // Update the fitted line
+    Plotly.restyle('myChart', {
+        y: [y_fit_values]
+    }, [1]); // Assuming the fit line is trace 1
+}
+
+// Initial guesses for the parameters
+let myParams = {
+    A1: 1,  // Initial guess for A1
+    w1: 1,  // Initial guess for w1
+    b1: 0,  // Initial guess for b1
+    A2: 1,  // Initial guess for A2
+    w2: 1,  // Initial guess for w2
+    b2: 0,  // Initial guess for b2
+    C: 0    // Initial guess for C
+};
+
+// Example dataset (replace with your own data points)
+let myData = [
+    { x: 0, y: 1 },
+    { x: 1, y: 2 },
+    { x: 2, y: 3 },
+    { x: 3, y: 4 },
+    { x: 4, y: 5 },
+    // Add more points as needed
+];
+
+// Define learning rate and number of iterations
+let myLearningRate = 0.001;  // Learning rate for parameter updates
+let myIterations = 10000;    // Number of iterations
+
+// Initial Plotly setup
+Plotly.newPlot('myChart', [{
+    x: myData.map(point => point.x),
+    y: myData.map(point => point.y),
+    mode: 'markers',
+    name: 'Data Points'
+}, {
+    x: myData.map(point => point.x),
+    y: myData.map(point => myYFit(myParams.A1, myParams.w1, myParams.b1, myParams.A2, myParams.w2, myParams.b2, myParams.C, point.x)),
+    mode: 'lines',
+    name: 'Fitted Line'
+}]);
+
+// Run the gradient descent to fit the parameters and update the chart
+myGradientDescent(myData, myParams, myLearningRate, myIterations);
+
         
     </script>
 </body>
