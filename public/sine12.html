@@ -165,15 +165,16 @@ async function myGradientDescent(data, params, learningRate, iterations) {
             A2: 0, w2: 0, b2: 0,
             C: 0
         };
+        
+        if (i % 10 == 0){
+            console.log(`Loop #${j}`)
+        }
+            
 
         // Compute gradients
         
         for (let j = 0; j < data.length; j++) {
 
-            if (j % 10 == 0){
-                console.log(`Loop #${i}`)
-            }
-            
             let x = j; // Use index j for calculations
             let y_true = yValues[j];
             let y_pred = myYFit(params.A1, params.w1, params.b1, params.A2, params.w2, params.b2, params.C, x);
