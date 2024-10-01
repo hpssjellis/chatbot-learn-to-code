@@ -48,8 +48,8 @@
         <input type="text" id="fileName" value="sine01-csv.csv"><br>
         
         <input type="button" value="Save as CSV" onclick="saveAsCSV()"><br>
-        Gradient Descent, Learning Rate: <input id="myLearningRate" type=text value="0.003"><br>
-        Gradient Descent Iterations <input id="myIterations" type=text value="1000"><br>
+        Gradient Descent, Learning Rate: <input id="myLearningRate2" type=number value="0.003" onchange="{myLearningRate = parseInt(this.value)}"><br>
+        Gradient Descent Iterations <input id="myIterations2" type=number value="1000" onchange="{myIterations = parseInt(this.value)}"><br>
 
         <input type="button" value="Gradient Descent (Not working yet)" onclick="myGradientDescent(myData, myParams, myLearningRate, myIterations);"><br>
         
@@ -58,6 +58,35 @@
     </div>
     
     <script>
+
+    // GLOBALS
+    // Define learning rate and number of iterations
+    let myLearningRate = 0.003;  // Learning rate for parameter updates
+    let myIterations = 1000;    // Number of iterations
+    
+    // Initial guesses for the parameters
+    let myParams = {
+        A1: 1,  // Initial guess for A1
+        w1: 1,  // Initial guess for w1
+        b1: 0,  // Initial guess for b1
+        A2: 1,  // Initial guess for A2
+        w2: 1,  // Initial guess for w2
+        b2: 0,  // Initial guess for b2
+        C: 0    // Initial guess for C
+    };
+    
+    // Example dataset (replace with your own data points)
+    let myData = [
+        { x: 0, y: 1 },
+        { x: 1, y: 2 },
+        { x: 2, y: 3 },
+        { x: 3, y: 4 },
+        { x: 4, y: 5 },
+        // Add more points as needed
+    ];
+
+
+        
         function toRadians(degrees) {
             return degrees * (Math.PI / 180);
         }
@@ -230,50 +259,9 @@ async function updatePlotlyChart(params, data) {
     }, [1]); // Assuming the fit line is trace 1
 }
 
-// Initial guesses for the parameters
-let myParams = {
-    A1: 1,  // Initial guess for A1
-    w1: 1,  // Initial guess for w1
-    b1: 0,  // Initial guess for b1
-    A2: 1,  // Initial guess for A2
-    w2: 1,  // Initial guess for w2
-    b2: 0,  // Initial guess for b2
-    C: 0    // Initial guess for C
-};
-
-// Example dataset (replace with your own data points)
-let myData = [
-    { x: 0, y: 1 },
-    { x: 1, y: 2 },
-    { x: 2, y: 3 },
-    { x: 3, y: 4 },
-    { x: 4, y: 5 },
-    // Add more points as needed
-];
-
-// Define learning rate and number of iterations
-let myLearningRate = 0.001;  // Learning rate for parameter updates
-let myIterations = 10000;    // Number of iterations
-
-// Initial Plotly setup
-
-  /*      
-Plotly.newPlot('myChart', [{
-    x: myData.map(point => point.x),
-    y: myData.map(point => point.y),
-    mode: 'markers',
-    name: 'Data Points'
-}, {
-    x: myData.map(point => point.x),
-    y: myData.map(point => myYFit(myParams.A1, myParams.w1, myParams.b1, myParams.A2, myParams.w2, myParams.b2, myParams.C, point.x)),
-    mode: 'lines',
-    name: 'Fitted Line'
-}]);
 
 
-        */
-
-        Plotly.newPlot('myChart', [{
+        Plotly.newPlot('myPlot', [{
     x: myData.map(point => point.x),
     y: myData.map(point => point.y),
     mode: 'markers',
