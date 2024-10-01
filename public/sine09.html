@@ -31,7 +31,7 @@
         
         <label for="xRange">Generate x values:</label>
         <input type="number" id="xStart" placeholder="Start (e.g., 0)" value="0">
-        <input type="number" id="xEnd" placeholder="End (e.g., 360)" value="5000">
+        <input type="number" id="xEnd" placeholder="End (e.g., 360)" value="7000">
         <input type="number" id="xStep" placeholder="Step (e.g., 30)" value="3"><br>
         <input type="button" value="Generate X Values" onclick="generateXValues()"><br>
         
@@ -111,8 +111,8 @@ function generatePlot() {
     
     const layout = {
         title: 'Sinusoidal Graph with Dates',
-        xaxis: { title: 'Date' },  // Update x-axis title
-        yaxis: { title: 'Y' }
+        xaxis: { title: 'Date', tickangle: -45 },  // Update x-axis title
+        yaxis: { title: 'Y',  }
     };
     
     Plotly.newPlot('myPlot', [trace], layout);
@@ -388,6 +388,8 @@ let myLearningRate = 0.001;  // Learning rate for parameter updates
 let myIterations = 10000;    // Number of iterations
 
 // Initial Plotly setup
+
+  /*      
 Plotly.newPlot('myChart', [{
     x: myData.map(point => point.x),
     y: myData.map(point => point.y),
@@ -399,6 +401,29 @@ Plotly.newPlot('myChart', [{
     mode: 'lines',
     name: 'Fitted Line'
 }]);
+
+
+        */
+
+        Plotly.newPlot('myChart', [{
+    x: myData.map(point => point.x),
+    y: myData.map(point => point.y),
+    mode: 'markers',
+    name: 'Data Points'
+}, {
+    x: myData.map(point => point.x),
+    y: myData.map(point => myYFit(myParams.A1, myParams.w1, myParams.b1, myParams.A2, myParams.w2, myParams.b2, myParams.C, point.x)),
+    mode: 'lines',
+    name: 'Fitted Line'
+}], {
+    xaxis: {
+        tickangle: -45  // Rotate the x-axis labels by -45 degrees
+    },
+    yaxis: {
+        title: 'Y Axis Title' // Optional: label for Y axis
+    }
+});
+
 
 // Run the gradient descent to fit the parameters and update the chart
 myGradientDescent(myData, myParams, myLearningRate, myIterations);
