@@ -33,7 +33,9 @@
         Gradient Descent, Learning Rate: <input id="myLearningRate2" type="number" value="0.003" onchange="myLearningRate = parseFloat(this.value)"><br>
         Gradient Descent Iterations: <input id="myIterations2" type="number" value="1000" onchange="myIterations = parseInt(this.value)"><br>
 
-        <input type="button" value="Gradient Descent" onclick="myGradientDescent(myData, myParams, myLearningRate, myIterations);"><br>
+        <input type="button" value="Gradient Descent" onclick="myGradientDescent(myData, myParams, myLearningRate, myIterations);">
+        <div id="myLoopDiv">... </div>
+        <br>
 
         <div id="myPlot" style="height: 500px;"></div>
     </div>
@@ -161,7 +163,7 @@ async function myGradientDescent(data, params, learningRate, iterations) {
             A2: 0, w2: 0, b2: 0,
             C: 0
         };
-
+         document.getElementById('myLoopDiv').innerHTML = `Loop #${i}`
         // Compute gradients
         for (let j = 0; j < data.length; j++) {
             let x = j; // Use index j for calculations
