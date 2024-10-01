@@ -51,7 +51,7 @@
         Gradient Descent, Learning Rate: <input id="myLearningRate" type=text value="0.003"><br>
         Gradient Descent Iterations <input id="myIterations" type=text value="1000"><br>
 
-        <input type="button" value="Gradient Descent (Not working yet)" onclick="fitCurve()"><br>
+        <input type="button" value="Gradient Descent (Not working yet)" onclick="myGradientDescent(myData, myParams, myLearningRate, myIterations);"><br>
         
         
         <div id="myPlot" style="height: 500px;"></div>
@@ -426,7 +426,7 @@ Plotly.newPlot('myChart', [{
 
 
 // Run the gradient descent to fit the parameters and update the chart
-myGradientDescent(myData, myParams, myLearningRate, myIterations);
+//myGradientDescent(myData, myParams, myLearningRate, myIterations);
 
         
     </script>
