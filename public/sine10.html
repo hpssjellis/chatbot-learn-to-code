@@ -276,7 +276,7 @@ async function updatePlotlyChart(params, data) {
     let y_fit_values = x_values.map(x => myYFit(params.A1, params.w1, params.b1, params.A2, params.w2, params.b2, params.C, x));
 
     // Update the fitted line
-    Plotly.restyle('myChart', {
+    Plotly.restyle('myPlot', {
         y: [y_fit_values]
     }, [1]); // Assuming the fit line is trace 1
 }
