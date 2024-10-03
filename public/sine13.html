@@ -49,7 +49,7 @@
         <label for="xData">x values (degrees, comma separated):</label><br>
         <textarea id="myXData" rows="1" cols="70"></textarea><br>
 
-        <input type="button" value="Generate Plot" onclick="generatePlot()">
+        <input type="button" value="Generate Plot" onclick="generatePlot(false, false)">
       
         <input type="button" value="Log x and y" onclick="runAll(true, true)">
         <input type="button" value="Log x" onclick="runAll(true, false)">
@@ -115,7 +115,7 @@
             document.getElementById('myXData').value = xValues.join(', ');
         }
 
-        function generatePlot(xLog, xLog) {
+        function generatePlot(xLog = false, yLog = false) {
             const myEquation = document.getElementById('myEquation').value;
             const myXData = document.getElementById('myXData').value.split(',').map(Number);
 
