@@ -149,7 +149,7 @@
 
             let myYDataLog = [];
             try {
-                myYDataLog = myXDataLog.map(x => Math.log(x) );
+                myYDataLog = myXDataLog.map(x => parseInt(eval(myEquation)) );
             } catch (error) {
                 alert('Invalid equation. Please check your input.');
                 return;
