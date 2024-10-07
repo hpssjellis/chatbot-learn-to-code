@@ -115,6 +115,66 @@
             document.getElementById('myXData').value = xValues.join(', ');
         }
 
+
+        function generatePlot(xLog = false, yLog = false) {
+    const myEquation = document.getElementById('myEquation').value;
+    const myXData = document.getElementById('myXData').value.split(',').map(Number);
+
+    let myYData = [];
+    try {
+        myYData = myXData.map(x => eval(myEquation));
+    } catch (error) {
+        alert('Invalid equation. Please check your input.');
+        return;
+    }
+    document.getElementById('myYData').value = myYData.join(', ');
+
+    // Create date labels starting from Jan 1, 2009
+    const startDate = new Date('2009-01-01');
+    const myDateData = myXData.map(x => {
+        let newDate = new Date(startDate);
+        newDate.setDate(newDate.getDate() + x); // Add x days to the start date
+        return newDate.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+    });
+
+    // Convert date to a number for the x-axis, such as the difference in days since startDate
+    const numericXData = myXData.map(x => {
+        let newDate = new Date(startDate);
+        newDate.setDate(newDate.getDate() + x);
+        return newDate.getTime(); // Use timestamp (milliseconds since epoch) for numeric axis
+    });
+
+    myData = myXData.map((x, index) => ({ x: myDateData[index], y: myYData[index] }));
+
+    const trace = {
+        x: numericXData,  // Use numeric x data for logarithmic scale
+        y: myYData,
+        mode: 'lines+markers',
+        type: 'scatter'
+    };
+
+    const layout = {
+        title: 'Sinusoidal Graph with Dates',
+        xaxis: {
+            title: 'Date',
+            tickformat: '%b %d %Y',
+            tickangle: -45, 
+            tickmode: 'auto',
+            nticks: 50,
+            type: xLog ? 'log' : 'linear',  // Keep this in numeric form (log or linear)
+            rangeslider: { visible: true },
+            tickvals: numericXData,  // Specify tick values for the numeric x-axis
+            ticktext: myDateData,    // Display the original dates as text labels
+        },
+        yaxis: { title: '$ BTC', type: yLog ? 'log' : 'linear' }
+    };
+
+    Plotly.newPlot('myPlot', [trace], layout);
+}
+
+
+        /*
+
         function generatePlot(xLog = false, yLog = false) {
             const myEquation = document.getElementById('myEquation').value;
             const myXData = document.getElementById('myXData').value.split(',').map(Number);
@@ -162,6 +222,11 @@
             Plotly.newPlot('myPlot', [trace], layout);
         }
 
+*/
+
+
+
+        
         function saveAsCSV() {
             const xData = document.getElementById('myXData').value.split(',').map(Number);
             const yData = document.getElementById('myYData').value.split(',').map(Number);
