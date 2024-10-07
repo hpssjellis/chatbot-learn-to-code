@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plotly Sinusoidal Graph in Degrees</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Sinusoidal Plot Generator in Degrees</h1>
+        <label for="equation">Enter the equation (e.g., Math.sin(toRadians(x))):</label><br>
+        <input type="text" size="120" id="myEquation" value="(50000+ 0.0007*x*x)*Math.sin(toRadians(0.015*x)) + (3000+5*x)*Math.sin(toRadians(0.2*x)) + (+2000 + 2*x)*Math.sin(toRadians(2*x))"><br>
+
+        <!--
+
+        <input type="text" size="70" id="myEquation" value="5*Math.sin(toRadians(0.3*x)) + 25*Math.sin(toRadians(0.015*x))"><br>
+
+        (15000+2*x)*Math.sin(toRadians(0.2*x)) + 60000*Math.sin(toRadians(0.015*x))
+
+        (15000+12*x)*Math.sin(toRadians(0.2*x))  + 60000*Math.sin(toRadians(0.015*x)) + 10000
+
+        15000*Math.sin(toRadians( 0.0002*x*x)) 
+
+
+        15000*Math.sin(toRadians(0.00004*x*x)) + 60000*Math.sin(toRadians(0.015*x))
+
+
+
+        60000*Math.sin(toRadians(0.015*x)) + (15000+12*x)*Math.sin(toRadians(0.2*x)) + (7000+1*x)*Math.sin(toRadians(2*x))
+
+
+        90000*Math.sin(toRadians(0.015*x)) + (3000+5*x)*Math.sin(toRadians(0.2*x)) + (5000+0.001*x*x)*Math.sin(toRadians(2*x))
+
+(50000+ 0.0007*x*x)*Math.sin(toRadians(0.015*x)) + (3000+5*x)*Math.sin(toRadians(0.2*x)) + (+2000 + 2*x)*Math.sin(toRadians(2*x))
+
+        
+        -->
+
+
+        
+
+        <label for="xRange">Generate x values:</label>
+        Min: <input type="number" id="xStart" value="2">
+        Max: <input type="number" id="xEnd" value="7000">
+        x-step (days): <input type="number" id="xStep" value="3"><br>
+        <input type="button" value="Generate X Values" onclick="generateXValues()"><br>
+
+        <label for="xData">x values (degrees, comma separated):</label><br>
+        <textarea id="myXData" rows="1" cols="70"></textarea><br>
+
+        
+        <label for="xDataLogs">x Log values (Generated):</label><br>
+        <textarea id="myXDataLogs" rows="1" cols="70" RAEDONLY></textarea><br>
+
+        <input type="button" value="Generate Plot" onclick="generatePlot(false, false)">
+      
+        <input type="button" value="Log x and y" onclick="runAll(true, true)">
+        <input type="button" value="Log x" onclick="runAll(true, false)">
+        <input type="button" value="Log y" onclick="runAll(false, true)">
+        <input type="button" value="Regular" onclick="runAll(false, false)">
+      
+        <br>
+
+        <label for="yData">y values (generated automatically):</label><br>
+        <textarea id="myYData" readonly rows="1" cols="70"></textarea><br>
+
+        <label for="fileName">File name:</label>
+        <input type="text" id="fileName" value="sine01-csv.csv"><br>
+        <input type="button" value="Save as CSV" onclick="saveAsCSV()"><br>
+
+        Gradient Descent, Learning Rate: <input id="myLearningRate2" type="number" value="0.003" onchange="myLearningRate = parseFloat(this.value)"><br>
+        Gradient Descent Iterations: <input id="myIterations2" type="number" value="1000" onchange="myIterations = parseInt(this.value)"><br>
+
+        <input type="button" value="Gradient Descent" onclick="myGradientDescent(myData, myParams, myLearningRate, myIterations);">
+        <div id="myLoopDiv">... </div>
+        <br>
+
+        <div id="myPlot" style="height: 500px;"></div>
+    </div>
+
+    <script>
+        // Globals
+        let myLearningRate = 0.003;
+        let myIterations = 1000;
+      
+       // let parsedData = '';
+
+        // Initial guess for parameters
+        let myParams = {
+            A1: 1, w1: 1, b1: 0,
+            A2: 1, w2: 1, b2: 0,
+            C: 0
+        };
+
+        let myData = [];
+
+
+        async function runAll(x, y) {
+            //plotData(parsedData, x, y);
+            generatePlot(x, y)
+        }
+
+      
+
+        function toRadians(degrees) {
+            return degrees * (Math.PI / 180);
+        }
+
+        function generateXValues() {
+            const start = parseFloat(document.getElementById('xStart').value);
+            const end = parseFloat(document.getElementById('xEnd').value);
+            const step = parseFloat(document.getElementById('xStep').value);
+
+            let xValues = [];
+            let xValuesLog = [];
+            for (let x = start; x <= end; x += step) {
+                xValues.push(x);
+                xValuesLog.push(parseInt(Math.pow(x, 1.1)))   //2.6 too much  adjust for the speed of date time increase
+            }
+            document.getElementById('myXData').value = xValues.join(', ');
+            document.getElementById('myXDataLogs').value = xValuesLog.join(', ');
+        }
+
+
+
+
+
+
+
+        function generatePlot(xLog = false, yLog = false) {
+            const myEquation = document.getElementById('myEquation').value;
+            const myXData = document.getElementById('myXData').value.split(',').map(Number);
+            const myXDataLog = document.getElementById('myXDataLogs').value.split(',').map(Number);
+
+            let myYData = [];
+            try {
+                myYData = myXData.map(x => eval(myEquation));
+            } catch (error) {
+                alert('Invalid equation. Please check your input.');
+                return;
+            }
+            document.getElementById('myYData').value = myYData.join(', ');
+
+            // Create date labels starting from Jan 1, 2009
+            const startDate = new Date('2009-01-01');
+            const myDateData = myXData.map(x => {
+                let newDate = new Date(startDate);
+                newDate.setDate(newDate.getDate() + x); // Add x days to the start date
+                return newDate.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+            });
+
+            const myDateDataLog = myXDataLog.map(x => {
+                let newDate = new Date(startDate);
+                newDate.setDate(newDate.getDate() + x); // Add x days to the start date
+                return newDate.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+            });
+          
+            if (xLog){
+               myData = myXDataLog.map((x, index) => ({ x: myDateDataLog[index], y: myYData[index] }));
+            } else {
+               myData = myXData.map((x, index) => ({ x: myDateData[index], y: myYData[index] }));
+            }
+
+            const trace = {
+                x:  xLog ? myDateDataLog : myDateData,
+                y: myYData,
+                mode: 'lines+markers',
+                type: 'scatter'
+            };
+
+            const layout = {
+                title: 'Sinusoidal Graph with Dates',
+                xaxis: {
+                    title: 'Date',
+                    tickformat: '%b %d %Y',
+                    tickangle: -45, 
+                    tickmode: 'auto',    
+                    nticks: 50,  
+                    rangeslider: { visible: true }
+                },
+                yaxis: { title: '$ BTC', type: yLog ? 'log' : 'scatter' }
+            };
+
+            Plotly.newPlot('myPlot', [trace], layout);
+        }
+
+
+
+
+
+        
+        function saveAsCSV() {
+            const xData = document.getElementById('myXData').value.split(',').map(Number);
+            const yData = document.getElementById('myYData').value.split(',').map(Number);
+            const fileName = document.getElementById('fileName').value;
+
+            let csvContent = "data:text/csv;charset=utf-8,X,Y\n";
+            xData.forEach((x, index) => {
+                csvContent += `${x},${yData[index]}\n`;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement('a');
+            link.setAttribute('href', encodedUri);
+            link.setAttribute('download', fileName);
+            document.body.appendChild(link); // Required for Firefox
+            link.click();
+        }
+
+        // Gradient Descent with Plotly Update
+        function myYFit(A1, w1, b1, A2, w2, b2, C, x) {
+            return A1 * Math.sin(w1 * x + b1) + A2 * Math.sin(w2 * x + b2) + C;
+        }
+
+
+
+async function myGradientDescent(data, params, learningRate, iterations) {
+    let xValues = data.map(d => new Date(d.x)); // Convert x back to date
+    let yValues = data.map(d => d.y);
+
+    let y_predicted = xValues.map(x => myYFit(params.A1, params.w1, params.b1, params.A2, params.w2, params.b2, params.C, x));
+
+    // Add gradient descent trace initially
+    let traceGD = {
+        x: xValues,
+        y: y_predicted,
+        mode: 'lines+markers',
+        type: 'scatter',
+        name: 'Gradient Descent'
+    };
+
+    // Add the trace to the plot initially
+    Plotly.addTraces('myPlot', traceGD);
+
+    for (let i = 0; i < iterations; i++) {
+        let gradients = {
+            A1: 0, w1: 0, b1: 0,
+            A2: 0, w2: 0, b2: 0,
+            C: 0
+        };
+        
+        if (i % 10 == 0){
+            console.log(`Loop #${i}`)
+        }
+            
+
+        // Compute gradients
+        
+        for (let j = 0; j < data.length; j++) {
+
+            let x = j; // Use index j for calculations
+            let y_true = yValues[j];
+            let y_pred = myYFit(params.A1, params.w1, params.b1, params.A2, params.w2, params.b2, params.C, x);
+
+            // Calculate gradients
+            gradients.A1 += -2 * (y_true - y_pred) * Math.sin(params.w1 * x + params.b1);
+            gradients.w1 += -2 * (y_true - y_pred) * params.A1 * x * Math.cos(params.w1 * x + params.b1);
+            gradients.b1 += -2 * (y_true - y_pred) * params.A1 * Math.cos(params.w1 * x + params.b1);
+            gradients.A2 += -2 * (y_true - y_pred) * Math.sin(params.w2 * x + params.b2);
+            gradients.w2 += -2 * (y_true - y_pred) * params.A2 * x * Math.cos(params.w2 * x + params.b2);
+            gradients.b2 += -2 * (y_true - y_pred) * params.A2 * Math.cos(params.w2 * x + params.b2);
+            gradients.C += -2 * (y_true - y_pred);
+        }
+
+        // Update parameters
+        params.A1 -= learningRate * gradients.A1 / data.length;
+        params.w1 -= learningRate * gradients.w1 / data.length;
+        params.b1 -= learningRate * gradients.b1 / data.length;
+        params.A2 -= learningRate * gradients.A2 / data.length;
+        params.w2 -= learningRate * gradients.w2 / data.length;
+        params.b2 -= learningRate * gradients.b2 / data.length;
+        params.C -= learningRate * gradients.C / data.length;
+
+        // Update predicted values
+        y_predicted = xValues.map(x => myYFit(params.A1, params.w1, params.b1, params.A2, params.w2, params.b2, params.C, x));
+
+        // Update the gradient descent trace
+        Plotly.restyle('myPlot', { y: [y_predicted] }, 1); // Updates the second trace (index 1)
+    }
+}
+
+
+ 
+    </script>
+</body>
+</html>
