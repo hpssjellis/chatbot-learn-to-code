@@ -41,7 +41,7 @@
         
 
         <label for="xRange">Generate x values:</label>
-        Min: <input type="number" id="xStart" value="0">
+        Min: <input type="number" id="xStart" value="2">
         Max: <input type="number" id="xEnd" value="7000">
         x-step (days): <input type="number" id="xStep" value="3"><br>
         <input type="button" value="Generate X Values" onclick="generateXValues()"><br>
@@ -116,7 +116,7 @@
             let xValuesLog = [];
             for (let x = start; x <= end; x += step) {
                 xValues.push(x);
-                xValuesLog.push(Math.log(x))
+                xValuesLog.push(Math.log(x+10000))   // adjusted for a different start date.
             }
             document.getElementById('myXData').value = xValues.join(', ');
             document.getElementById('myXDataLogs').value = xValuesLog.join(', ');
