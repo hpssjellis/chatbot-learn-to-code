@@ -139,12 +139,16 @@
 
             let myYData = [];
             try {
-                myYData = myXData.map(x => eval(myEquation));
+                myYData = myXData.map(x => eval(parseInt(myEquation)));
             } catch (error) {
                 alert('Invalid equation. Please check your input.');
                 return;
             }
             document.getElementById('myYData').value = myYData.join(', ');
+
+
+
+            
 
             // Create date labels starting from Jan 1, 2009
             const startDate = new Date('2009-01-01');
