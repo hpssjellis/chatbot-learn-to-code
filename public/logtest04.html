@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Plotly Example</title>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+  <div id="graph"></div>   
+
+  <button onclick="generateGraph(false)">Generate Graph (Linear)</button>
+  <button onclick="generateGraph(true)">Generate Graph (Logarithmic)</button>
+
+  <script>
+    var xLog = false;
+
+    function generateGraph(logScale) {
+      xLog = logScale;
+
+      var data = [{
+        x: ['2023-01-01', '2023-02-01', '2023-03-01', '2023-04-01'],
+        y: [10, 20, 30, 40],
+        type: 'scatter'
+      }];
+
+      var layout = {
+        xaxis: {
+          type: xLog ? 'log' : 'date',
+          tickformat: '%Y-%m-%d',
+          tickvals: xLog ? [1, 10, 100, 1000] : null,
+          ticktext: xLog ? ['2023-01-01', '2023-02-01', '2023-03-01', '2023-04-01'] : null
+        }
+      };
+
+      Plotly.newPlot('graph', data, layout);
+    }
+  </script>
+</body>
+</html>
