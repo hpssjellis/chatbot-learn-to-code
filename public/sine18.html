@@ -147,6 +147,18 @@
             document.getElementById('myYData').value = myYData.join(', ');
 
 
+            let myYDataLog = [];
+            try {
+                myYDataLog = myXDataLog.map(x => Math.log(x) );
+            } catch (error) {
+                alert('Invalid equation. Please check your input.');
+                return;
+            }
+            document.getElementById('myYDataLog').value = myYDataLog.join(', ');
+
+
+
+            
 
             
 
@@ -176,7 +188,7 @@
           */
             const trace = {
                 x:  xLog ? myDateDataLog : myDateData,
-                y: myYData,
+                y: yLog ? myYDataLog : myYData,
                 mode: 'lines+markers',
                 type: 'scatter'
             };
