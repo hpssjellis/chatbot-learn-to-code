@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plotly.js Date Graph</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+    <h1>Plotly.js Date Graph</h1>
+    <div id="graph"></div>
+    <button onclick="generateGraph(false)">Normal Date View</button>
+    <button onclick="generateGraph(true)">Logarithmic Date View</button>
+
+    <script>
+        const dates = ['2023-01-01', '2023-02-01', '2023-03-01', '2023-04-01', '2023-05-01'];
+        const values = [10, 15, 13, 17, 21];
+
+        function dateToNumber(date) {
+            return new Date(date).getTime();
+        }
+
+        function generateGraph(xLog) {
+            const xValues = dates.map(date => dateToNumber(date));
+            const layout = {
+                title: 'Date Graph',
+                xaxis: {
+                    title: 'Date',
+                    type: xLog ? 'log' : 'date',
+                    tickvals: xValues,
+                    ticktext: dates,
+                    tickformat: '%Y-%m-%d'
+                },
+                yaxis: {
+                    title: 'Value'
+                }
+            };
+
+            const data = [{
+                x: xValues,
+                y: values,
+                type: 'scatter'
+            }];
+
+            Plotly.newPlot('graph', data, layout);
+        }
+
+        // Generate the initial graph with normal date view
+        generateGraph(false);
+    </script>
+</body>
+</html>
