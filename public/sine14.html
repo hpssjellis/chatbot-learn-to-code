@@ -116,7 +116,7 @@
         }
 
 
-        function generatePlot(xLog = false, yLog = false) {
+function generatePlot(xLog = false, yLog = false) {
     const myEquation = document.getElementById('myEquation').value;
     const myXData = document.getElementById('myXData').value.split(',').map(Number);
 
@@ -144,11 +144,15 @@
         return newDate.getTime(); // Use timestamp (milliseconds since epoch) for numeric axis
     });
 
-    myData = myXData.map((x, index) => ({ x: myDateData[index], y: myYData[index] }));
+    // If xLog is true, apply a logarithmic transformation to the numericXData
+    const logXData = xLog ? numericXData.map(val => Math.log10(val)) : numericXData;
+
+    // Similarly, apply a logarithmic transformation to the y-axis if yLog is true
+    const logYData = yLog ? myYData.map(val => Math.log10(val)) : myYData;
 
     const trace = {
-        x: numericXData,  // Use numeric x data for logarithmic scale
-        y: myYData,
+        x: numericXData,  // Use numeric x data for linear axis
+        y: logYData,      // Use log-transformed y data if yLog is true
         mode: 'lines+markers',
         type: 'scatter'
     };
@@ -157,11 +161,10 @@
         title: 'Sinusoidal Graph with Dates',
         xaxis: {
             title: 'Date',
-            tickformat: '%b %d %Y',
             tickangle: -45, 
             tickmode: 'auto',
             nticks: 50,
-            type: xLog ? 'log' : 'linear',  // Keep this in numeric form (log or linear)
+            type: 'linear',  // Keep this linear to show proper dates
             rangeslider: { visible: true },
             tickvals: numericXData,  // Specify tick values for the numeric x-axis
             ticktext: myDateData,    // Display the original dates as text labels
@@ -173,7 +176,7 @@
 }
 
 
-        /*
+  /*
 
         function generatePlot(xLog = false, yLog = false) {
             const myEquation = document.getElementById('myEquation').value;
