@@ -139,7 +139,7 @@
 
             let myYData = [];
             try {
-                myYData = myXData.map(x => eval(parseInt(myEquation)));
+                myYData = myXData.map(x => parseInt(eval(myEquation)) );
             } catch (error) {
                 alert('Invalid equation. Please check your input.');
                 return;
