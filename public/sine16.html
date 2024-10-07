@@ -49,6 +49,10 @@
         <label for="xData">x values (degrees, comma separated):</label><br>
         <textarea id="myXData" rows="1" cols="70"></textarea><br>
 
+        
+        <label for="xDataLogs">x Log values (Generated):</label><br>
+        <textarea id="myXDataLogs" rows="1" cols="70" RAEDONLY></textarea><br>
+
         <input type="button" value="Generate Plot" onclick="generatePlot(false, false)">
       
         <input type="button" value="Log x and y" onclick="runAll(true, true)">
@@ -109,10 +113,13 @@
             const step = parseFloat(document.getElementById('xStep').value);
 
             let xValues = [];
+            let xValuesLog = [];
             for (let x = start; x <= end; x += step) {
                 xValues.push(x);
+                xValuesLog.push(Math.log(x))
             }
             document.getElementById('myXData').value = xValues.join(', ');
+            document.getElementById('myXDataLogs').value = xValuesLog.join(', ');
         }
 
 
@@ -124,6 +131,7 @@
         function generatePlot(xLog = false, yLog = false) {
             const myEquation = document.getElementById('myEquation').value;
             const myXData = document.getElementById('myXData').value.split(',').map(Number);
+            const myXDataLog = document.getElementById('myXDataLogs').value.split(',').map(Number);
 
             let myYData = [];
             try {
@@ -142,10 +150,16 @@
                 return newDate.toISOString().split('T')[0]; // Format as YYYY-MM-DD
             });
 
+            const myDateDataLog = myXDataLog.map(x => {
+                let newDate = new Date(startDate);
+                newDate.setDate(newDate.getDate() + x); // Add x days to the start date
+                return newDate.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+            });
+
             myData = myXData.map((x, index) => ({ x: myDateData[index], y: myYData[index] }));
 
             const trace = {
-                x: myDateData,
+                x:  xLog ? myDateDataLog : myDateData,
                 y: myYData,
                 mode: 'lines+markers',
                 type: 'scatter'
@@ -159,7 +173,6 @@
                     tickangle: -45, 
                     tickmode: 'auto',    
                     nticks: 50,  
-                    type: xLog ? 'log' : 'scatter',
                     rangeslider: { visible: true }
                 },
                 yaxis: { title: '$ BTC', type: yLog ? 'log' : 'scatter' }
