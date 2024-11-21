@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sinusoidal Curve</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        canvas {
+            border: 1px solid black;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="sinCanvas" width="800" height="600"></canvas>
+    <script>
+        const canvas = document.getElementById('sinCanvas');
+        const ctx = canvas.getContext('2d');
+        const width = canvas.width;
+        const height = canvas.height;
+
+        function drawSinusoidal() {
+            ctx.clearRect(0, 0, width, height);
+            ctx.beginPath();
+            ctx.moveTo(0, height);
+
+            const frequency = 0.0; 
+            const amplitude = 1; 
+          
+            const smallFrequency = 0; 
+            const smallAmplitude = 1; 
+          
+            const thirdFrequency = 0.05; 
+            const thirdAmplitude = 20; 
+
+
+
+
+
+
+          /*
+          
+          
+            const frequency = 0.02; 
+            const amplitude = 50; 
+          
+            const smallFrequency = 0.2; 
+            const smallAmplitude = 10; 
+          
+            const thirdFrequency = 0.05; 
+            const thirdAmplitude = 20;           
+          
+          
+          
+          
+          
+          
+          */
+            const slope = height / width; // Slope to create the upward trend
+
+            for (let x = 0; x <= width; x++) {
+                const y = height - (slope * x + amplitude * Math.sin(frequency * x) + smallAmplitude * Math.sin(smallFrequency * x) + thirdAmplitude * Math.sin(thirdFrequency * x));
+                ctx.lineTo(x, y);
+            }
+
+            ctx.strokeStyle = 'blue';
+            ctx.stroke();
+        }
+
+        drawSinusoidal();
+    </script>
+</body>
+</html>
