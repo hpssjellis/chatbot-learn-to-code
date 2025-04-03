@@ -48,7 +48,7 @@ Strategic Decision-Making: Risk Assessment and Problem Navigation
 Logical Fallacy Detection: Cognitive Bias Recognition and Critical Thinking
 
 
-Musical Intelligence
+### Musical Intelligence
 
 Rhythmic Sensitivity: Temporal Perception and Synchronization
 
@@ -71,7 +71,7 @@ Aural Sensitivity: Acoustic Discrimination and Timbre Awareness
 Cross-Cultural Appreciation: Musical Diversity and Historical Context
 
 
-Bodily-Kinesthetic Intelligence
+### Bodily-Kinesthetic Intelligence
 
 Gross Motor Coordination: Strength, Agility, and Balance
 
@@ -94,7 +94,7 @@ Physical Expression: Dance, Theater, and Performance Art
 Non-Verbal Communication: Body Language and Expressive Gestures
 
 
-Spatial-Visual Intelligence
+### Spatial-Visual Intelligence
 
 3D Visualization: Mental Rotation and Spatial Manipulation
 
@@ -117,7 +117,7 @@ Visual Pattern Recognition: Shape and Form Discrimination
 Perspective Awareness: Depth Perception and Relativity Analysis
 
 
-Interpersonal Intelligence
+### Interpersonal Intelligence
 
 Emotional Perception: Empathy and Expressive Recognition
 
@@ -140,7 +140,7 @@ Mentorship & Coaching: Encouragement and Skill Development
 Diplomatic Skill: Persuasion and Political Acumen
 
 
-Intrapersonal Intelligence
+### Intrapersonal Intelligence
 
 Self-Awareness: Identity Understanding and Personal Insight
 
@@ -163,7 +163,7 @@ Purpose & Meaning-Making: Existential Awareness and Directionality
 Mindfulness: Present-Moment Awareness and Focused Attention
 
 
-Naturalistic Intelligence
+### Naturalistic Intelligence
 
 Ecological Pattern Recognition: Seasonal and Environmental Awareness
 
@@ -186,7 +186,7 @@ Survival Adaptability: Foraging, Shelter-Building, and Outdoor Skills
 Biophilia: Deep Connection and Reverence for Nature
 
 
-Existential Intelligence
+### Existential Intelligence
 
 Philosophical Inquiry: Abstract Thinking and Theoretical Exploration
 
