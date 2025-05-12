@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Log-Log Sinusoidal Growth Plot</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  </head>
+  <body>
+    <h3 style="font-family:sans-serif;">Log-Log Growing Sinusoids</h3>
+    <div id="myPlot" style="width:90%;height:600px;"></div>
+
+    <script>
+      function myGenerateLogLogData() {
+        let myYears = [];
+        let myCombined = [];
+        let myWaves = [[], [], []];
+
+        // Sine wave parameters
+        let myBaseFreqs = [0.02, 0.05, 0.09];
+        let myBaseAmps = [500, 1000, 2000];
+        let myPhases   = [0, Math.PI / 4, Math.PI / 2];
+
+        for (let year = 1970; year <= 2070; year++) {
+          let logYear = Math.log10(year - 1969); // Start at log10(1) = 0
+          myYears.push(year);
+          let mySum = 0;
+
+          // Apply a dynamic offset that increases as the year increases
+          let myOffset = Math.exp(logYear / 3); // Exponentially increasing offset
+
+          for (let i = 0; i < 3; i++) {
+            let myFreq = myBaseFreqs[i] * Math.exp(logYear); // frequency grows
+            let myAmp  = myBaseAmps[i] * Math.exp(logYear * 1.2);  // stronger exponential for amplitude
+            let myY = myAmp * Math.sin(2 * Math.PI * myFreq * logYear + myPhases[i]);
+            myWaves[i].push(myY + myOffset); // Apply offset here
+            mySum += myY + myOffset; // Apply offset to sum as well
+          }
+
+          // Store combined result with the offset
+          myCombined.push(mySum);
+        }
+
+        // Plot individual sine components
+        let myTraces = myWaves.map((wave, i) => ({
+          x: myYears,
+          y: wave,
+          mode: 'lines',
+          line: { color: 'green', width: 1 },
+          name: 'Wave ' + (i + 1)
+        }));
+
+        // Add combined wave
+        myTraces.push({
+          x: myYears,
+          y: myCombined,
+          mode: 'lines',
+          line: { color: 'blue', width: 3 },
+          name: 'Combined'
+        });
+
+        let myLayout = {
+          title: 'Exponential Sine Growth on Log-Log Plot',
+          xaxis: {
+            title: 'Year',
+            type: 'log',
+            tickvals: [1970, 1980, 1990, 2000, 2020, 2040, 2070]
+          },
+          yaxis: {
+            title: 'Simulated Dollars',
+            type: 'log',
+            range: [4, 7] // optional zoom (log10 of y range)
+          },
+          margin: { t: 40 }
+        };
+
+        Plotly.newPlot('myPlot', myTraces, myLayout);
+      }
+
+      myGenerateLogLogData();
+    </script>
+  </body>
+</html>
