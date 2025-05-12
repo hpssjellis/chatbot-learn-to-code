@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Scaled Cycle Combiner with Plotly</title>
+  <title>Dollar Cycles - Plotly</title>
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 </head>
 <body>
-<h3>Combine Yearly Sinusoidal Patterns (Scaled to 0–1,000,000)</h3>
-<p>Adjust amplitude, period (years), and phase offset (degrees) for each cycle:</p>
+<h3>Simulated Dollar Cycles from Combined Sine Waves</h3>
+<p>Adjust amplitude, period (years), and phase offset (degrees):</p>
 
 <table>
   <tr><th>Amplitude</th><th>Period (years)</th><th>Phase Offset (degrees)</th></tr>
@@ -32,7 +32,7 @@ function myPlotCycles() {
   let mySteps = 1000;
   let myDt = (myEndYear - myStartYear) / mySteps;
 
-  // Get all parameters and generate each wave
+  // Get all parameters
   let myWaves = [];
   let myMaxTotalAmplitude = 0;
 
@@ -46,6 +46,7 @@ function myPlotCycles() {
   }
 
   let myScale = 1000000 / myMaxTotalAmplitude;
+  let myOffset = 500000;
 
   let myIndividualWaves = Array(myWaves.length).fill(0).map(() => []);
 
@@ -56,10 +57,10 @@ function myPlotCycles() {
     for (let j = 0; j < myWaves.length; j++) {
       let w = myWaves[j];
       let y = w.A * Math.sin(2 * Math.PI * t / w.T + w.phase);
-      myIndividualWaves[j].push(y * myScale);
+      myIndividualWaves[j].push(y * myScale + myOffset);
       sum += y;
     }
-    myCombined.push(sum * myScale);
+    myCombined.push(sum * myScale + myOffset);
   }
 
   for (let j = 0; j < myIndividualWaves.length; j++) {
@@ -81,9 +82,9 @@ function myPlotCycles() {
   });
 
   Plotly.newPlot('myPlot', myWavesData, {
-    title: 'Combined Sinusoidal Cycles (Scaled)',
+    title: 'Dollar-Safe Sinusoidal Cycles',
     xaxis: { title: 'Year' },
-    yaxis: { title: 'Combined Value', range: [0, 1000000] },
+    yaxis: { title: 'Simulated Dollars', range: [0, 1000000] },
     showlegend: true
   });
 }
