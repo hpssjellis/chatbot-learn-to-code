@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Cycle Combiner with Plotly</title>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+<h3>Combine Yearly Sinusoidal Patterns</h3>
+<p>Adjust amplitude, period (years), and phase offset (degrees) for each cycle:</p>
+
+<table>
+  <tr><th>Amplitude</th><th>Period (years)</th><th>Phase Offset (degrees)</th></tr>
+  <tr><td><input id="myAmp1" value="1.0" size=4></td><td><input id="myPer1" value="4" size=4></td><td><input id="myPhase1" value="0" size=4></td></tr>
+  <tr><td><input id="myAmp2" value="0.5" size=4></td><td><input id="myPer2" value="10" size=4></td><td><input id="myPhase2" value="0" size=4></td></tr>
+  <tr><td><input id="myAmp3" value="0.3" size=4></td><td><input id="myPer3" value="11" size=4></td><td><input id="myPhase3" value="0" size=4></td></tr>
+  <tr><td><input id="myAmp4" value="0.2" size=4></td><td><input id="myPer4" value="18" size=4></td><td><input id="myPhase4" value="0" size=4></td></tr>
+  <tr><td><input id="myAmp5" value="0.1" size=4></td><td><input id="myPer5" value="80" size=4></td><td><input id="myPhase5" value="180" size=4></td></tr>
+</table>
+
+<p><input type="button" value="Plot Waves" onclick="myPlotCycles()"></p>
+
+<div id="myPlot" style="width:100%;height:400px;"></div>
+
+<script>
+function myPlotCycles() {
+  let myYears = [];
+  let myCombined = [];
+  let myWavesData = [];
+
+  let myStartYear = 0;
+  let myEndYear = 100;
+  let mySteps = 1000;
+  let myDt = (myEndYear - myStartYear) / mySteps;
+
+  // Get all parameters and generate each wave
+  let myWaves = [];
+  for (let i = 1; i <= 5; i++) {
+    let A = parseFloat(document.getElementById("myAmp" + i).value || 0);
+    let T = parseFloat(document.getElementById("myPer" + i).value || 1);
+    let phaseDeg = parseFloat(document.getElementById("myPhase" + i).value || 0);
+    let phaseRad = phaseDeg * Math.PI / 180;
+    myWaves.push({A:A, T:T, phase:phaseRad});
+  }
+
+  // Initialize individual wave arrays
+  let myIndividualWaves = Array(myWaves.length).fill(0).map(() => []);
+
+  for (let i = 0; i <= mySteps; i++) {
+    let t = myStartYear + i * myDt;
+    myYears.push(t);
+    let sum = 0;
+    for (let j = 0; j < myWaves.length; j++) {
+      let w = myWaves[j];
+      let y = w.A * Math.sin(2 * Math.PI * t / w.T + w.phase);
+      myIndividualWaves[j].push(y);
+      sum += y;
+    }
+    myCombined.push(sum);
+  }
+
+  // Build Plotly traces
+  for (let j = 0; j < myIndividualWaves.length; j++) {
+    myWavesData.push({
+      x: myYears,
+      y: myIndividualWaves[j],
+      mode: 'lines',
+      name: 'Wave ' + (j + 1),
+      line: { color: 'green', width: 1, dash: 'dot' }
+    });
+  }
+
+  myWavesData.push({
+    x: myYears,
+    y: myCombined,
+    mode: 'lines',
+    name: 'Combined Wave',
+    line: { color: 'blue', width: 3 }
+  });
+
+  Plotly.newPlot('myPlot', myWavesData, {
+    title: 'Combined Sinusoidal Cycles',
+    xaxis: { title: 'Year' },
+    yaxis: { title: 'Combined Value' },
+    showlegend: true
+  });
+}
+</script>
+</body>
+</html>
