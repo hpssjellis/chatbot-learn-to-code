@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Cycle Combiner</title>
+</head>
+<body>
+<h3>Combine Cyclical Patterns</h3>
+<p>Adjust amplitudes, periods (years), and phase offsets (degrees):</p>
+
+<table>
+  <tr><th>Amplitude</th><th>Period (years)</th><th>Phase Offset (degrees)</th></tr>
+  <tr><td><input id="myAmp1" value="1.0" size=4></td><td><input id="myPer1" value="4" size=4></td><td><input id="myPhase1" value="0" size=4></td></tr>
+  <tr><td><input id="myAmp2" value="0.5" size=4></td><td><input id="myPer2" value="10" size=4></td><td><input id="myPhase2" value="0" size=4></td></tr>
+  <tr><td><input id="myAmp3" value="0.3" size=4></td><td><input id="myPer3" value="11" size=4></td><td><input id="myPhase3" value="0" size=4></td></tr>
+  <tr><td><input id="myAmp4" value="0.2" size=4></td><td><input id="myPer4" value="18" size=4></td><td><input id="myPhase4" value="0" size=4></td></tr>
+  <tr><td><input id="myAmp5" value="0.1" size=4></td><td><input id="myPer5" value="80" size=4></td><td><input id="myPhase5" value="180" size=4></td></tr>
+</table>
+
+<p><input type="button" value="Plot Combined Wave" onclick="myPlotCycles()"></p>
+<canvas id="myCanvas" width="800" height="300" style="border:1px solid black"></canvas>
+
+<script>
+function myPlotCycles() {
+  let ctx = myCanvas.getContext("2d");
+  ctx.clearRect(0, 0, myCanvas.width, myCanvas.height);
+  ctx.beginPath();
+
+  // Get parameters
+  let myW = myCanvas.width;
+  let myH = myCanvas.height;
+  let myMidY = myH / 2;
+
+  // Years range from -10 to +90 (e.g., 2015–2115)
+  let myStartYear = 0;
+  let myEndYear = 100;
+  let mySteps = myW;
+
+  // Gather sine wave parameters
+  let myWaves = [];
+  for (let i = 1; i <= 5; i++) {
+    let A = parseFloat(document.getElementById("myAmp" + i).value || 0);
+    let T = parseFloat(document.getElementById("myPer" + i).value || 1);
+    let phaseDeg = parseFloat(document.getElementById("myPhase" + i).value || 0);
+    let phaseRad = phaseDeg * Math.PI / 180;
+    myWaves.push({A:A, T:T, phase:phaseRad});
+  }
+
+  // Plot
+  ctx.moveTo(0, myMidY);
+  for (let i = 0; i < mySteps; i++) {
+    let t = myStartYear + (myEndYear - myStartYear) * i / mySteps;
+    let y = 0;
+    for (let w of myWaves) {
+      y += w.A * Math.sin(2 * Math.PI * t / w.T + w.phase);
+    }
+    let screenY = myMidY - y * 50; // scale vertical
+    ctx.lineTo(i, screenY);
+  }
+
+  ctx.strokeStyle = "blue";
+  ctx.stroke();
+
+  // Draw x-axis
+  ctx.beginPath();
+  ctx.moveTo(0, myMidY);
+  ctx.lineTo(myW, myMidY);
+  ctx.strokeStyle = "black";
+  ctx.stroke();
+}
+</script>
+</body>
+</html>
