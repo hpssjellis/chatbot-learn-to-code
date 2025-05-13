@@ -33,13 +33,39 @@
           let dynamicOffset = Math.exp(logYear / 3) * myOffset; // Offset increases faster over time
 
           // Loop through each of the waves
-          for (let i = 0; i < 3; i++) {
-            let myFreq = myBaseFreqs[i] * Math.exp(logYear); // Frequency increases as the years go on
-            let myAmp  = myBaseAmps[i] * Math.exp(logYear * 1.9);  // Amplitude also increases with time   // myBaseAmps[i] * Math.exp(logYear * 1.2);
-            let myY = myAmp * Math.sin(2 * Math.PI * myFreq * logYear + myPhases[i])  ; // Generate sine wave
+      //    for (let i = 0; i < 3; i++) {
+            let myFreq = myBaseFreqs[0] * Math.exp(logYear); // Frequency increases as the years go on
+            let myAmp  = myBaseAmps[0] * Math.exp(logYear * 1.9);  // Amplitude also increases with time   // myBaseAmps[i] * Math.exp(logYear * 1.2);
+            let myY = myAmp * Math.sin(2 * Math.PI * myFreq * logYear + myPhases[0])  ; // Generate sine wave
 
-            myWaves[i].push(myY + dynamicOffset + myStart); // Apply offset and store the wave
+            myWaves[0].push(myY + dynamicOffset + myStart); // Apply offset and store the wave
             mySum += myY + dynamicOffset + myStart ; // Add wave to the combined sum
+
+
+
+            myFreq = myBaseFreqs[1] * Math.exp(logYear); // Frequency increases as the years go on
+            myAmp  = myBaseAmps[1] * Math.exp(logYear * 1.9);  // Amplitude also increases with time   // myBaseAmps[i] * Math.exp(logYear * 1.2);
+            myY = myAmp * Math.sin(2 * Math.PI * myFreq * logYear + myPhases[1])  ; // Generate sine wave
+
+            myWaves[1].push(myY + dynamicOffset + myStart); // Apply offset and store the wave
+            mySum += myY + dynamicOffset + myStart ; // Add wave to the combined sum
+
+
+
+
+            myFreq = myBaseFreqs[2] * Math.exp(logYear); // Frequency increases as the years go on
+            myAmp  = myBaseAmps[2] * Math.exp(logYear * 1.9);  // Amplitude also increases with time   // myBaseAmps[i] * Math.exp(logYear * 1.2);
+            myY = myAmp * Math.sin(2 * Math.PI * myFreq * logYear + myPhases[2])  ; // Generate sine wave
+
+            myWaves[2].push(myY + dynamicOffset + myStart); // Apply offset and store the wave
+            mySum += myY + dynamicOffset + myStart ; // Add wave to the combined sum
+
+
+
+
+
+
+            
           }
 
           // Store the combined wave (sum of all waves with offset)
