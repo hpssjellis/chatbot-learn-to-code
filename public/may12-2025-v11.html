@@ -15,7 +15,7 @@
         let myWaves = [[], [], []]; // Arrays for the individual waves
 
         // Sine wave parameters
-        let myBaseFreqs = [0.1, 0.6, 0.9]; // Frequencies of the waves, change for more/less oscillation
+        let myBaseFreqs = [0.005, 0.6, 0.9]; // Frequencies of the waves, change for more/less oscillation
         let myBaseAmps = [500, 1000, 2000]; // Amplitudes of the waves, change for bigger/smaller waves
         let myPhases   = [0, Math.PI / 4, Math.PI / 2]; // Phases of the waves, change to shift them
 
@@ -35,7 +35,7 @@
           // Loop through each of the waves
       //    for (let i = 0; i < 3; i++) {
             let myFreq = myBaseFreqs[0] * Math.exp(logYear); // Frequency increases as the years go on
-            let myAmp  = myBaseAmps[0] * Math.exp(logYear * 5);  // Amplitude also increases with time   // myBaseAmps[i] * Math.exp(logYear * 1.2);
+            let myAmp  = myBaseAmps[0] * Math.exp(logYear * 3);  // Amplitude also increases with time   // myBaseAmps[i] * Math.exp(logYear * 1.2);
             let myY = myAmp * Math.sin(2 * Math.PI * myFreq * logYear + myPhases[0])  ; // Generate sine wave
 
             myWaves[0].push(myY + dynamicOffset + myStart); // Apply offset and store the wave
