@@ -21,6 +21,7 @@
 
         // Initial dynamic offset, this ensures all waves stay positive
         let myOffset = 100000;    // 10000;
+        let myStart = -100000;    // 10000;
 
         // Loop through years from 1970 to 2070
         for (let year = 1970; year <= 2070; year++) {
@@ -38,7 +39,7 @@
             let myY = myAmp * Math.sin(2 * Math.PI * myFreq * logYear + myPhases[i])  ; // Generate sine wave
 
             myWaves[i].push(myY + dynamicOffset); // Apply offset and store the wave
-            mySum += myY + dynamicOffset; // Add wave to the combined sum
+            mySum += myY + dynamicOffset + myStart ; // Add wave to the combined sum
           }
 
           // Store the combined wave (sum of all waves with offset)
