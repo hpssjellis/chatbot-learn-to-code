@@ -24,7 +24,7 @@
         let myStart = -100000;    // 10000;
 
         // Loop through years from 1970 to 2070
-        for (let year = 1970; year <= 2070; year++) {
+        for (let year = 1990; year <= 2070; year++) {
           let logYear = Math.log10(year - 1969); // Start at log10(1) = 0
           myYears.push(year);  // Add the year to the x-axis array
           let mySum = 0;       // To accumulate the sum of the waves for the combined wave
@@ -35,7 +35,7 @@
           // Loop through each of the waves
       //    for (let i = 0; i < 3; i++) {
             let myFreq = myBaseFreqs[0] * Math.exp(logYear); // Frequency increases as the years go on
-            let myAmp  = myBaseAmps[0] * Math.exp(logYear * 5.2);  // Amplitude also increases with time   // myBaseAmps[i] * Math.exp(logYear * 1.2);
+            let myAmp  = myBaseAmps[0] * Math.exp(logYear * 4.0);  // Amplitude also increases with time   // myBaseAmps[i] * Math.exp(logYear * 1.2);
             let myY = myAmp * Math.sin(2 * Math.PI * myFreq * logYear + myPhases[0])  ; // Generate sine wave
 
             myWaves[0].push(myY + dynamicOffset + myStart); // Apply offset and store the wave
