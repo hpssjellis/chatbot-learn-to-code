@@ -35,7 +35,7 @@
           for (let i = 0; i < 3; i++) {
             let myFreq = myBaseFreqs[i] * Math.exp(logYear); // Frequency increases as the years go on
             let myAmp  = myBaseAmps[i] * Math.exp(logYear * 1.9);  // Amplitude also increases with time   // myBaseAmps[i] * Math.exp(logYear * 1.2);
-            let myY = myAmp * Math.sin(2 * Math.PI * myFreq * logYear + myPhases[i]) ; // Generate sine wave
+            let myY = myAmp * Math.sin(2 * Math.PI * myFreq * logYear + myPhases[i]) + myOffset ; // Generate sine wave
 
             myWaves[i].push(myY + dynamicOffset); // Apply offset and store the wave
             mySum += myY + dynamicOffset; // Add wave to the combined sum
