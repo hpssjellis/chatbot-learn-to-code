@@ -19,7 +19,11 @@
             const response = await fetch(url);
             const data = await response.json();
 
-            const btcDates = data.map(candle => new Date(candle[0]));
+            const btcDates = data.map(candle => {
+                const d = new Date(candle[0]);
+                return d.getFullYear() + (d.getMonth() / 12);
+             });
+
             const btcPrices = data.map(candle => parseFloat(candle[4])); // closing price
             const btcLogPrices = btcPrices.map(p => Math.log(p));
 
@@ -28,7 +32,6 @@
                 y: btcPrices,
                 mode: 'lines+markers',
                 name: 'BTC Price (USD)',
-                yaxis: 'y2',
                 marker: { color: 'orange' }
             };
 
