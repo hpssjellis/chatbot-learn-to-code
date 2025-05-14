@@ -30,22 +30,23 @@
             const trace1 = {
                 x: btcDates,
                 y: btcPrices,
-                mode: 'lines+markers',
-                name: 'BTC Price (USD)',
-                marker: { color: 'orange' }
+                mode: 'lines',
+                line: { color: 'orange', width: 1 }, // Combined wave in blue
+                name: 'BTC Price (USD)'
             };
 
-            const trace2 = {
-                x: btcDates,
-                y: btcLogPrices,
-                mode: 'lines+markers',
-                name: 'BTC Log Price',
-                yaxis: 'y2',
-                marker: { color: 'brown' }
-            };
+
+
+          /*
+          x: myYears,
+          y: myCombined,
+          mode: 'lines',
+          line: { color: 'blue', width: 3 }, // Combined wave in blue
+          name: 'Combined'
+          */
 
             // Add new traces to existing Plotly graph
-            Plotly.addTraces('myPlot', [trace1, trace2]);
+            Plotly.addTraces('myPlot', [trace1]);
 
             console.log('✅ Bitcoin data added to plot.');
         } catch (err) {
