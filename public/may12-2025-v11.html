@@ -6,9 +6,52 @@
   </head>
   <body>
     <h3 style="font-family:sans-serif;">Log-Log Growing Sinusoids</h3>
+    <input type="button" value="Overlay BTC Data" onclick="myAddBitcoinToPlot()">
+
     <div id="myPlot" style="width:90%;height:600px;"></div>
 
     <script>
+
+      <script>
+    async function myAddBitcoinToPlot() {
+        const url = 'https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1w&limit=1000';
+        try {
+            const response = await fetch(url);
+            const data = await response.json();
+
+            const btcDates = data.map(candle => new Date(candle[0]));
+            const btcPrices = data.map(candle => parseFloat(candle[4])); // closing price
+            const btcLogPrices = btcPrices.map(p => Math.log(p));
+
+            const trace1 = {
+                x: btcDates,
+                y: btcPrices,
+                mode: 'lines+markers',
+                name: 'BTC Price (USD)',
+                yaxis: 'y2',
+                marker: { color: 'orange' }
+            };
+
+            const trace2 = {
+                x: btcDates,
+                y: btcLogPrices,
+                mode: 'lines+markers',
+                name: 'BTC Log Price',
+                yaxis: 'y2',
+                marker: { color: 'brown' }
+            };
+
+            // Add new traces to existing Plotly graph
+            Plotly.addTraces('myPlot', [trace1, trace2]);
+
+            console.log('✅ Bitcoin data added to plot.');
+        } catch (err) {
+            console.error('❌ Failed to load BTC data:', err);
+        }
+    }
+</script>
+
+    
       function myGenerateLogLogData() {
         let myYears = [];         // Array to hold the years for the x-axis
         let myCombined = [];      // Array to hold the combined sum of all waves
