@@ -31,7 +31,7 @@
                 x: btcDates,
                 y: btcPrices,
                 mode: 'lines',
-                line: { color: 'orange', width: 1 }, // Combined wave in blue
+                line: { color: 'orange', width: 3 }, // Combined wave in blue
                 name: 'BTC Price (USD)'
             };
 
@@ -71,7 +71,8 @@
         let myStart = -10000;    // 10000;
 
         // Loop through years from 1970 to 2070
-        for (let year = 1990; year <= 2070; year++) {
+     //   for (let year = 1990; year <= 2070; year++) {
+        for (let year = 2017; year <= 2035; year++) {
           let logYear = Math.log10(year - 1969); // Start at log10(1) = 0
           myYears.push(year);  // Add the year to the x-axis array
           let mySum = 0;       // To accumulate the sum of the waves for the combined wave
