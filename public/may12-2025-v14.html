@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>BTC + Sinusoidal Approximation</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  </head>
+  <body>
+    <h3 style="font-family:sans-serif;">BTC Price vs FFT Sinusoidal Approximation</h3>
+    <input type="button" value="Plot BTC + Sinusoids" onclick="myPlotBTCWithSinusoids()">
+    <div id="myPlot" style="width:90%;height:600px;"></div>
+
+    <script>
+    async function myPlotBTCWithSinusoids() {
+        const url = 'https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1w&limit=1000';
+        try {
+            const response = await fetch(url);
+            const data = await response.json();
+
+            const myYears = data.map(c => {
+                const d = new Date(c[0]);
+                return d.getFullYear() + d.getMonth() / 12 + d.getDate() / 365.25;
+            });
+
+            const myPrices = data.map(c => parseFloat(c[4])); // closing price
+
+            // Extract start time for phase alignment
+            const t0 = myYears[0];
+
+            // Use the 3 dominant frequency components derived from FFT on raw prices
+            const myFreqs = [0.3865, 0.1288, 0.2577];
+            const myAmps  = [14002.45, 19557.26, 20580.60];
+            const myPhases = [1.8883, 1.2962, 0.6554];
+
+            // Build combined sinusoidal approximation
+            let mySynth = new Array(myYears.length).fill(0);
+            for (let i = 0; i < myFreqs.length; i++) {
+                const freq = myFreqs[i];
+                const amp = myAmps[i];
+                const phase = myPhases[i];
+                for (let j = 0; j < myYears.length; j++) {
+                    const t = myYears[j] - t0;
+                    mySynth[j] += amp * Math.sin(2 * Math.PI * freq * t + phase);
+                }
+            }
+
+            const traceBTC = {
+                x: myYears,
+                y: myPrices,
+                mode: 'lines',
+                name: 'BTC Price',
+                line: { color: 'orange', width: 2 }
+            };
+
+            const traceSynth = {
+                x: myYears,
+                y: mySynth,
+                mode: 'lines',
+                name: '3-Wave Synth',
+                line: { color: 'blue', width: 2, dash: 'dot' }
+            };
+
+            const layout = {
+                title: 'BTC Price and FFT-Based Sinusoidal Fit',
+                xaxis: { title: 'Year' },
+                yaxis: { title: 'Price (USD)', type: 'log' },
+                margin: { t: 40 }
+            };
+
+            Plotly.newPlot('myPlot', [traceBTC, traceSynth], layout);
+        } catch (err) {
+            console.error('❌ Failed to load or process BTC data:', err);
+        }
+    }
+    </script>
+  </body>
+</html>
