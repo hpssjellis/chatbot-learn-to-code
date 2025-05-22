@@ -4,36 +4,20 @@
     <title>Log-Log Sinusoidal Growth Plot</title>
     <script src="https://cdn.jsdelivr.net/npm/plotly.js-dist@3.0.1/plotly.min.js"></script>
     <style>
+      /* Essential styles for basic layout and readability */
       body {
         font-family: sans-serif;
         margin: 20px;
-        background-color: #f4f4f4;
-        color: #333;
       }
       h3 {
-        color: #0056b3;
         text-align: center;
         margin-bottom: 20px;
       }
       input[type="button"] {
-        background-color: #007bff;
-        color: white;
-        padding: 10px 15px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        font-size: 16px;
         margin-bottom: 15px;
       }
-      input[type="button"]:hover {
-        background-color: #0056b3;
-      }
       input[type="text"] {
-        padding: 8px;
         margin: 5px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        width: 80px; /* Adjust width for better layout */
       }
       .controls {
         margin-bottom: 20px;
@@ -47,14 +31,14 @@
       }
       #myPlot {
         border: 1px solid #ddd;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         margin: 0 auto; /* Center the plot */
         max-width: 90%; /* Ensure responsiveness */
+        height: 600px; /* Maintain plot height */
       }
     </style>
   </head>
   <body>
-    <h3 style="font-family:sans-serif;">Log-Log Growing Sinusoids</h3>
+    <h3>Log-Log Growing Sinusoids</h3>
 
     <div class="controls">
       <input type="button" value="Overlay BTC Data" onclick="myAddBitcoinToPlot()"><br>
@@ -77,12 +61,12 @@
       <label>Baseline Scale:</label>
       <input type="text" value="8000" size="6" onchange="myOffset = parseInt(this.value); myGenerateLogLogData();">
       <label>Constant Shift:</label>
-      <input type="text" value="-8000" size="6" onchange="myStart = parseInt(this.value); myGenerateLogLogData();">
+      <input type="text" value="0" size="6" onchange="myStart = parseInt(this.value); myGenerateLogLogData();">
       <label>Baseline Growth Factor:</label>
       <input type="text" value="0.333" size="6" onchange="baselineGrowthFactor = parseFloat(this.value); myGenerateLogLogData();">
     </div>
 
-    <div id="myPlot" style="width:90%;height:600px;"></div>
+    <div id="myPlot"></div>
 
     <script>
       // GLOBAL VARIABLES
@@ -92,7 +76,7 @@
 
       // These variables now control the baseline's initial scale and constant shift
       let myOffset = 8000; // This acts as the initial scaling factor for the exponential baseline
-      let myStart = -8000; // This acts as a constant additive shift to the entire curve
+      let myStart = 0; // This acts as a constant additive shift to the entire curve
       let baselineGrowthFactor = 1/3; // Controls the steepness of the exponential baseline
 
       /**
@@ -204,7 +188,10 @@
           xaxis: {
             title: 'Year',
             type: 'log', // Set the x-axis to logarithmic scale
-            tickvals: [1990, 2000, 2020, 2040, 2070] // Custom x-axis ticks
+            // Expanded tick values for more detail, while still being selective
+            tickvals: [2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033, 2034, 2035],
+            ticktext: ['2017', '2018', '2019', '2020', '2021', '2022', '2023', '2024', '2025', '2026', '2027', '2028', '2029', '2030', '2031', '2032', '2033', '2034', '2035'],
+            tickangle: -45 // Angle the tick labels for better readability
           },
           yaxis: {
             title: 'Simulated Dollars',
