@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Log-Log Sinusoidal Growth Plot</title>
+    <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+    <style>
+      /* Minimal essential styles */
+      body {
+        font-family: sans-serif;
+        margin: 20px;
+      }
+      .controls input[type="button"]:hover {
+        background-color: #2980b9;
+      }
+      .controls input[type="button"]:disabled {
+        background-color: #cccccc;
+        cursor: not-allowed;
+      }
+    </style>
+  </head>
+  <body>
+    <h3 style="text-align: center;">Log-Log Growing Sinusoids</h3>
+
+    <div class="controls" style="text-align: center; margin-bottom: 20px;">
+      <input type="button" id="fitBtn" value="Fit to BTC Data" onclick="fitToBTCData()" style="padding: 8px 15px; cursor: pointer;">
+      <div id="statusMessage" style="margin-top: 10px; font-weight: bold;"></div>
+      <br>
+
+      <label>Frequency:</label>
+      <input type="text" value="0.05" size="6" onchange="myBaseFreqs[0] = parseFloat(this.value); myGenerateLogLogData();">
+      <input type="text" value="0.2" size="6" onchange="myBaseFreqs[1] = parseFloat(this.value); myGenerateLogLogData();">
+      <input type="text" value="0.4" size="6" onchange="myBaseFreqs[2] = parseFloat(this.value); myGenerateLogLogData();"><br>
+
+      <label>Amplitude:</label>
+      <input type="text" value="10" size="6" onchange="myBaseAmps[0] = parseFloat(this.value); myGenerateLogLogData();">
+      <input type="text" value="20" size="6" onchange="myBaseAmps[1] = parseFloat(this.value); myGenerateLogLogData();">
+      <input type="text" value="50" size="6" onchange="myBaseAmps[2] = parseFloat(this.value); myGenerateLogLogData();"><br>
+
+      <label>Phase:</label>
+      <input type="text" value="1.0" size="6" onchange="myPhases[0] = parseFloat(this.value); myGenerateLogLogData();">
+      <input type="text" value="4.0" size="6" onchange="myPhases[1] = parseFloat(this.value); myGenerateLogLogData();">
+      <input type="text" value="2.5" size="6" onchange="myPhases[2] = parseFloat(this.value); myGenerateLogLogData();"><br>
+
+      <label>Baseline Scale:</label>
+      <input type="text" value="20" size="6" onchange="myOffset = parseFloat(this.value); myGenerateLogLogData();">
+      <label>Constant Shift:</label>
+      <input type="text" value="100" size="6" onchange="myStart = parseFloat(this.value); myGenerateLogLogData();">
+      <label>Baseline Growth Factor:</label>
+      <input type="text" value="4.5" size="6" onchange="baselineGrowthFactor = parseFloat(this.value); myGenerateLogLogData();">
+    </div>
+
+    <div id="myPlot" style="width:90%; height:600px; margin: 0 auto;"></div>
+
+    <script>
+      // GLOBAL VARIABLES for sinusoidal model parameters
+      let myBaseFreqs = [0.05, 0.2, 0.4];
+      let myBaseAmps = [10, 20, 50];
+      let myPhases    = [1.0, 4.0, 2.5];
+
+      let myOffset = 20; // Initial scaling for the exponential baseline
+      let myStart = 100; // Constant shift applied to all waves
+      let baselineGrowthFactor = 4.5; // Exponent for the baseline's exponential growth
+
+      // Global variable to store the BTC trace after it's fetched
+      let btcTraceGlobal = null;
+      let btcLogPricesGlobal = []; // Stores log prices for the fitting algorithm
+      let btcDatesGlobal = []; // Stores dates for the fitting algorithm
+
+      /**
+       * Helper function to generate combined data for a given set of parameters.
+       * This is used by the fitting algorithm to test different parameter combinations
+       * without affecting the global state during the optimization process.
+       * @param {object} params - An object containing all model parameters.
+       * @returns {Array<number>} An array of combined Y-values for the simulated data.
+       */
+      function generateCombinedData(params) {
+          let combinedData = [];
+          // Loop through years from 2017 to 2035 with a step of 0.1 for 10x more data points
+          for (let year = 2017; year <= 2035; year += 0.1) {
+              let logYear = Math.log10(year - 1969);
+              // Calculate the exponential baseline for the current year
+              let baseline = params.myOffset * Math.exp(logYear * params.baselineGrowthFactor);
+              let sum = 0; // Accumulator for the sum of individual waves
+
+              for (let i = 0; i < 3; i++) {
+                  // Determine frequency growth factor for each wave
+                  let freqGrowthFactor;
+                  if (i === 0) freqGrowthFactor = 0.7;
+                  else if (i === 1) freqGrowthFactor = 1.5;
+                  else freqGrowthFactor = 2.5;
+                  // Calculate the current frequency of the wave
+                  let myFreq = params.myBaseFreqs[i] * Math.exp(logYear * freqGrowthFactor);
+
+                  // Determine amplitude growth factor for each wave
+                  let ampGrowthFactor;
+                  if (i === 0) ampGrowthFactor = 3.5;
+                  else if (i === 1) ampGrowthFactor = 3.0;
+                  else ampGrowthFactor = 2.5;
+                  // Calculate the current amplitude of the wave
+                  let myAmp = params.myBaseAmps[i] * Math.exp(logYear * ampGrowthFactor);
+
+                  // Generate the sine wave value
+                  let myY = myAmp * Math.sin(2 * Math.PI * myFreq * logYear + params.myPhases[i]);
+
+                  // Add the sine wave value, the exponential baseline, and the constant shift.
+                  // Ensure adjustedY is positive before adding to sum to avoid issues with Math.log later.
+                  let adjustedY = myY + baseline + params.myStart;
+                  // Prevent negative values which would break log scale
+                  if (adjustedY <= 0) adjustedY = 0.001; // Small positive number to avoid log(0) or log(negative)
+                  sum += adjustedY; // Add to the combined sum
+              }
+              combinedData.push(sum); // Store the combined sum for the current year
+          }
+          return combinedData;
+      }
+
+      /**
+       * Calculates the Mean Squared Error (MSE) between simulated and actual BTC log prices.
+       * This function quantifies how well the simulated curve fits the real data.
+       * It compares the logarithm of the simulated values to the logarithm of the BTC values.
+       * @param {Array<number>} simulatedData - The Y-values of the simulated combined curve.
+       * @param {Array<number>} actualLogPrices - The logarithm of the actual BTC prices.
+       * @returns {number} The Mean Squared Error. Returns Infinity if no valid data points for comparison.
+       */
+      function calculateModelError(simulatedData, actualLogPrices) {
+          let error = 0;
+          let count = 0;
+
+          // Align data by index. Assumes simulatedData and actualLogPrices cover similar time ranges.
+          // We iterate over the shorter of the two arrays to prevent out-of-bounds access.
+          const minLen = Math.min(simulatedData.length, actualLogPrices.length);
+
+          for (let i = 0; i < minLen; i++) {
+              // Ensure simulated value is positive before taking logarithm
+              if (simulatedData[i] > 0) {
+                  const logSimulated = Math.log(simulatedData[i]);
+                  // Ensure actualLogPrices[i] is a valid finite number
+                  if (isFinite(actualLogPrices[i])) {
+                      error += Math.pow(logSimulated - actualLogPrices[i], 2);
+                      count++;
+                  }
+              }
+          }
+          // Return the average squared error, or Infinity if no valid comparisons were made
+          return count > 0 ? error / count : Infinity;
+      }
+
+
+      /**
+       * Asynchronously fetches Bitcoin (BTCUSDT) weekly closing prices from Binance API.
+       * It then creates a Plotly trace for this data, stores it globally, and
+       * triggers a full redraw of the graph including the BTC data.
+       */
+      async function myAddBitcoinToPlot() {
+          const url = 'https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1w&limit=1000';
+          try {
+              document.getElementById('statusMessage').innerText = 'Fetching BTC data...';
+              const response = await fetch(url);
+              const data = await response.json();
+
+              // Process BTC dates and prices
+              btcDatesGlobal = data.map(candle => {
+                  const d = new Date(candle[0]);
+                  return d.getFullYear() + (d.getMonth() / 12); // Convert timestamp to fractional year
+              });
+
+              const btcPrices = data.map(candle => parseFloat(candle[4])); // Extract closing prices
+              btcLogPricesGlobal = btcPrices.map(p => Math.log(p)); // Store log prices for fitting
+
+              // Create the BTC trace object
+              btcTraceGlobal = {
+                  x: btcDatesGlobal,
+                  y: btcPrices,
+                  mode: 'lines',
+                  line: { color: 'orange', width: 3 },
+                  name: 'BTC Price (USD)'
+              };
+
+              // Redraw the entire graph, now including the BTC trace
+              myGenerateLogLogData();
+              document.getElementById('statusMessage').innerText = '✅ Bitcoin data added to plot.';
+              console.log('✅ Bitcoin data added to plot.');
+          } catch (err) {
+              btcTraceGlobal = null; // Clear the trace if fetching fails
+              document.getElementById('statusMessage').innerText = '❌ Failed to load BTC data.';
+              console.error('❌ Failed to load BTC data:', err);
+          }
+      }
+
+      /**
+       * Attempts to fit the simulated graph to the overlaid BTC data using a simple
+       * iterative optimization (random walk / hill climbing).
+       * This is a simplified approach and may not find the global optimum.
+       */
+      async function fitToBTCData() {
+          // Ensure BTC data is available before attempting to fit
+          if (btcLogPricesGlobal.length === 0) {
+              document.getElementById('statusMessage').innerText = 'Please overlay BTC data first!';
+              await myAddBitcoinToPlot(); // Attempt to fetch if not already present
+              if (btcLogPricesGlobal.length === 0) {
+                  document.getElementById('statusMessage').innerText = 'Failed to get BTC data for fitting.';
+                  return; // Exit if BTC data still not available
+              }
+          }
+
+          document.getElementById('statusMessage').innerText = 'Fitting model to BTC data... This may take a moment.';
+          document.getElementById('fitBtn').disabled = true; // Disable button during fitting
+
+          // Make a deep copy of current global parameters to start optimization from
+          let currentBestParams = {
+              myBaseFreqs: [...myBaseFreqs],
+              myBaseAmps: [...myBaseAmps],
+              myPhases: [...myPhases],
+              myOffset: myOffset,
+              myStart: myStart,
+              baselineGrowthFactor: baselineGrowthFactor
+          };
+
+          // Calculate initial error with current parameters
+          let minError = calculateModelError(generateCombinedData(currentBestParams), btcLogPricesGlobal);
+
+          const numIterations = 50000; // Increased iterations for potentially better fit
+          const learningRate = 0.005; // Reduced learning rate for finer adjustments
+
+          console.log('Starting fitting process...');
+
+          for (let iter = 0; iter < numIterations; iter++) {
+              let testParams = JSON.parse(JSON.stringify(currentBestParams)); // Deep copy for perturbation
+
+              // Define parameters to perturb and their scaling factors
+              const paramChoices = [
+                  { type: 'freq', index: 0, scale: 0.005 }, { type: 'freq', index: 1, scale: 0.005 }, { type: 'freq', index: 2, scale: 0.005 },
+                  { type: 'amp', index: 0, scale: 5 }, { type: 'amp', index: 1, scale: 5 }, { type: 'amp', index: 2, scale: 5 },
+                  { type: 'phase', index: 0, scale: 0.05 * Math.PI }, { type: 'phase', index: 1, scale: 0.05 * Math.PI }, { type: 'phase', index: 2, scale: 0.05 * Math.PI },
+                  { type: 'offset', scale: 10 }, // Reduced scale
+                  { type: 'start', scale: 5 },    // Reduced scale
+                  { type: 'baselineGrowth', scale: 0.01 }
+              ];
+              const chosenParam = paramChoices[Math.floor(Math.random() * paramChoices.length)];
+              const perturbation = (Math.random() * 2 - 1) * chosenParam.scale * learningRate; // Random perturbation
+
+              // Apply perturbation to the chosen parameter
+              switch (chosenParam.type) {
+                  case 'freq':
+                      testParams.myBaseFreqs[chosenParam.index] += perturbation;
+                      // Ensure frequency remains positive
+                      if (testParams.myBaseFreqs[chosenParam.index] < 0.0001) testParams.myBaseFreqs[chosenParam.index] = 0.0001;
+                      break;
+                  case 'amp':
+                      testParams.myBaseAmps[chosenParam.index] += perturbation;
+                      // Ensure amplitude remains positive
+                      if (testParams.myBaseAmps[chosenParam.index] < 0.1) testParams.myBaseAmps[chosenParam.index] = 0.1;
+                      break;
+                  case 'phase':
+                      testParams.myPhases[chosenParam.index] += perturbation;
+                      break;
+                  case 'offset':
+                      testParams.myOffset += perturbation;
+                      // Ensure offset remains positive
+                      if (testParams.myOffset < 1) testParams.myOffset = 1;
+                      break;
+                  case 'start':
+                      testParams.myStart += perturbation;
+                      break;
+                  case 'baselineGrowth':
+                      testParams.baselineGrowthFactor += perturbation;
+                      // Ensure growth factor remains positive
+                      if (testParams.baselineGrowthFactor < 0.1) testParams.baselineGrowthFactor = 0.1;
+                      break;
+              }
+
+              // Calculate error with the new parameters
+              const newSimulatedData = generateCombinedData(testParams);
+              const currentError = calculateModelError(newSimulatedData, btcLogPricesGlobal);
+
+              // If new parameters yield a better fit, update best parameters
+              if (currentError < minError) {
+                  minError = currentError;
+                  currentBestParams = testParams;
+                  // Log progress to console
+                  if (iter % 1000 === 0) { // Log every 1000 iterations
+                      console.log(`Iteration ${iter}: New best error = ${minError.toFixed(6)}`);
+                  }
+              }
+              // Allow UI to update during long computations
+              if (iter % 500 === 0) { // Update status message more frequently
+                  document.getElementById('statusMessage').innerText = `Fitting... Iteration ${iter}/${numIterations}. Current best error: ${minError.toFixed(6)}`;
+                  await new Promise(resolve => setTimeout(resolve, 0)); // Yield control to browser
+              }
+          }
+
+          // Apply the best found parameters globally
+          myBaseFreqs = currentBestParams.myBaseFreqs;
+          myBaseAmps = currentBestParams.myBaseAmps;
+          myPhases = currentBestParams.myPhases;
+          myOffset = currentBestParams.myOffset;
+          myStart = currentBestParams.myStart;
+          baselineGrowthFactor = currentBestParams.baselineGrowthFactor;
+
+          // Update the input fields with the new optimized values
+          document.querySelectorAll('.controls input[type="text"]').forEach((input, index) => {
+              if (index >= 0 && index <= 2) { // Frequencies
+                  input.value = myBaseFreqs[index].toFixed(3);
+              } else if (index >= 3 && index <= 5) { // Amplitudes
+                  input.value = myBaseAmps[index - 3].toFixed(3);
+              } else if (index >= 6 && index <= 8) { // Phases
+                  input.value = myPhases[index - 6].toFixed(3);
+              } else if (index === 9) { // Baseline Scale
+                  input.value = myOffset.toFixed(3);
+              } else if (index === 10) { // Constant Shift
+                  input.value = myStart.toFixed(3);
+              } else if (index === 11) { // Baseline Growth Factor
+                  input.value = baselineGrowthFactor.toFixed(3);
+              }
+          });
+
+
+          document.getElementById('statusMessage').innerText = `Fitting complete. Best error: ${minError.toFixed(6)}`;
+          document.getElementById('fitBtn').disabled = false; // Re-enable button
+          console.log(`Fitting complete. Best error: ${minError.toFixed(6)}`);
+          console.log('New optimized parameters:', currentBestParams);
+          myGenerateLogLogData(); // Redraw graph with new optimized parameters
+      }
+
+
+      /**
+       * Generates and plots sinusoidal growth data on a log-log scale.
+       * The function calculates three individual waves and a combined sum,
+       * applying exponential growth to both amplitude and frequency,
+       * and an exponential baseline with a constant offset.
+       * This function now also includes the global BTC trace if it exists.
+       */
+      function myGenerateLogLogData() {
+        let myYears = []; // Array to hold the years for the x-axis
+        let myCombined = []; // Array to hold the combined sum of all waves
+        let myWaves = [[], [], []]; // Arrays for the individual waves
+
+        // Loop through years from 2017 to 2035 with a step of 0.1 for 10x more data points
+        for (let year = 2017; year <= 2035; year += 0.1) {
+          // Calculate log of (year - 1969) for the x-axis transformation.
+          // Subtracting 1969 makes the starting point (1970) correspond to log10(1) = 0.
+          let logYear = Math.log10(year - 1969);
+          myYears.push(year); // Add the year to the x-axis array
+          let mySum = 0; // To accumulate the sum of the waves for the combined wave
+
+          // --- MATHEMATICALLY SENSIBLE BASELINE CALCULATION ---
+          // The baseline represents the underlying exponential growth trend.
+          // myOffset acts as the initial scaling factor for this exponential growth.
+          // baselineGrowthFactor determines how steeply this baseline grows.
+          let baseline = myOffset * Math.exp(logYear * baselineGrowthFactor);
+
+          // Loop through each of the three waves
+          for (let i = 0; i < 3; i++) {
+            // Frequency increases exponentially with logYear
+            // The coefficient determines how fast the frequency compresses.
+            let freqGrowthFactor;
+            if (i === 0) freqGrowthFactor = 0.7; // Slower for longer cycles
+            else if (i === 1) freqGrowthFactor = 1.5; // Medium for medium cycles
+            else freqGrowthFactor = 2.5; // Faster for shorter cycles
+            let myFreq = myBaseFreqs[i] * Math.exp(logYear * freqGrowthFactor);
+
+            // Amplitude increases exponentially with logYear
+            // The coefficient determines how fast the amplitude grows.
+            let ampGrowthFactor;
+            if (i === 0) ampGrowthFactor = 3.5; // Reduced from 6.0 for better initial fit
+            else if (i === 1) ampGrowthFactor = 3.0; // Reduced from 5.2
+            else ampGrowthFactor = 2.5; // Reduced from 4.5
+            let myAmp  = myBaseAmps[i] * Math.exp(logYear * ampGrowthFactor);
+
+            // Generate sine wave value
+            let myY = myAmp * Math.sin(2 * Math.PI * myFreq * logYear + myPhases[i]);
+
+            // Add the sine wave value, the exponential baseline, and the constant shift.
+            let adjustedY = myY + baseline + myStart;
+            // Ensure adjustedY is positive to avoid issues with log scale
+            if (adjustedY <= 0) adjustedY = 0.001; // Small positive number
+            myWaves[i].push(adjustedY);
+            mySum += adjustedY;
+          }
+
+          // Store the combined wave (sum of all waves with baseline and constant shift)
+          myCombined.push(mySum);
+        }
+
+        // Plot individual sine wave components
+        let myTraces = myWaves.map((wave, i) => ({
+          x: myYears,
+          y: wave,
+          mode: 'lines',
+          line: { color: 'green', width: 1 },
+          name: 'Wave ' + (i + 1)
+        }));
+
+        // Add the combined wave (sum of all individual waves)
+        myTraces.push({
+          x: myYears,
+          y: myCombined,
+          mode: 'lines',
+          line: { color: 'blue', width: 3 },
+          name: 'Combined'
+        });
+
+        // Add the BTC trace if it has been fetched and stored globally
+        if (btcTraceGlobal) {
+            myTraces.push(btcTraceGlobal);
+        }
+
+        // Layout for the graph (adjust for axis range, labels, etc.)
+        let myLayout = {
+          title: 'Exponential Sine Growth on Log-Log Plot',
+          xaxis: {
+            title: 'Year',
+            type: 'log', // Set the x-axis to logarithmic scale
+            // Removed tickvals and ticktext to allow Plotly to auto-generate log-appropriate ticks
+            tickangle: -45 // Keep the angle for readability if Plotly generates many ticks
+          },
+          yaxis: {
+            title: 'Simulated Dollars',
+            type: 'log', // Set the y-axis to logarithmic scale
+            range: [2, 7] // Adjust range to zoom in (log10 scale)
+          },
+          margin: { t: 40 }
+        };
+
+        // Create the plot using Plotly with the traces and layout
+        Plotly.newPlot('myPlot', myTraces, myLayout);
+      }
+
+      // Call the function to generate and display the graph on page load
+      // Also call myAddBitcoinToPlot() on page load to automatically display BTC data
+      myGenerateLogLogData();
+      myAddBitcoinToPlot();
+    </script>
+  </body>
+</html>
