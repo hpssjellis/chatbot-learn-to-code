@@ -9,7 +9,14 @@
   </head>
   <body>
     <h3 style="font-family:sans-serif;">Log-Log Growing Sinusoids</h3>
-    <input type="button" value="Overlay BTC Data" onclick="myAddBitcoinToPlot()">
+    <input type="button" value="Overlay BTC Data" onclick="myAddBitcoinToPlot()"><br>
+    <input id="myInFreq1" type=text value="0.005" onchange="{alert(); myBaseFreqs[0] = this.value}">
+
+<!--
+        let myBaseFreqs = [0.005, 0.6, 0.9]; 
+        let myBaseAmps = [500, 1000, 2000]; 
+        let myPhases    = [2.0717, 0.7076, 1.6908];
+    -->
 
     <div id="myPlot" style="width:90%;height:600px;"></div>
 
