@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Log-Log Sinusoidal Growth Plot</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  </head>
+  <body>
+    <h3 style="font-family:sans-serif;">Log-Log Growing Sinusoids</h3>
+    <input type="button" value="Overlay BTC Data" onclick="myAddBitcoinToPlot()">
+
+    <div id="myPlot" style="width:90%;height:600px;"></div>
+
+    <script>
+
+
+    async function myAddBitcoinToPlot() {
+        const url = 'https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1w&limit=1000';
+        try {
+            const response = await fetch(url);
+            const data = await response.json();
+
+            const btcDates = data.map(candle => {
+                const d = new Date(candle[0]);
+                return d.getFullYear() + (d.getMonth() / 12);
+             });
+
+            const btcPrices = data.map(candle => parseFloat(candle[4])); // closing price
+            const btcLogPrices = btcPrices.map(p => Math.log(p));
+
+            const trace1 = {
+                x: btcDates,
+                y: btcPrices,
+                mode: 'lines',
+                line: { color: 'orange', width: 3 }, // Combined wave in blue
+                name: 'BTC Price (USD)'
+            };
+
+
+            // Add new traces to existing Plotly graph
+            Plotly.addTraces('myPlot', [trace1]);
+
+            console.log('✅ Bitcoin data added to plot.');
+        } catch (err) {
+            console.error('❌ Failed to load BTC data:', err);
+        }
+    }
+
+
+    
+      function myGenerateLogLogData() {
+        let myYears = [];         // Array to hold the years for the x-axis
+        let myCombined = [];      // Array to hold the combined sum of all waves
+        let myWaves = [[], [], []]; // Arrays for the individual waves
+
+        /*
+        // Sine wave parameters
+        let myBaseFreqs = [0.005, 0.6, 0.9]; // Frequencies of the waves, change for more/less oscillation
+        let myBaseAmps = [500, 1000, 2000]; // Amplitudes of the waves, change for bigger/smaller waves
+        let myPhases   = [0, Math.PI / 4, Math.PI / 2]; // Phases of the waves, change to shift them
+
+        
+        let myBaseFreqs = [0.3865, 0.2577, 0.1288];
+        let myBaseAmps  = [0.3895, 0.6641, 0.9296];
+        let myPhases    = [2.0717, 0.7076, 1.6908];
+
+*/
+
+
+        /*
+        let myBaseFreqs = [0.005, 0.6, 0.9]; 
+        let myBaseAmps = [500, 1000, 2000]; 
+        let myPhases    = [2.0717, 0.7076, 1.6908];
+
+        // Initial dynamic offset, this ensures all waves stay positive
+        let myOffset = 8000;    // 10000;
+        let myStart = -8000;    // 10000;
+
+        // Loop through years from 1970 to 2070
+     //   for (let year = 1990; year <= 2070; year++) {
+        for (let year = 2017; year <= 2035; year++) {
+          let logYear = Math.log10(year - 1969); // Start at log10(1) = 0
+          myYears.push(year);  // Add the year to the x-axis array
+          let mySum = 0;       // To accumulate the sum of the waves for the combined wave
+
+          // Apply a dynamic offset that increases exponentially with log(Year)
+          let dynamicOffset = Math.exp(logYear / 3) * myOffset; // Offset increases faster over time
+
+          // Loop through each of the waves
+      //    for (let i = 0; i < 3; i++) {
+            let myFreq = myBaseFreqs[0] * Math.exp(logYear); // Frequency increases as the years go on
+            let myAmp  = myBaseAmps[0] * Math.exp(logYear * 4.0);  // Amplitude also increases with time   // myBaseAmps[i] * Math.exp(logYear * 1.2);
+            let myY = myAmp * Math.sin(2 * Math.PI * myFreq * logYear + myPhases[0])  ; // Generate sine wave
+
+            myWaves[0].push(myY + dynamicOffset + myStart); // Apply offset and store the wave
+            mySum += myY + dynamicOffset + myStart ; // Add wave to the combined sum
+
+
+
+            myFreq = myBaseFreqs[1] * Math.exp(logYear); // Frequency increases as the years go on
+            myAmp  = myBaseAmps[1] * Math.exp(logYear * 1.9);  // Amplitude also increases with time   // myBaseAmps[i] * Math.exp(logYear * 1.2);
+            myY = myAmp * Math.sin(2 * Math.PI * myFreq * logYear + myPhases[1])  ; // Generate sine wave
+
+            myWaves[1].push(myY + dynamicOffset + myStart); // Apply offset and store the wave
+            mySum += myY + dynamicOffset + myStart ; // Add wave to the combined sum
+
+
+
+
+            myFreq = myBaseFreqs[2] * Math.exp(logYear); // Frequency increases as the years go on
+            myAmp  = myBaseAmps[2] * Math.exp(logYear * 1.9);  // Amplitude also increases with time   // myBaseAmps[i] * Math.exp(logYear * 1.2);
+            myY = myAmp * Math.sin(2 * Math.PI * myFreq * logYear + myPhases[2])  ; // Generate sine wave
+
+            myWaves[2].push(myY + dynamicOffset + myStart); // Apply offset and store the wave
+            mySum += myY + dynamicOffset + myStart ; // Add wave to the combined sum
+
+
+
+
+
+
+            
+         // }
+
+          // Store the combined wave (sum of all waves with offset)
+          myCombined.push(mySum);
+        }
+
+
+
+
+
+        */
+
+// --- NEW SUGGESTED PARAMETERS FOR BETTER BTC MATCH ---
+
+// These are the initial values. The real scaling happens inside the loop.
+let myBaseFreqs = [0.05, 0.2, 0.4]; // Adjusted for slightly different initial cycle lengths
+let myBaseAmps = [10, 20, 50];     // Reduced initial amplitudes, as exponential growth will be very strong
+let myPhases    = [1.0, 4.0, 2.5]; // Adjusted phases to try and align major peaks/troughs
+
+// Crucial: Adjusting the overall baseline and starting point
+let myOffset = 500; // Further reduced, as the baseGrowth will take over
+let myStart = 0;    // Keep at 0 or slightly positive
+
+// Inside the `myGenerateLogLogData()` function's loop:
+// This is where the most significant adjustments happen for matching BTC's exponential nature.
+for (let year = 2017; year <= 2035; year++) {
+    let logYear = Math.log10(year - 1969);
+
+    // This `baseGrowth` term is vital. It defines the underlying exponential trend
+    // that the sinusoidal waves "ride" on. Tune the '4.0' coefficient for the overall steepness.
+    let baseGrowth = 5 * Math.exp(logYear * 4.0); // More aggressive baseline growth
+
+    // Wave 0: Long-term cycle (e.g., multi-year halving cycle influence)
+    // Frequency grows slowly, amplitude grows very aggressively.
+    let myFreq0 = myBaseFreqs[0] * Math.exp(logYear * 0.7); // Slower frequency increase for a long, stretched cycle
+    let myAmp0  = myBaseAmps[0] * Math.exp(logYear * 6.0); // Extremely aggressive amplitude growth for the main pump
+    let myY0 = myAmp0 * Math.sin(2 * Math.PI * myFreq0 * logYear + myPhases[0]);
+    myWaves[0].push(myY0 + baseGrowth);
+    mySum += myY0 + baseGrowth;
+
+    // Wave 1: Medium-term cycle (e.g., intra-bull/bear market movements)
+    // Frequency grows moderately, amplitude grows aggressively.
+    let myFreq1 = myBaseFreqs[1] * Math.exp(logYear * 1.5); // Moderate frequency increase
+    let myAmp1  = myBaseAmps[1] * Math.exp(logYear * 5.2); // Aggressive amplitude growth, slightly less than Wave 0
+    let myY1 = myAmp1 * Math.sin(2 * Math.PI * myFreq1 * logYear + myPhases[1]);
+    myWaves[1].push(myY1 + baseGrowth);
+    mySum += myY1 + baseGrowth;
+
+    // Wave 2: Shorter-term volatility or minor cycles
+    // Frequency grows faster, amplitude grows less aggressively than the main waves.
+    let myFreq2 = myBaseFreqs[2] * Math.exp(logYear * 2.5); // Faster frequency increase for more oscillations
+    let myAmp2  = myBaseAmps[2] * Math.exp(logYear * 4.5); // Still significant amplitude growth, but less dominant
+    let myY2 = myAmp2 * Math.sin(2 * Math.PI * myFreq2 * logYear + myPhases[2]);
+    myWaves[2].push(myY2 + baseGrowth);
+    mySum += myY2 + baseGrowth;
+
+    myCombined.push(mySum);
+}
+
+
+
+
+        
+
+        // Plot individual sine wave components
+        let myTraces = myWaves.map((wave, i) => ({
+          x: myYears, // Years for the x-axis
+          y: wave,    // The y-values of the sine wave
+          mode: 'lines',  // Display as a line graph
+          line: { color: 'green', width: 1 }, // Line style for individual waves
+          name: 'Wave ' + (i + 1)  // Name of the wave (Wave 1, Wave 2, etc.)
+        }));
+
+        // Add the combined wave (sum of all individual waves)
+        myTraces.push({
+          x: myYears,
+          y: myCombined,
+          mode: 'lines',
+          line: { color: 'blue', width: 3 }, // Combined wave in blue
+          name: 'Combined'
+        });
+
+        // Layout for the graph (adjust for axis range, labels, etc.)
+        let myLayout = {
+          title: 'Exponential Sine Growth on Log-Log Plot',  // Title of the plot
+          xaxis: {
+            title: 'Year', // Label for the x-axis
+            type: 'log',  // Set the x-axis to logarithmic scale
+            tickvals: [1990, 2000, 2020, 2040, 2070] // Custom x-axis ticks (can adjust this list)
+          },
+          yaxis: {
+            title: 'Simulated Dollars',  // Label for the y-axis
+            type: 'log',  // Set the y-axis to logarithmic scale
+            range: [2, 7] // Adjust range to zoom in (log10 scale) -- [4,7] corresponds to range from 10,000 to 1,000,000
+          },
+          margin: { t: 40 }  // Adjust the top margin (optional)
+        };
+
+        // Create the plot using Plotly with the traces and layout
+        Plotly.newPlot('myPlot', myTraces, myLayout);
+      }
+
+      // Call the function to generate and display the graph
+      myGenerateLogLogData();
+    </script>
+  </body>
+</html>
