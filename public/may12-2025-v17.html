@@ -14,6 +14,20 @@
     <input type=text value="0.6"   size=6 onchange="{myBaseFreqs[1] = this.value; myGenerateLogLogData();}">
     <input type=text value="0.9"   size=6 onchange="{myBaseFreqs[2] = this.value; myGenerateLogLogData();}"><br>
 
+    
+    <input type=text value="500"    size=6 onchange="{myBaseAmps[0] = this.value; myGenerateLogLogData();}">
+    <input type=text value="1000"   size=6 onchange="{myBaseAmps[1] = this.value; myGenerateLogLogData();}">
+    <input type=text value="2000"   size=6 onchange="{myBaseAmps[2] = this.value; myGenerateLogLogData();}"><br>
+
+    
+    <input type=text value="2.0717"   size=6 onchange="{myPhases[0] = this.value; myGenerateLogLogData();}">
+    <input type=text value="0.7076"   size=6 onchange="{myPhases[1] = this.value; myGenerateLogLogData();}">
+    <input type=text value="1.6908"   size=6 onchange="{myPhases[2] = this.value; myGenerateLogLogData();}"><br>
+
+    
+    <input type=text value="8000"   size=6 onchange="{myOffset = this.value; myGenerateLogLogData();}">
+    <input type=text value="-8000"  size=6 onchange="{myStart = this.value; myGenerateLogLogData();}"><br>
+
 <!--
         let myBaseFreqs = [0.005, 0.6, 0.9]; 
         let myBaseAmps = [500, 1000, 2000]; 
