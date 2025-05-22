@@ -4,12 +4,10 @@
     <title>Log-Log Sinusoidal Growth Plot</title>
     <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
     <style>
-      /* Essential styles for basic layout and responsiveness */
+      /* Minimal essential styles */
       body {
         font-family: sans-serif;
         margin: 20px;
-        background-color: #f4f7f6;
-        color: #333;
       }
       .controls input[type="button"]:hover {
         background-color: #2980b9;
@@ -18,73 +16,40 @@
         background-color: #cccccc;
         cursor: not-allowed;
       }
-      @media (max-width: 768px) {
-        .controls {
-          flex-direction: column;
-          align-items: center;
-        }
-        .controls label {
-          width: auto;
-          text-align: left;
-          margin-right: 0;
-          margin-bottom: 5px;
-        }
-        .param-group {
-          flex-direction: column;
-          align-items: flex-start;
-          width: 100%;
-        }
-        .param-group input[type="text"] {
-          width: 100%;
-          margin-bottom: 10px;
-        }
-      }
     </style>
   </head>
   <body>
-    <h3 style="text-align: center; margin-bottom: 20px; color: #2c3e50;">Log-Log Growing Sinusoids</h3>
+    <h3 style="text-align: center;">Log-Log Growing Sinusoids</h3>
 
-    <div class="controls" style="margin-bottom: 20px; text-align: center; background-color: #ffffff; padding: 15px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;">
-      <input type="button" id="fitBtn" value="Fit to BTC Data" onclick="fitToBTCData()" style="background-color: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; transition: background-color 0.3s ease;">
-      <div id="statusMessage" style="margin-top: 10px; font-weight: bold; color: #27ae60; text-align: center; width: 100%;"></div>
+    <div class="controls" style="text-align: center; margin-bottom: 20px;">
+      <input type="button" id="fitBtn" value="Fit to BTC Data" onclick="fitToBTCData()" style="padding: 8px 15px; cursor: pointer;">
+      <div id="statusMessage" style="margin-top: 10px; font-weight: bold;"></div>
       <br>
 
-      <div class="param-group" style="display: flex; align-items: center; margin-bottom: 5px;">
-        <label style="display: inline-block; width: 120px; text-align: right; margin-right: 5px; font-weight: bold; color: #34495e;">Frequency:</label>
-        <input type="text" value="0.05" size="6" onchange="myBaseFreqs[0] = parseFloat(this.value); myGenerateLogLogData();" style="border: 1px solid #ccc; padding: 8px; border-radius: 5px; width: 80px; text-align: center;">
-        <input type="text" value="0.2" size="6" onchange="myBaseFreqs[1] = parseFloat(this.value); myGenerateLogLogData();" style="border: 1px solid #ccc; padding: 8px; border-radius: 5px; width: 80px; text-align: center;">
-        <input type="text" value="0.4" size="6" onchange="myBaseFreqs[2] = parseFloat(this.value); myGenerateLogLogData();" style="border: 1px solid #ccc; padding: 8px; border-radius: 5px; width: 80px; text-align: center;">
-      </div><br>
-      
-      <div class="param-group" style="display: flex; align-items: center; margin-bottom: 5px;">
-        <label style="display: inline-block; width: 120px; text-align: right; margin-right: 5px; font-weight: bold; color: #34495e;">Amplitude:</label>
-        <input type="text" value="10" size="6" onchange="myBaseAmps[0] = parseFloat(this.value); myGenerateLogLogData();" style="border: 1px solid #ccc; padding: 8px; border-radius: 5px; width: 80px; text-align: center;">
-        <input type="text" value="20" size="6" onchange="myBaseAmps[1] = parseFloat(this.value); myGenerateLogLogData();" style="border: 1px solid #ccc; padding: 8px; border-radius: 5px; width: 80px; text-align: center;">
-        <input type="text" value="50" size="6" onchange="myBaseAmps[2] = parseFloat(this.value); myGenerateLogLogData();" style="border: 1px solid #ccc; padding: 8px; border-radius: 5px; width: 80px; text-align: center;">
-      </div><br>
+      <label>Frequency:</label>
+      <input type="text" value="0.05" size="6" onchange="myBaseFreqs[0] = parseFloat(this.value); myGenerateLogLogData();">
+      <input type="text" value="0.2" size="6" onchange="myBaseFreqs[1] = parseFloat(this.value); myGenerateLogLogData();">
+      <input type="text" value="0.4" size="6" onchange="myBaseFreqs[2] = parseFloat(this.value); myGenerateLogLogData();"><br>
 
-      <div class="param-group" style="display: flex; align-items: center; margin-bottom: 5px;">
-        <label style="display: inline-block; width: 120px; text-align: right; margin-right: 5px; font-weight: bold; color: #34495e;">Phase:</label>
-        <input type="text" value="1.0" size="6" onchange="myPhases[0] = parseFloat(this.value); myGenerateLogLogData();" style="border: 1px solid #ccc; padding: 8px; border-radius: 5px; width: 80px; text-align: center;">
-        <input type="text" value="4.0" size="6" onchange="myPhases[1] = parseFloat(this.value); myGenerateLogLogData();" style="border: 1px solid #ccc; padding: 8px; border-radius: 5px; width: 80px; text-align: center;">
-        <input type="text" value="2.5" size="6" onchange="myPhases[2] = parseFloat(this.value); myGenerateLogLogData();" style="border: 1px solid #ccc; padding: 8px; border-radius: 5px; width: 80px; text-align: center;">
-      </div><br><br>
+      <label>Amplitude:</label>
+      <input type="text" value="10" size="6" onchange="myBaseAmps[0] = parseFloat(this.value); myGenerateLogLogData();">
+      <input type="text" value="20" size="6" onchange="myBaseAmps[1] = parseFloat(this.value); myGenerateLogLogData();">
+      <input type="text" value="50" size="6" onchange="myBaseAmps[2] = parseFloat(this.value); myGenerateLogLogData();"><br>
 
-      <div class="param-group" style="display: flex; align-items: center; margin-bottom: 5px;">
-        <label style="display: inline-block; width: 120px; text-align: right; margin-right: 5px; font-weight: bold; color: #34495e;">Baseline Scale:</label>
-        <input type="text" value="20" size="6" onchange="myOffset = parseFloat(this.value); myGenerateLogLogData();" style="border: 1px solid #ccc; padding: 8px; border-radius: 5px; width: 80px; text-align: center;">
-      </div>
-      <div class="param-group" style="display: flex; align-items: center; margin-bottom: 5px;">
-        <label style="display: inline-block; width: 120px; text-align: right; margin-right: 5px; font-weight: bold; color: #34495e;">Constant Shift:</label>
-        <input type="text" value="100" size="6" onchange="myStart = parseFloat(this.value); myGenerateLogLogData();" style="border: 1px solid #ccc; padding: 8px; border-radius: 5px; width: 80px; text-align: center;">
-      </div>
-      <div class="param-group" style="display: flex; align-items: center; margin-bottom: 5px;">
-        <label style="display: inline-block; width: 120px; text-align: right; margin-right: 5px; font-weight: bold; color: #34495e;">Baseline Growth Factor:</label>
-        <input type="text" value="4.5" size="6" onchange="baselineGrowthFactor = parseFloat(this.value); myGenerateLogLogData();" style="border: 1px solid #ccc; padding: 8px; border-radius: 5px; width: 80px; text-align: center;">
-      </div>
+      <label>Phase:</label>
+      <input type="text" value="1.0" size="6" onchange="myPhases[0] = parseFloat(this.value); myGenerateLogLogData();">
+      <input type="text" value="4.0" size="6" onchange="myPhases[1] = parseFloat(this.value); myGenerateLogLogData();">
+      <input type="text" value="2.5" size="6" onchange="myPhases[2] = parseFloat(this.value); myGenerateLogLogData();"><br>
+
+      <label>Baseline Scale:</label>
+      <input type="text" value="20" size="6" onchange="myOffset = parseFloat(this.value); myGenerateLogLogData();">
+      <label>Constant Shift:</label>
+      <input type="text" value="100" size="6" onchange="myStart = parseFloat(this.value); myGenerateLogLogData();">
+      <label>Baseline Growth Factor:</label>
+      <input type="text" value="4.5" size="6" onchange="baselineGrowthFactor = parseFloat(this.value); myGenerateLogLogData();">
     </div>
 
-    <div id="myPlot" style="border: 1px solid #ddd; margin: 0 auto; max-width: 95%; height: 600px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); border-radius: 10px; background-color: #ffffff;"></div>
+    <div id="myPlot" style="width:90%; height:600px; margin: 0 auto;"></div>
 
     <script>
       // GLOBAL VARIABLES for sinusoidal model parameters
@@ -327,25 +292,22 @@
           baselineGrowthFactor = currentBestParams.baselineGrowthFactor;
 
           // Update the input fields with the new optimized values
-          document.querySelectorAll('.controls input[type="text"]').forEach(input => {
-              // This logic is a bit brittle, relies on specific `onchange` string format.
-              // A more robust way would be to assign IDs to inputs and update by ID.
-              // For now, adapting to existing structure:
-              const labelText = input.previousElementSibling ? input.previousElementSibling.innerText.trim() : '';
-              if (labelText.includes('Frequency')) {
-                  const index = Array.from(input.parentNode.children).filter(el => el.tagName === 'INPUT').indexOf(input);
+          // This part of the code is now more robust due to the new structure
+          document.querySelectorAll('.controls input[type="text"]').forEach((input, index) => {
+              // This logic is simplified as the grouping divs are removed.
+              // We rely on the order of inputs within the .controls div.
+              // This might need adjustment if the order changes significantly.
+              if (index >= 0 && index <= 2) { // Frequencies
                   input.value = myBaseFreqs[index].toFixed(3);
-              } else if (labelText.includes('Amplitude')) {
-                  const index = Array.from(input.parentNode.children).filter(el => el.tagName === 'INPUT').indexOf(input);
-                  input.value = myBaseAmps[index].toFixed(3);
-              } else if (labelText.includes('Phase')) {
-                  const index = Array.from(input.parentNode.children).filter(el => el.tagName === 'INPUT').indexOf(input);
-                  input.value = myPhases[index].toFixed(3);
-              } else if (labelText.includes('Baseline Scale')) {
+              } else if (index >= 3 && index <= 5) { // Amplitudes
+                  input.value = myBaseAmps[index - 3].toFixed(3);
+              } else if (index >= 6 && index <= 8) { // Phases
+                  input.value = myPhases[index - 6].toFixed(3);
+              } else if (index === 9) { // Baseline Scale
                   input.value = myOffset.toFixed(3);
-              } else if (labelText.includes('Constant Shift')) {
+              } else if (index === 10) { // Constant Shift
                   input.value = myStart.toFixed(3);
-              } else if (labelText.includes('Baseline Growth Factor')) {
+              } else if (index === 11) { // Baseline Growth Factor
                   input.value = baselineGrowthFactor.toFixed(3);
               }
           });
