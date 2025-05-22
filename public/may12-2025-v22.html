@@ -88,11 +88,6 @@
       let myStart = 100;
       let baselineGrowthFactor = 4.5;
 
-      // New global variables to store the exponential growth factors for frequency and amplitude
-      // These will now be optimized by the fitting algorithm
-      let freqGrowthFactors = [0.7, 1.5, 2.5]; // Initial values for frequency growth exponents
-      let ampGrowthFactors = [3.5, 3.0, 2.5]; // Initial values for amplitude growth exponents
-
       // Global variable to store BTC log prices for fitting
       let btcLogPricesGlobal = [];
       let btcDatesGlobal = []; // Also store dates for alignment
@@ -101,9 +96,7 @@
        * Helper function to generate combined data for a given set of parameters.
        * This is used by the fitting algorithm to test different parameter combinations
        * without affecting the global state during the optimization process.
-       * @param {object} params - An object containing all model parameters, including
-       * myBaseFreqs, myBaseAmps, myPhases, myOffset, myStart,
-       * baselineGrowthFactor, freqGrowthFactors, and ampGrowthFactors.
+       * @param {object} params - An object containing all model parameters.
        * @returns {Array<number>} An array of combined Y-values for the simulated data.
        */
       function generateCombinedData(params) {
@@ -113,11 +106,17 @@
               let baseline = params.myOffset * Math.exp(logYear * params.baselineGrowthFactor);
               let sum = 0;
               for (let i = 0; i < 3; i++) {
-                  // Use the passed freqGrowthFactors for each wave
-                  let myFreq = params.myBaseFreqs[i] * Math.exp(logYear * params.freqGrowthFactors[i]);
+                  let freqGrowthFactor = 0;
+                  if (i === 0) freqGrowthFactor = 0.7;
+                  else if (i === 1) freqGrowthFactor = 1.5;
+                  else freqGrowthFactor = 2.5;
+                  let myFreq = params.myBaseFreqs[i] * Math.exp(logYear * freqGrowthFactor);
 
-                  // Use the passed ampGrowthFactors for each wave
-                  let myAmp = params.myBaseAmps[i] * Math.exp(logYear * params.ampGrowthFactors[i]);
+                  let ampGrowthFactor = 0;
+                  if (i === 0) ampGrowthFactor = 3.5;
+                  else if (i === 1) ampGrowthFactor = 3.0;
+                  else ampGrowthFactor = 2.5;
+                  let myAmp = params.myBaseAmps[i] * Math.exp(logYear * ampGrowthFactor);
 
                   let myY = myAmp * Math.sin(2 * Math.PI * myFreq * logYear + params.myPhases[i]);
                   let adjustedY = myY + baseline + params.myStart;
@@ -220,14 +219,12 @@
               myPhases: [...myPhases],
               myOffset: myOffset,
               myStart: myStart,
-              baselineGrowthFactor: baselineGrowthFactor,
-              freqGrowthFactors: [...freqGrowthFactors], // Include new parameters
-              ampGrowthFactors: [...ampGrowthFactors]    // Include new parameters
+              baselineGrowthFactor: baselineGrowthFactor
           };
 
           let minError = calculateModelError(generateCombinedData(currentBestParams), btcLogPricesGlobal);
 
-          const numIterations = 50000; // Increased iterations for more thorough search
+          const numIterations = 10000; // Number of optimization attempts
           const learningRate = 0.01; // How much to perturb parameters (smaller for finer tuning)
 
           console.log('Starting fitting process...');
@@ -237,34 +234,28 @@
 
               // Randomly select a parameter to perturb
               const paramChoices = [
-                  { type: 'baseFreq', index: 0, scale: 0.01 },
-                  { type: 'baseFreq', index: 1, scale: 0.01 },
-                  { type: 'baseFreq', index: 2, scale: 0.01 },
-                  { type: 'baseAmp', index: 0, scale: 10 },
-                  { type: 'baseAmp', index: 1, scale: 10 },
-                  { type: 'baseAmp', index: 2, scale: 10 },
+                  { type: 'freq', index: 0, scale: 0.01 },
+                  { type: 'freq', index: 1, scale: 0.01 },
+                  { type: 'freq', index: 2, scale: 0.01 },
+                  { type: 'amp', index: 0, scale: 10 },
+                  { type: 'amp', index: 1, scale: 10 },
+                  { type: 'amp', index: 2, scale: 10 },
                   { type: 'phase', index: 0, scale: 0.1 * Math.PI },
                   { type: 'phase', index: 1, scale: 0.1 * Math.PI },
                   { type: 'phase', index: 2, scale: 0.1 * Math.PI },
                   { type: 'offset', scale: 100 },
                   { type: 'start', scale: 50 },
-                  { type: 'baselineGrowth', scale: 0.05 },
-                  { type: 'freqGrowth', index: 0, scale: 0.05 }, // New parameter for optimization
-                  { type: 'freqGrowth', index: 1, scale: 0.05 }, // New parameter for optimization
-                  { type: 'freqGrowth', index: 2, scale: 0.05 }, // New parameter for optimization
-                  { type: 'ampGrowth', index: 0, scale: 0.1 }, // New parameter for optimization
-                  { type: 'ampGrowth', index: 1, scale: 0.1 }, // New parameter for optimization
-                  { type: 'ampGrowth', index: 2, scale: 0.1 }  // New parameter for optimization
+                  { type: 'baselineGrowth', scale: 0.05 }
               ];
               const chosenParam = paramChoices[Math.floor(Math.random() * paramChoices.length)];
               const perturbation = (Math.random() * 2 - 1) * chosenParam.scale * learningRate;
 
               switch (chosenParam.type) {
-                  case 'baseFreq':
+                  case 'freq':
                       testParams.myBaseFreqs[chosenParam.index] += perturbation;
                       if (testParams.myBaseFreqs[chosenParam.index] < 0.0001) testParams.myBaseFreqs[chosenParam.index] = 0.0001;
                       break;
-                  case 'baseAmp':
+                  case 'amp':
                       testParams.myBaseAmps[chosenParam.index] += perturbation;
                       if (testParams.myBaseAmps[chosenParam.index] < 0.1) testParams.myBaseAmps[chosenParam.index] = 0.1;
                       break;
@@ -281,14 +272,6 @@
                   case 'baselineGrowth':
                       testParams.baselineGrowthFactor += perturbation;
                       if (testParams.baselineGrowthFactor < 0.1) testParams.baselineGrowthFactor = 0.1;
-                      break;
-                  case 'freqGrowth': // Handle new frequency growth factors
-                      testParams.freqGrowthFactors[chosenParam.index] += perturbation;
-                      if (testParams.freqGrowthFactors[chosenParam.index] < 0.01) testParams.freqGrowthFactors[chosenParam.index] = 0.01;
-                      break;
-                  case 'ampGrowth': // Handle new amplitude growth factors
-                      testParams.ampGrowthFactors[chosenParam.index] += perturbation;
-                      if (testParams.ampGrowthFactors[chosenParam.index] < 0.01) testParams.ampGrowthFactors[chosenParam.index] = 0.01;
                       break;
               }
 
@@ -309,8 +292,6 @@
           myOffset = currentBestParams.myOffset;
           myStart = currentBestParams.myStart;
           baselineGrowthFactor = currentBestParams.baselineGrowthFactor;
-          freqGrowthFactors = currentBestParams.freqGrowthFactors; // Update global freq growth factors
-          ampGrowthFactors = currentBestParams.ampGrowthFactors;   // Update global amp growth factors
 
           // Update the input fields with the new values
           document.querySelectorAll('.controls input[type="text"]').forEach(input => {
@@ -366,11 +347,22 @@
 
           // Loop through each of the three waves
           for (let i = 0; i < 3; i++) {
-            // Frequency increases exponentially with logYear, using optimized growth factors
-            let myFreq = myBaseFreqs[i] * Math.exp(logYear * freqGrowthFactors[i]);
+            // Frequency increases exponentially with logYear
+            // The coefficient determines how fast the frequency compresses.
+            let freqGrowthFactor = 0;
+            if (i === 0) freqGrowthFactor = 0.7; // Slower for longer cycles
+            else if (i === 1) freqGrowthFactor = 1.5; // Medium for medium cycles
+            else freqGrowthFactor = 2.5; // Faster for shorter cycles
+            let myFreq = myBaseFreqs[i] * Math.exp(logYear * freqGrowthFactor);
 
-            // Amplitude increases exponentially with logYear, using optimized growth factors
-            let myAmp  = myBaseAmps[i] * Math.exp(logYear * ampGrowthFactors[i]);
+            // Amplitude increases exponentially with logYear
+            // The coefficient determines how fast the amplitude grows.
+            // These have been reduced to prevent negative values
+            let ampGrowthFactor = 0;
+            if (i === 0) ampGrowthFactor = 3.5; // Reduced from 6.0
+            else if (i === 1) ampGrowthFactor = 3.0; // Reduced from 5.2
+            else ampGrowthFactor = 2.5; // Reduced from 4.5
+            let myAmp  = myBaseAmps[i] * Math.exp(logYear * ampGrowthFactor);
 
             // Generate sine wave value
             let myY = myAmp * Math.sin(2 * Math.PI * myFreq * logYear + myPhases[i]);
@@ -424,7 +416,6 @@
 
         // Create the plot using Plotly with the traces and layout
         Plotly.newPlot('myPlot', myTraces, myLayout);
-   
       }
 
       // Call the function to generate and display the graph on page load
