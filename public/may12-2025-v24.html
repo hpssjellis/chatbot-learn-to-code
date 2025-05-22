@@ -108,7 +108,6 @@
     <h3>Log-Log Growing Sinusoids</h3>
 
     <div class="controls">
-      <input type="button" id="overlayBtn" value="Overlay BTC Data" onclick="myAddBitcoinToPlot()">
       <input type="button" id="fitBtn" value="Fit to BTC Data" onclick="fitToBTCData()">
       <div id="statusMessage"></div>
       <br>
@@ -527,7 +526,9 @@
       }
 
       // Call the function to generate and display the graph on page load
+      // Also call myAddBitcoinToPlot() on page load to automatically display BTC data
       myGenerateLogLogData();
+      myAddBitcoinToPlot();
     </script>
   </body>
 </html>
