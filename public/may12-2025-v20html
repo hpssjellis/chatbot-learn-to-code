@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Log-Log Sinusoidal Growth Plot</title>
+    <script src="https://cdn.jsdelivr.net/npm/plotly.js-dist@3.0.1/plotly.min.js"></script>
+    <style>
+      /* Essential styles for basic layout and readability */
+      body {
+        font-family: sans-serif;
+        margin: 20px;
+      }
+      h3 {
+        text-align: center;
+        margin-bottom: 20px;
+      }
+      input[type="button"] {
+        margin-bottom: 15px;
+      }
+      input[type="text"] {
+        margin: 5px;
+      }
+      .controls {
+        margin-bottom: 20px;
+        text-align: center;
+      }
+      .controls label {
+        display: inline-block;
+        width: 100px; /* Align labels */
+        text-align: right;
+        margin-right: 5px;
+      }
+      #myPlot {
+        border: 1px solid #ddd;
+        margin: 0 auto; /* Center the plot */
+        max-width: 90%; /* Ensure responsiveness */
+        height: 600px; /* Maintain plot height */
+      }
+    </style>
+  </head>
+  <body>
+    <h3>Log-Log Growing Sinusoids</h3>
+
+    <div class="controls">
+      <input type="button" value="Overlay BTC Data" onclick="myAddBitcoinToPlot()"><br>
+
+      <label>Frequency:</label>
+      <input type="text" value="0.05" size="6" onchange="myBaseFreqs[0] = parseFloat(this.value); myGenerateLogLogData();">
+      <input type="text" value="0.2" size="6" onchange="myBaseFreqs[1] = parseFloat(this.value); myGenerateLogLogData();">
+      <input type="text" value="0.4" size="6" onchange="myBaseFreqs[2] = parseFloat(this.value); myGenerateLogLogData();"><br>
+
+      <label>Amplitude:</label>
+      <input type="text" value="10" size="6" onchange="myBaseAmps[0] = parseFloat(this.value); myGenerateLogLogData();">
+      <input type="text" value="20" size="6" onchange="myBaseAmps[1] = parseFloat(this.value); myGenerateLogLogData();">
+      <input type="text" value="50" size="6" onchange="myBaseAmps[2] = parseFloat(this.value); myGenerateLogLogData();"><br>
+
+      <label>Phase:</label>
+      <input type="text" value="1.0" size="6" onchange="myPhases[0] = parseFloat(this.value); myGenerateLogLogData();">
+      <input type="text" value="4.0" size="6" onchange="myPhases[1] = parseFloat(this.value); myGenerateLogLogData();">
+      <input type="text" value="2.5" size="6" onchange="myPhases[2] = parseFloat(this.value); myGenerateLogLogData();"><br>
+
+      <label>Baseline Scale:</label>
+      <input type="text" value="20" size="6" onchange="myOffset = parseInt(this.value); myGenerateLogLogData();">
+      <label>Constant Shift:</label>
+      <input type="text" value="100" size="6" onchange="myStart = parseInt(this.value); myGenerateLogLogData();">
+      <label>Baseline Growth Factor:</label>
+      <input type="text" value="4.5" size="6" onchange="baselineGrowthFactor = parseFloat(this.value); myGenerateLogLogData();">
+    </div>
+
+    <div id="myPlot"></div>
+
+    <script>
+      // GLOBAL VARIABLES
+      // Adjusted to try and match BTC's observed cycles and growth
+      let myBaseFreqs = [0.05, 0.2, 0.4];
+      let myBaseAmps = [10, 20, 50];
+      let myPhases    = [1.0, 4.0, 2.5];
+
+      // These variables now control the baseline's initial scale and constant shift
+      let myOffset = 20; // Increased initial scaling factor for the exponential baseline
+      let myStart = 100; // Added a positive constant additive shift to ensure values stay positive
+      let baselineGrowthFactor = 4.5; // Increased steepness of the exponential baseline
+
+      /**
+       * Asynchronously fetches Bitcoin (BTCUSDT) weekly closing prices from Binance API
+       * and overlays them onto the existing Plotly graph.
+       */
+      async function myAddBitcoinToPlot() {
+        const url = 'https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1w&limit=1000';
+        try {
+          const response = await fetch(url);
+          const data = await response.json();
+
+          // Extract year (with month as fraction) for x-axis
+          const btcDates = data.map(candle => {
+            const d = new Date(candle[0]);
+            return d.getFullYear() + (d.getMonth() / 12);
+          });
+
+          // Extract closing prices and convert to numbers
+          const btcPrices = data.map(candle => parseFloat(candle[4]));
+
+          // Define the trace for Bitcoin prices
+          const trace1 = {
+            x: btcDates,
+            y: btcPrices,
+            mode: 'lines',
+            line: { color: 'orange', width: 3 },
+            name: 'BTC Price (USD)'
+          };
+
+          // Add new traces to existing Plotly graph
+          Plotly.addTraces('myPlot', [trace1]);
+
+          console.log('✅ Bitcoin data added to plot.');
+        } catch (err) {
+          console.error('❌ Failed to load BTC data:', err);
+        }
+      }
+
+      /**
+       * Generates and plots sinusoidal growth data on a log-log scale.
+       * The function calculates three individual waves and a combined sum,
+       * applying exponential growth to both amplitude and frequency,
+       * and an exponential baseline with a constant offset.
+       */
+      function myGenerateLogLogData() {
+        let myYears = [];          // Array to hold the years for the x-axis
+        let myCombined = [];       // Array to hold the combined sum of all waves
+        let myWaves = [[], [], []]; // Arrays for the individual waves
+
+        // Loop through years from 2017 to 2035 for data generation
+        for (let year = 2017; year <= 2035; year++) {
+          // Calculate log of (year - 1969) for the x-axis transformation.
+          // Subtracting 1969 makes the starting point (1970) correspond to log10(1) = 0.
+          let logYear = Math.log10(year - 1969);
+          myYears.push(year); // Add the year to the x-axis array
+          let mySum = 0;      // To accumulate the sum of the waves for the combined wave
+
+          // --- MATHEMATICALLY SENSIBLE BASELINE CALCULATION ---
+          // The baseline represents the underlying exponential growth trend.
+          // myOffset acts as the initial scaling factor for this exponential growth.
+          // baselineGrowthFactor determines how steeply this baseline grows.
+          let baseline = myOffset * Math.exp(logYear * baselineGrowthFactor);
+
+          // Loop through each of the three waves
+          for (let i = 0; i < 3; i++) {
+            // Frequency increases exponentially with logYear
+            // The coefficient determines how fast the frequency compresses.
+            let freqGrowthFactor = 0;
+            if (i === 0) freqGrowthFactor = 0.7; // Slower for longer cycles
+            else if (i === 1) freqGrowthFactor = 1.5; // Medium for medium cycles
+            else freqGrowthFactor = 2.5; // Faster for shorter cycles
+            let myFreq = myBaseFreqs[i] * Math.exp(logYear * freqGrowthFactor);
+
+            // Amplitude increases exponentially with logYear
+            // The coefficient determines how fast the amplitude grows.
+            // These have been reduced to prevent negative values
+            let ampGrowthFactor = 0;
+            if (i === 0) ampGrowthFactor = 3.5; // Reduced from 6.0
+            else if (i === 1) ampGrowthFactor = 3.0; // Reduced from 5.2
+            else ampGrowthFactor = 2.5; // Reduced from 4.5
+            let myAmp  = myBaseAmps[i] * Math.exp(logYear * ampGrowthFactor);
+
+            // Generate sine wave value
+            let myY = myAmp * Math.sin(2 * Math.PI * myFreq * logYear + myPhases[i]);
+
+            // Add the sine wave value, the exponential baseline, and the constant shift.
+            let adjustedY = myY + baseline + myStart;
+            myWaves[i].push(adjustedY);
+            mySum += adjustedY;
+          }
+
+          // Store the combined wave (sum of all waves with baseline and constant shift)
+          myCombined.push(mySum);
+        }
+
+        // Plot individual sine wave components
+        let myTraces = myWaves.map((wave, i) => ({
+          x: myYears,
+          y: wave,
+          mode: 'lines',
+          line: { color: 'green', width: 1 },
+          name: 'Wave ' + (i + 1)
+        }));
+
+        // Add the combined wave (sum of all individual waves)
+        myTraces.push({
+          x: myYears,
+          y: myCombined,
+          mode: 'lines',
+          line: { color: 'blue', width: 3 },
+          name: 'Combined'
+        });
+
+        // Layout for the graph (adjust for axis range, labels, etc.)
+        let myLayout = {
+          title: 'Exponential Sine Growth on Log-Log Plot',
+          xaxis: {
+            title: 'Year',
+            type: 'log', // Set the x-axis to logarithmic scale
+            // Expanded tick values for more detail, while still being selective
+            tickvals: [2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033, 2034, 2035],
+            ticktext: ['2017', '2018', '2019', '2020', '2021', '2022', '2023', '2024', '2025', '2026', '2027', '2028', '2029', '2030', '2031', '2032', '2033', '2034', '2035'],
+            tickangle: -45 // Angle the tick labels for better readability
+          },
+          yaxis: {
+            title: 'Simulated Dollars',
+            type: 'log', // Set the y-axis to logarithmic scale
+            range: [2, 7] // Adjust range to zoom in (log10 scale)
+          },
+          margin: { t: 40 }
+        };
+
+        // Create the plot using Plotly with the traces and layout
+        Plotly.newPlot('myPlot', myTraces, myLayout);
+      }
+
+      // Call the function to generate and display the graph on page load
+      myGenerateLogLogData();
+    </script>
+  </body>
+</html>
