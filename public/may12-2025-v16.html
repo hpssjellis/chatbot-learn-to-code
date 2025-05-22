@@ -65,8 +65,8 @@
 
 */
 
-
-        /*
+/*
+        
         let myBaseFreqs = [0.005, 0.6, 0.9]; 
         let myBaseAmps = [500, 1000, 2000]; 
         let myPhases    = [2.0717, 0.7076, 1.6908];
@@ -75,6 +75,24 @@
         let myOffset = 8000;    // 10000;
         let myStart = -8000;    // 10000;
 
+
+
+        */
+
+
+
+
+
+        // These are the initial values. The real scaling happens inside the loop.
+let myBaseFreqs = [0.05, 0.2, 0.4]; // Adjusted for slightly different initial cycle lengths
+let myBaseAmps = [10, 20, 50];     // Reduced initial amplitudes, as exponential growth will be very strong
+let myPhases    = [1.0, 4.0, 2.5]; // Adjusted phases to try and align major peaks/troughs
+
+// Crucial: Adjusting the overall baseline and starting point
+let myOffset = 500; // Further reduced, as the baseGrowth will take over
+let myStart = 0;    // Keep at 0 or slightly positive
+
+        
         // Loop through years from 1970 to 2070
      //   for (let year = 1990; year <= 2070; year++) {
         for (let year = 2017; year <= 2035; year++) {
@@ -129,7 +147,9 @@
 
 
 
-        */
+        
+
+        /*
 
 // --- NEW SUGGESTED PARAMETERS FOR BETTER BTC MATCH ---
 
@@ -180,7 +200,7 @@ for (let year = 2017; year <= 2035; year++) {
 
 
 
-
+*/
         
 
         // Plot individual sine wave components
