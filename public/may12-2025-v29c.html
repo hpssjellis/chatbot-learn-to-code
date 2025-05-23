@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Log-Log Sinusoidal Growth Plot</title>
+    <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+    <style>
+      /* Minimal essential styles */
+      body {
+        font-family: sans-serif;
+        margin: 20px;
+      }
+      .controls input[type="button"]:hover {
+        background-color: #2980b9;
+      }
+      .controls input[type="button"]:disabled {
+        background-color: #cccccc;
+        cursor: not-allowed;
+      }
+    </style>
+  </head>
+  <body>
+    <h3 style="text-align: center;">Log-Log Growing Sinusoids</h3>
+
+    <div class="controls" style="text-align: center; margin-bottom: 20px;">
+      <input type="button" id="fitBtn" value="Fit to BTC Data" onclick="fitToBTCData()" style="padding: 8px 15px; cursor: pointer;">
+      <div id="statusMessage" style="margin-top: 10px; font-weight: bold;"></div>
+      <br>
+
+      <label>Frequency:</label>
+      <input type="text" value="0.05" size="6" onchange="myBaseFreqs[0] = parseFloat(this.value); myGenerateLogLogData();">
+      <input type="text" value="0.2" size="6" onchange="myBaseFreqs[1] = parseFloat(this.value); myGenerateLogLogData();">
+      <input type="text" value="0.4" size="6" onchange="myBaseFreqs[2] = parseFloat(this.value); myGenerateLogLogData();"><br>
+
+      <label>Amplitude:</label>
+      <input type="text" value="10" size="6" onchange="myBaseAmps[0] = parseFloat(this.value); myGenerateLogLogData();">
+      <input type="text" value="20" size="6" onchange="myBaseAmps[1] = parseFloat(this.value); myGenerateLogLogData();">
+      <input type="text" value="50" size="6" onchange="myBaseAmps[2] = parseFloat(this.value); myGenerateLogLogData();"><br>
+
+      <label>Y-Shift:</label>
+      <input type="text" value="0.0" size="6" onchange="myYShifts[0] = parseFloat(this.value); myGenerateLogLogData();">
+      <input type="text" value="0.0" size="6" onchange="myYShifts[1] = parseFloat(this.value); myGenerateLogLogData();">
+      <input type="text" value="0.0" size="6" onchange="myYShifts[2] = parseFloat(this.value); myGenerateLogLogData();"><br>
+
+      <label>X-Shift:</label>
+      <input type="text" value="0.0" size="6" onchange="myXShifts[0] = parseFloat(this.value); myGenerateLogLogData();">
+      <input type="text" value="0.0" size="6" onchange="myXShifts[1] = parseFloat(this.value); myGenerateLogLogData();">
+      <input type="text" value="0.0" size="6" onchange="myXShifts[2] = parseFloat(this.value); myGenerateLogLogData();"><br>
+
+      <label>Freq Growth Factor:</label>
+      <input type="text" value="0.7" size="6" onchange="freqGrowthFactors[0] = parseFloat(this.value); myGenerateLogLogData();">
+      <input type="text" value="1.5" size="6" onchange="freqGrowthFactors[1] = parseFloat(this.value); myGenerateLogLogData();">
+      <input type="text" value="2.5" size="6" onchange="freqGrowthFactors[2] = parseFloat(this.value); myGenerateLogLogData();"><br>
+
+      <label>Amp Growth Factor:</label>
+      <input type="text" value="3.5" size="6" onchange="ampGrowthFactors[0] = parseFloat(this.value); myGenerateLogLogData();">
+      <input type="text" value="3.0" size="6" onchange="ampGrowthFactors[1] = parseFloat(this.value); myGenerateLogLogData();">
+      <input type="text" value="2.5" size="6" onchange="ampGrowthFactors[2] = parseFloat(this.value); myGenerateLogLogData();"><br>
+
+      <label>Baseline Scale:</label>
+      <input type="text" value="20" size="6" onchange="myOffset = parseFloat(this.value); myGenerateLogLogData();">
+      <label>Constant Shift:</label>
+      <input type="text" value="100" size="6" onchange="myStart = parseFloat(this.value); myGenerateLogLogData();">
+      <label>Baseline Growth Factor:</label>
+      <input type="text" value="4.5" size="6" onchange="baselineGrowthFactor = parseFloat(this.value); myGenerateLogLogData();"><br>
+
+      <label>QCBD Year:</label>
+      <input type="text" id="qcbDateInput" value="2030.0" size="8" onchange="qcbDateYear = parseFloat(this.value); myGenerateLogLogData();">
+      <label>Destruction Value:</label>
+      <input type="text" id="destructionValueInput" value="0.000001" size="10" onchange="destructionValue = parseFloat(this.value); myGenerateLogLogData();">
+      <label>QCBD Transition (Years):</label>
+      <input type="text" id="qcbTransitionInput" value="0.5" size="6" onchange="qcbTransitionDuration = parseFloat(this.value); myGenerateLogLogData();"><br>
+
+      <div style="margin-top: 15px; font-weight: bold;">Quantum Computing Power Law:</div>
+      <label>Constant:</label>
+      <input type="text" id="powerLawConstantInput" value="2.34e-173" size="15" onchange="powerLawConstant = parseFloat(this.value); myGenerateLogLogData();">
+      <label>Exponent:</label>
+      <input type="text" id="powerLawExponentInput" value="41.322" size="10" onchange="powerLawExponent = parseFloat(this.value); myGenerateLogLogData();">
+    </div>
+
+    <div id="myPlot" style="width:90%; height:600px; margin: 0 auto;"></div>
+
+    <script>
+      // GLOBAL VARIABLES for sinusoidal model parameters
+      let myBaseFreqs = [0.05, 0.2, 0.4];
+      let myBaseAmps = [10, 20, 50];
+      let myYShifts = [0.0, 0.0, 0.0]; // New: Vertical shift for each wave
+      let myXShifts = [0.0, 0.0, 0.0]; // New: Horizontal shift for each wave
+
+      // New global variables for growth factors (now adjustable)
+      let freqGrowthFactors = [0.7, 1.5, 2.5]; // Frequency growth factors for each wave
+      let ampGrowthFactors = [3.5, 3.0, 2.5];   // Amplitude growth factors for each wave
+
+      let myOffset = 20; // Initial scaling for the exponential baseline
+      let myStart = 100; // Constant shift applied to all waves
+      let baselineGrowthFactor = 4.5; // Exponent for the baseline's exponential growth
+
+      // New global variables for QCBD and Destruction
+      let qcbDateYear = 2030.0; // Quantum Crypto Breaking Date (Year)
+      let destructionValue = 0.000001; // Value BTC drops to (very small positive for log scale)
+      let qcbTransitionDuration = 0.5; // Duration in years over which the QCBD impact smooths
+
+      // Power Law Equation parameters for QCBD graph (now dynamic)
+      // Recalculated constant and exponent to make y=1 on 2011-03-26 (15060 days) and y=69000 on 2024-01-01 (19723 days)
+      let powerLawConstant = 2.34e-173; // Calculated as 10^(log10(1) - E * log10(15060))
+      let powerLawExponent = 41.322; // Calculated as (log10(69000) - log10(1)) / (log10(19723.5) - log10(15060))
+
+      // Global variable to store the BTC trace after it's fetched
+      let btcTraceGlobal = null;
+      let btcLogPricesGlobal = []; // Stores log prices for the fitting algorithm
+      let btcDatesGlobal = []; // Stores dates for the fitting algorithm
+
+      /**
+       * Calculates the value of the Quantum Computing Power Law for a given year.
+       * This function is used for the *separate* QCBD line.
+       * @param {number} year - The year for which to calculate the value.
+       * @param {number} qcbYear - The QCBD year.
+       * @param {number} destVal - The destruction value.
+       * @param {number} transitionDur - The transition duration in years.
+       * @returns {number} The calculated value for the QCBD line.
+       */
+      function calculateQCBLineValue(year, qcbYear, destVal, transitionDur) {
+          // Calculate days since 1970-01-01 for the power law equation
+          const daysSince1970 = (year - 1970) * 365.25;
+
+          let powerLawValue = powerLawConstant * Math.pow(daysSince1970, powerLawExponent);
+          if (powerLawValue <= 0) powerLawValue = 0.001; // Ensure positive for log scale
+
+          const startTransition = qcbYear;
+          const endTransition = qcbYear + transitionDur;
+
+          let qcbValue;
+          if (year < startTransition) {
+              qcbValue = powerLawValue;
+          } else if (year >= startTransition && year <= endTransition) {
+              const t = (year - startTransition) / transitionDur;
+              qcbValue = powerLawValue * (1 - t) + destVal * t;
+          } else {
+              qcbValue = destVal;
+          }
+          return qcbValue > 0 ? qcbValue : 0.001; // Ensure positive for log scale
+      }
+
+      /**
+       * Helper function to generate combined data for a given set of parameters.
+       * This is used by the fitting algorithm to test different parameter combinations
+       * without affecting the global state during the optimization process.
+       * This function now generates the full combined data including the QCBD impact.
+       * @param {object} params - An object containing all model parameters.
+       * @returns {Array<number>} An array of combined Y-values for the simulated data.
+       */
+      function generateCombinedData(params) {
+          let combinedData = [];
+          // Loop through years from 2000 to 2035 with a step of 0.1 for more data points
+          for (let year = 2000; year <= 2035; year = parseFloat((year + 0.1).toFixed(1))) {
+              let logYear = Math.log10(year - 1969);
+              let sumOfPureSinusoidalOscillations = 0; // Just the sine part of the sinusoids
+              let sumOfIndividualYShifts = 0; // Sum of the Y-shifts for each wave
+
+              let baseline = params.myOffset * Math.exp(logYear * params.baselineGrowthFactor);
+              let totalBaselineShift = baseline + params.myStart; // Combine baseline and constant shift
+
+              for (let i = 0; i < 3; i++) {
+                  let myFreq = params.myBaseFreqs[i] * Math.exp(logYear * params.freqGrowthFactors[i]);
+                  let myAmp = params.myBaseAmps[i] * Math.exp(logYear * params.ampGrowthFactors[i]);
+
+                  let pureOscillation = myAmp * Math.sin(2 * Math.PI * myFreq * (logYear - params.myXShifts[i]));
+                  sumOfPureSinusoidalOscillations += pureOscillation;
+                  sumOfIndividualYShifts += params.myYShifts[i];
+              }
+
+              // Calculate the QCBD line value
+              const qcbLineValue = calculateQCBLineValue(year, qcbDateYear, destructionValue, qcbTransitionDuration);
+
+              let finalCombinedValue;
+              const startTransition = qcbDateYear;
+              const endTransition = qcbDateYear + qcbTransitionDuration;
+
+              if (year < startTransition) {
+                  // Before QCBD, combined is sum of sinusoids (with their shifts) + baseline + start + QCBD power law
+                  finalCombinedValue = sumOfPureSinusoidalOscillations + sumOfIndividualYShifts + totalBaselineShift + qcbLineValue;
+              } else if (year >= startTransition && year <= endTransition) {
+                  // During transition, smoothly reduce the amplitude of the sinusoidal components
+                  // and pull the sum towards the destruction value.
+                  const t = (year - startTransition) / qcbTransitionDuration; // Normalized time (0 to 1)
+
+                  // Scale the oscillation amplitude down from 1 to 0.01 over the transition
+                  let oscillationScaleFactor = 1 - t * 0.99; // Goes from 1 to 0.01
+
+                  // The combined value is the qcbLineValue (which is dropping)
+                  // plus the scaled-down sinusoidal oscillations.
+                  finalCombinedValue = qcbLineValue + (sumOfPureSinusoidalOscillations * oscillationScaleFactor);
+
+              } else {
+                  // After transition, combined is destructionValue + a very small, scaled sinusoidal effect
+                  let scaledSinusoidalPart = sumOfPureSinusoidalOscillations * 0.01; // Keep a very small effect (1% of original oscillation amplitude)
+
+                  finalCombinedValue = destructionValue + scaledSinusoidalPart;
+              }
+
+              if (finalCombinedValue <= 0) finalCombinedValue = 0.001;
+              combinedData.push(finalCombinedValue);
+          }
+          return combinedData;
+      }
+
+      /**
+       * Calculates the Mean Squared Error (MSE) between simulated and actual BTC log prices.
+       * This function quantifies how well the simulated curve fits the real data.
+       * It compares the logarithm of the simulated values to the logarithm of the BTC values.
+       * @param {Array<number>} simulatedData - The Y-values of the simulated combined curve.
+       * @param {Array<number>} actualLogPrices - The logarithm of the actual BTC prices.
+       * @returns {number} The Mean Squared Error. Returns Infinity if no valid data points for comparison.
+       */
+      function calculateModelError(simulatedData, actualLogPrices) {
+          let error = 0;
+          let count = 0;
+
+          // Align data by index. Assumes simulatedData and actualLogPrices cover similar time ranges.
+          // We iterate over the shorter of the two arrays to prevent out-of-bounds access.
+          const minLen = Math.min(simulatedData.length, actualLogPrices.length);
+
+          for (let i = 0; i < minLen; i++) {
+              // Ensure simulated value is positive before taking logarithm
+              if (simulatedData[i] > 0) {
+                  const logSimulated = Math.log(simulatedData[i]);
+                  // Ensure actualLogPrices[i] is a valid finite number
+                  if (isFinite(actualLogPrices[i])) {
+                      error += Math.pow(logSimulated - actualLogPrices[i], 2);
+                      count++;
+                  }
+              }
+          }
+          // Return the average squared error, or Infinity if no valid comparisons were made
+          return count > 0 ? error / count : Infinity;
+      }
+
+
+      /**
+       * Asynchronously fetches Bitcoin (BTCUSDT) weekly closing prices from Binance API.
+       * It then creates a Plotly trace for this data, stores it globally, and
+       * triggers a full redraw of the graph including the BTC data.
+       */
+      async function myAddBitcoinToPlot() {
+          const url = 'https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1w&limit=1000';
+          try {
+              document.getElementById('statusMessage').innerText = 'Fetching BTC data...';
+              const response = await fetch(url);
+              const data = await response.json();
+
+              // Process BTC dates and prices
+              btcDatesGlobal = data.map(candle => {
+                  const d = new Date(candle[0]);
+                  return d.getFullYear() + (d.getMonth() / 12); // Convert timestamp to fractional year
+              });
+
+              const btcPrices = data.map(candle => parseFloat(candle[4])); // Extract closing prices
+              btcLogPricesGlobal = btcPrices.map(p => Math.log(p)); // Store log prices for fitting
+
+              // Create the BTC trace object
+              btcTraceGlobal = {
+                  x: btcDatesGlobal,
+                  y: btcPrices,
+                  mode: 'lines',
+                  line: { color: 'orange', width: 3 },
+                  name: 'BTC Price (USD)'
+              };
+
+              // Redraw the entire graph, now including the BTC trace
+              myGenerateLogLogData();
+              document.getElementById('statusMessage').innerText = '✅ Bitcoin data added to plot.';
+              console.log('✅ Bitcoin data added to plot.');
+          } catch (err) {
+              btcTraceGlobal = null; // Clear the trace if fetching fails
+              document.getElementById('statusMessage').innerText = '❌ Failed to load BTC data.';
+              console.error('❌ Failed to load BTC data:', err);
+          }
+      }
+
+      /**
+       * Attempts to fit the simulated graph to the overlaid BTC data using a simple
+       * iterative optimization (random walk / hill climbing).
+       * This is a simplified approach and may not find the global optimum.
+       */
+      async function fitToBTCData() {
+          // Ensure BTC data is available before attempting to fit
+          if (btcLogPricesGlobal.length === 0) {
+              document.getElementById('statusMessage').innerText = 'Please overlay BTC data first!';
+              await myAddBitcoinToPlot(); // Attempt to fetch if not already present
+              if (btcLogPricesGlobal.length === 0) {
+                  document.getElementById('statusMessage').innerText = 'Failed to get BTC data for fitting.';
+                  return; // Exit if BTC data still not available
+              }
+          }
+
+          document.getElementById('statusMessage').innerText = 'Fitting model to BTC data... This may take a moment.';
+          document.getElementById('fitBtn').disabled = true; // Disable button during fitting
+
+          // Make a deep copy of current global parameters to start optimization from
+          let currentBestParams = {
+              myBaseFreqs: [...myBaseFreqs],
+              myBaseAmps: [...myBaseAmps],
+              myYShifts: [...myYShifts], // New
+              myXShifts: [...myXShifts], // New
+              freqGrowthFactors: [...freqGrowthFactors],
+              ampGrowthFactors: [...ampGrowthFactors],
+              myOffset: myOffset,
+              myStart: myStart,
+              baselineGrowthFactor: baselineGrowthFactor
+          };
+
+          // Calculate initial error with current parameters
+          let minError = calculateModelError(generateCombinedData(currentBestParams), btcLogPricesGlobal);
+
+          const numIterations = 50000;
+          const learningRate = 0.005;
+
+          console.log('Starting fitting process...');
+
+          for (let iter = 0; iter < numIterations; iter++) {
+              let testParams = JSON.parse(JSON.stringify(currentBestParams)); // Deep copy for perturbation
+
+              const paramChoices = [
+                  { type: 'baseFreq', index: 0, scale: 0.005 }, { type: 'baseFreq', index: 1, scale: 0.005 }, { type: 'baseFreq', index: 2, scale: 0.005 },
+                  { type: 'baseAmp', index: 0, scale: 5 }, { type: 'baseAmp', index: 1, scale: 5 }, { type: 'baseAmp', index: 2, scale: 5 },
+                  { type: 'yShift', index: 0, scale: 50 }, { type: 'yShift', index: 1, scale: 50 }, { type: 'yShift', index: 2, scale: 50 }, // New
+                  { type: 'xShift', index: 0, scale: 0.1 }, { type: 'xShift', index: 1, scale: 0.1 }, { type: 'xShift', index: 2, scale: 0.1 }, // New
+                  { type: 'freqGrowth', index: 0, scale: 0.01 }, { type: 'freqGrowth', index: 1, scale: 0.01 }, { type: 'freqGrowth', index: 2, scale: 0.01 },
+                  { type: 'ampGrowth', index: 0, scale: 0.05 }, { type: 'ampGrowth', index: 1, scale: 0.05 }, { type: 'ampGrowth', index: 2, scale: 0.05 },
+                  { type: 'offset', scale: 10 },
+                  { type: 'start', scale: 5 },
+                  { type: 'baselineGrowth', scale: 0.01 }
+              ];
+              const chosenParam = paramChoices[Math.floor(Math.random() * paramChoices.length)];
+              const perturbation = (Math.random() * 2 - 1) * chosenParam.scale * learningRate;
+
+              switch (chosenParam.type) {
+                  case 'baseFreq':
+                      testParams.myBaseFreqs[chosenParam.index] += perturbation;
+                      if (testParams.myBaseFreqs[chosenParam.index] < 0.0001) testParams.myBaseFreqs[chosenParam.index] = 0.0001;
+                      break;
+                  case 'baseAmp':
+                      testParams.myBaseAmps[chosenParam.index] += perturbation;
+                      if (testParams.myBaseAmps[chosenParam.index] < 0.1) testParams.myBaseAmps[chosenParam.index] = 0.1;
+                      break;
+                  case 'yShift': // New case
+                      testParams.myYShifts[chosenParam.index] += perturbation;
+                      break;
+                  case 'xShift': // New case
+                      testParams.myXShifts[chosenParam.index] += perturbation;
+                      break;
+                  case 'freqGrowth':
+                      testParams.freqGrowthFactors[chosenParam.index] += perturbation;
+                      if (testParams.freqGrowthFactors[chosenParam.index] < 0.01) testParams.freqGrowthFactors[chosenParam.index] = 0.01;
+                      break;
+                  case 'ampGrowth':
+                      testParams.ampGrowthFactors[chosenParam.index] += perturbation;
+                      if (testParams.ampGrowthFactors[chosenParam.index] < 0.01) testParams.ampGrowthFactors[chosenParam.index] = 0.01;
+                      break;
+                  case 'offset':
+                      testParams.myOffset += perturbation;
+                      if (testParams.myOffset < 1) testParams.myOffset = 1;
+                      break;
+                  case 'start':
+                      testParams.myStart += perturbation;
+                      break;
+                  case 'baselineGrowth':
+                      testParams.baselineGrowthFactor += perturbation;
+                      if (testParams.baselineGrowthFactor < 0.1) testParams.baselineGrowthFactor = 0.1;
+                      break;
+              }
+
+              const newSimulatedData = generateCombinedData(testParams);
+              const currentError = calculateModelError(newSimulatedData, btcLogPricesGlobal);
+
+              if (currentError < minError) {
+                  minError = currentError;
+                  currentBestParams = testParams;
+                  if (iter % 1000 === 0) {
+                      console.log(`Iteration ${iter}: New best error = ${minError.toFixed(6)}`);
+                  }
+              }
+              if (iter % 500 === 0) {
+                  document.getElementById('statusMessage').innerText = `Fitting... Iteration ${iter}/${numIterations}. Current best error: ${minError.toFixed(6)}`;
+                  await new Promise(resolve => setTimeout(resolve, 0));
+              }
+          }
+
+          myBaseFreqs = currentBestParams.myBaseFreqs;
+          myBaseAmps = currentBestParams.myBaseAmps;
+          myYShifts = currentBestParams.myYShifts; // Update global
+          myXShifts = currentBestParams.myXShifts; // Update global
+          freqGrowthFactors = currentBestParams.freqGrowthFactors;
+          ampGrowthFactors = currentBestParams.ampGrowthFactors;
+          myOffset = currentBestParams.myOffset;
+          myStart = currentBestParams.myStart;
+          baselineGrowthFactor = currentBestParams.baselineGrowthFactor;
+
+          const allInputs = document.querySelectorAll('.controls input[type="text"]');
+          let inputIndex = 0;
+
+          // Update Base Frequencies (indices 0-2)
+          for (let i = 0; i < 3; i++) { allInputs[inputIndex++].value = myBaseFreqs[i].toFixed(3); }
+          // Update Base Amplitudes (indices 3-5)
+          for (let i = 0; i < 3; i++) { allInputs[inputIndex++].value = myBaseAmps[i].toFixed(3); }
+          // Update Y-Shifts (indices 6-8)
+          for (let i = 0; i < 3; i++) { allInputs[inputIndex++].value = myYShifts[i].toFixed(3); }
+          // Update X-Shifts (indices 9-11)
+          for (let i = 0; i < 3; i++) { allInputs[inputIndex++].value = myXShifts[i].toFixed(3); }
+          // Update Freq Growth Factors (indices 12-14)
+          for (let i = 0; i < 3; i++) { allInputs[inputIndex++].value = freqGrowthFactors[i].toFixed(3); }
+          // Update Amp Growth Factors (indices 15-17)
+          for (let i = 0; i < 3; i++) { allInputs[inputIndex++].value = ampGrowthFactors[i].toFixed(3); }
+          // Update Baseline Scale (index 18)
+          allInputs[inputIndex++].value = myOffset.toFixed(3);
+          // Update Constant Shift (index 19)
+          allInputs[inputIndex++].value = myStart.toFixed(3);
+          // Update Baseline Growth Factor (index 20)
+          allInputs[inputIndex++].value = baselineGrowthFactor.toFixed(3);
+
+
+          document.getElementById('statusMessage').innerText = `Fitting complete. Best error: ${minError.toFixed(6)}`;
+          document.getElementById('fitBtn').disabled = false;
+          console.log(`Fitting complete. Best error: ${minError.toFixed(6)}`);
+          console.log('New optimized parameters:', currentBestParams);
+          myGenerateLogLogData();
+      }
+
+
+      /**
+       * Generates and plots sinusoidal growth data on a log-log scale.
+       * The function calculates three individual waves and a combined sum,
+       * applying exponential growth to both amplitude and frequency,
+       * and an exponential baseline with a constant offset.
+       * This function now also includes the global BTC trace if it exists.
+       */
+      function myGenerateLogLogData() {
+        let myYears = [];
+        let myCombined = []; // This will now represent the sum of sinusoids + QCBD line
+        let myWaves = [[], [], []];
+        let qcbLineData = []; // Data for the separate QCBD line trace
+
+        // Loop through years from 2000 to 2035 with a step of 0.1 for more data points
+        for (let year = 2000; year <= 2035; year = parseFloat((year + 0.1).toFixed(1))) {
+          let logYear = Math.log10(year - 1969);
+          myYears.push(year);
+          let sumOfPureSinusoidalOscillations = 0; // Just the sine part of the sinusoids
+          let sumOfIndividualYShifts = 0; // Sum of the Y-shifts for each wave
+
+          let baseline = myOffset * Math.exp(logYear * baselineGrowthFactor);
+          let totalBaselineShift = baseline + myStart; // Combine baseline and constant shift
+
+          for (let i = 0; i < 3; i++) {
+            let myFreq = myBaseFreqs[i] * Math.exp(logYear * freqGrowthFactors[i]);
+            let myAmp  = myBaseAmps[i] * Math.exp(logYear * ampGrowthFactors[i]);
+
+            let pureOscillation = myAmp * Math.sin(2 * Math.PI * myFreq * (logYear - myXShifts[i]));
+            sumOfPureSinusoidalOscillations += pureOscillation;
+            sumOfIndividualYShifts += myYShifts[i];
+
+            let individualWaveValue = pureOscillation + myYShifts[i]; // Oscillation + individual Y-shift
+            if (individualWaveValue <= 0) individualWaveValue = 0.001; // Ensure positive for individual waves trace
+            myWaves[i].push(individualWaveValue + totalBaselineShift); // Individual waves include baseline/start for plotting
+          }
+
+          // Calculate the QCBD line value for the separate trace
+          const qcbLineValue = calculateQCBLineValue(year, qcbDateYear, destructionValue, qcbTransitionDuration);
+          qcbLineData.push(qcbLineValue); // Store for the separate red dashed trace
+
+          let finalCombinedValue;
+          const startTransition = qcbDateYear;
+          const endTransition = qcbDateYear + qcbTransitionDuration;
+
+          if (year < startTransition) {
+              // Before QCBD, combined is sum of sinusoids (with their shifts) + baseline + start + QCBD power law
+              finalCombinedValue = sumOfPureSinusoidalOscillations + sumOfIndividualYShifts + totalBaselineShift + qcbLineValue;
+          } else if (year >= startTransition && year <= endTransition) {
+              // During transition, smoothly reduce the amplitude of the sinusoidal components
+              // and pull the sum towards the destruction value.
+              const t = (year - startTransition) / qcbTransitionDuration; // Normalized time (0 to 1)
+
+              // Scale the oscillation amplitude down from 1 to 0.01 over the transition
+              let oscillationScaleFactor = 1 - t * 0.99; // Goes from 1 to 0.01
+
+              // The combined value is the qcbLineValue (which is dropping)
+              // plus the scaled-down sinusoidal oscillations.
+              finalCombinedValue = qcbLineValue + (sumOfPureSinusoidalOscillations * oscillationScaleFactor);
+
+          } else {
+              // After transition, combined is destructionValue + a very small, scaled sinusoidal effect
+              let scaledSinusoidalPart = sumOfPureSinusoidalOscillations * 0.01; // Keep a very small effect (1% of original oscillation amplitude)
+
+              finalCombinedValue = destructionValue + scaledSinusoidalPart;
+          }
+
+          if (finalCombinedValue <= 0) finalCombinedValue = 0.001;
+          myCombined.push(finalCombinedValue);
+        }
+
+        // Plot individual sine wave components
+        let myTraces = myWaves.map((wave, i) => ({
+          x: myYears,
+          y: wave,
+          mode: 'lines',
+          line: { color: 'green', width: 1 },
+          name: 'Wave ' + (i + 1)
+        }));
+
+        // Add the combined wave (sum of all individual waves and the QCBD impact)
+        myTraces.push({
+          x: myYears,
+          y: myCombined,
+          mode: 'lines',
+          line: { color: 'blue', width: 3 },
+          name: 'Combined'
+        });
+
+        // Re-add the separate QCBD Impact trace
+        myTraces.push({
+            x: myYears, // Use the same years array for alignment
+            y: qcbLineData,
+            mode: 'lines',
+            line: { color: 'red', width: 2, dash: 'dashdot' }, // Red dashed-dotted line for impact
+            name: 'QCBD Impact'
+        });
+
+        // Add the BTC trace if it has been fetched and stored globally
+        if (btcTraceGlobal) {
+            myTraces.push(btcTraceGlobal);
+        }
+
+        // Layout for the graph (adjust for axis range, labels, etc.)
+        let myLayout = {
+          title: 'Exponential Sine Growth on Log-Log Plot',
+          xaxis: {
+            title: 'Year',
+            type: 'log',
+            tickangle: -45
+          },
+          yaxis: {
+            title: 'Simulated Dollars',
+            type: 'log',
+            range: [0, 7] // Adjusted range to show values down to 10^0 (1)
+          },
+          margin: { t: 40 }
+        };
+
+        // Create the plot using Plotly with the traces and layout
+        Plotly.newPlot('myPlot', myTraces, myLayout);
+      }
+
+      // Call the function to generate and display the graph on page load
+      // Also call myAddBitcoinToPlot() on page load to automatically display BTC data
+      myGenerateLogLogData();
+      myAddBitcoinToPlot();
+    </script>
+  </body>
+</html>
