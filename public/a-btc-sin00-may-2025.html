@@ -71,14 +71,14 @@
           <h4>QCBD Parameters <small>(Quantum Crypto Breaking Date)</small></h4>
           <label>QCBD Year:</label>
           <input type="text" id="qcbDateInput" value="2030.0" size="8" onchange="qcbDateYear = parseFloat(this.value); myGenerateLogLogData();"><br>
-          <label>Destruction Value (Target Floor):</label> <input type="text" id="destructionValueInput" value="500" size="10" onchange="destructionValue = parseFloat(this.value); myGenerateLogLogData();"><br>
+          <label>Social Distrust (Target Estimate):</label> <input type="text" id="socialDistrustValueInput" value="500" size="10" onchange="socialDistrustValue = parseFloat(this.value); myGenerateLogLogData();"><br>
           <label>QCBD Transition (Years):</label>
           <input type="text" id="qcbTransitionInput" value="0.5" size="6" onchange="qcbTransitionDuration = parseFloat(this.value); myGenerateLogLogData();"><br>
           <div style="margin-top: 15px; font-weight: bold;">Quantum Computing Power Law:</div>
           <label>Constant:</label>
           <input type="text" id="powerLawConstantInput" value="3.147e-173" size="15" onchange="powerLawConstant = parseFloat(this.value); myGenerateLogLogData();"><br>
           <label>Exponent:</label>
-          <input type="text" id="powerLawExponentInput" value="41.287" size="10" onchange="powerLawExponent = parseFloat(this.value); myGenerateLogLogData();">
+          <input type="text" id="powerLawExponentInput" value="41.2" size="10" onchange="powerLawExponent = parseFloat(this.value); myGenerateLogLogData();">
         </div>
       </div>
 
@@ -137,22 +137,22 @@
 
     <script>
       // GLOBAL VARIABLES for sinusoidal model parameters - now individual variables for clarity
-      let wave1Freq = 7.0; // Adjusted default
-      let wave1Amp = 10000;     // Adjusted default
+      let wave1Freq = 15.0; // Adjusted default
+      let wave1Amp = 1;     // Adjusted default
       let wave1YShift = 0.001; // This now represents the desired trough value for the individual wave
-      let wave1Phase = 0.0;
-      let wave1FreqGrowth = 0.0; // Adjusted default for multiplicative growth
-      let wave1AmpGrowth = 0.0;    // Adjusted default for linear growth
+      let wave1Phase = 2.0;
+      let wave1FreqGrowth = 0.8; // Adjusted default for multiplicative growth
+      let wave1AmpGrowth = 333333.0;    // Adjusted default for linear growth
 
-      let wave2Freq = 77; // Adjusted default
-      let wave2Amp = 5000;     // Adjusted default
+      let wave2Freq = 40; // Adjusted default
+      let wave2Amp = 1;     // Adjusted default
       let wave2YShift = 0.001; // This now represents the desired trough value for the individual wave
       let wave2Phase = 0.0;
-      let wave2FreqGrowth = 0.0; // Adjusted default for multiplicative growth
-      let wave2AmpGrowth = 0.0;    // Adjusted default for linear growth
+      let wave2FreqGrowth = 1; // Adjusted default for multiplicative growth
+      let wave2AmpGrowth = 333333.0;    // Adjusted default for linear growth
 
-      let wave3Freq = 777;  // Adjusted default
-      let wave3Amp = 5000;    // Adjusted default
+      let wave3Freq = 555;  // Adjusted default
+      let wave3Amp = 2;    // Adjusted default
       let wave3YShift = 0.001; // This now represents the desired trough value for the individual wave
       let wave3Phase = 0.0;
       let wave3FreqGrowth = 0.0; // Adjusted default for multiplicative growth
@@ -160,18 +160,18 @@
 
       let myOffset = 0.0; // Adjusted default to be very small
       let myStart = 0.0; // Adjusted default to be very small
-      let baselineGrowthFactor = 0.0; // Adjusted default to be flat initially
+      let baselineGrowthFactor = 333333.0; // Adjusted default to be flat initially
 
-      // Global variables for QCBD and Destruction
-      let qcbDateYear = 2030.0; // Quantum Crypto Breaking Date (Year)
-      // destructionValue now represents the TARGET FLOOR for the combined line.
-      let destructionValue = 500; 
+      // Global variables for QCBD and Social Distrust
+      let qcbDateYear = 2031.5; // Quantum Crypto Breaking Date (Year)
+      // socialDistrustValue now represents the TARGET ESTIMATE for the combined line.
+      let socialDistrustValue = 50000; 
       let qcbTransitionDuration = 0.5; // Duration in years over which the QCBD impact smooths
 
       // Power Law Equation parameters for QCBD graph (now dynamic)
       // Recalculated constant and exponent to make y=1 on 2011-03-26 (15060 days) and y=69000 on 2024-01-01 (19723.5 days)
       let powerLawConstant = 3.147e-173; // Recalculated value
-      let powerLawExponent = 41.287; // Recalculated value
+      let powerLawExponent = 41.0; // Recalculated value
 
       // Global variable to store the BTC trace after it's fetched
       let btcTraceGlobal = null;
@@ -180,14 +180,14 @@
 
       /**
        * Calculates the value for the *separate* QCBD Impact line.
-       * This function blends the power law value towards a destruction target value.
+       * This function blends the power law value towards a socialDistrust target value.
        * @param {number} year - The year for which to calculate the value.
        * @param {number} qcbYear - The QCBD year.
-       * @param {number} destVal - The destruction value (as a target floor for this line).
+       * @param {number} socialDistrustVal - The social distrust value (as a target floor for this line).
        * @param {number} transitionDur - The transition duration in years.
        * @returns {number} The calculated value for the QCBD line.
        */
-      function getQCBDImpactLineValue(year, qcbYear, destVal, transitionDur) {
+      function getQCBDImpactLineValue(year, qcbYear, socialDistrustVal, transitionDur) {
           // Calculate days since 1970-01-01 for the power law equation
           const daysSince1970 = (year - 1970) * 365.25;
 
@@ -196,25 +196,24 @@
           // Cap powerLawValue for plotting visibility if it becomes astronomically large
           if (powerLawValue > 1e10) powerLawValue = 1e10; // Cap at 10 billion for visibility on log scale
 
-          const startTransition = qcbYear;
-          const endTransition = qcbYear + transitionDur;
+          let qcbValue = powerLawValue; // Start with the raw power law value
 
-          let qcbValue;
-          if (year < startTransition) {
-              qcbValue = powerLawValue;
-          } else if (year >= startTransition && year <= endTransition) {
-              const t = (year - startTransition) / transitionDur;
-              // Blend from powerLawValue to destVal
-              qcbValue = powerLawValue * (1 - t) + destVal * t;
-          } else {
-              qcbValue = destVal;
+          if (year >= qcbYear) {
+              const transitionFactor = getQCBDTransitionFactor(year, qcbYear, transitionDur);
+              // If powerLawValue is below socialDistrustVal, blend it towards socialDistrustVal
+              if (powerLawValue < socialDistrustVal) {
+                  qcbValue = powerLawValue * (1 - transitionFactor) + socialDistrustVal * transitionFactor;
+              } else {
+                  // If powerLawValue is already above socialDistrustVal, it just remains powerLawValue
+                  qcbValue = powerLawValue;
+              }
           }
           return qcbValue > 0 ? qcbValue : 0.001; // Ensure positive for log scale
       }
 
       /**
        * Calculates a transition factor (0 to 1) for the QCBD effect.
-       * This factor determines how much the combined line transitions towards the destructionValue.
+       * This factor determines how much the combined line transitions towards the socialDistrustValue.
        * @param {number} year - The current year.
        * @param {number} qcbYear - The QCBD year.
        * @param {number} transitionDur - The transition duration in years.
@@ -284,12 +283,14 @@
           const startPlotYear = 2015;
           const startLogYear = Math.log10(startPlotYear - 1969);
 
-          // Loop through years from 2015 to 2035 with a step of 0.01 for 10x more data points
-          for (let year = startPlotYear; year <= 2035; year = parseFloat((year + 0.01).toFixed(2))) {
+          // Loop through years from 2015 to 2035 with a step of 0.001 for more data points
+          for (let year = 2015; year <= 2035; year = parseFloat((year + 0.001).toFixed(3))) { // Changed step to 0.001
               let logYear = Math.log10(year - 1969);
-              let relativeLogYear = logYear - startLogYear; // Time relative to plot start in log scale
+              // Calculate days since 1970-01-01 for the power law equation
+              const daysSince1970 = (year - 1970) * 365.25;
 
               let sumOfIndividualWaveComponents = 0; // Sum of waves, each with its own trough controlled
+              let sumOfPureOscillations = 0; // Sum of just the oscillating parts of the waves
 
               let baseline = params.myOffset * Math.exp(logYear * params.baselineGrowthFactor);
               let totalBaselineShift = baseline + params.myStart; // Combine baseline and constant shift
@@ -303,6 +304,8 @@
 
               for (let i = 0; i < 3; i++) {
                   let currentWave = waveParams[i];
+                  let relativeLogYear = logYear - startLogYear; // Time relative to plot start in log scale
+
                   // Frequency grows multiplicatively with relativeLogYear
                   let myFreq = currentWave.freq * (1 + relativeLogYear * currentWave.freqGrowth);
                   if (myFreq < 0.0001) myFreq = 0.0001; // Ensure frequency remains positive
@@ -318,15 +321,33 @@
                   let pureOscillation = myAmp * Math.sin(2 * Math.PI * myFreq * logYear + currentWave.phase);
                   
                   // Individual wave component, with its trough controlled by effectiveTroughValue
-                  sumOfIndividualWaveComponents += (pureOscillation + effectiveTroughValue + myAmp); // Summing up the full wave value
+                  let individualWaveComponent = pureOscillation + effectiveTroughValue + myAmp; // Summing up the full wave value
+                  sumOfIndividualWaveComponents += individualWaveComponent;
+                  sumOfPureOscillations += pureOscillation; // Collect pure oscillations
               }
 
-              // Calculate the initial combined value before QCBD impact
-              let combinedValueBeforeQCB = sumOfIndividualWaveComponents + totalBaselineShift;
+              // Calculate the power law value
+              let powerLawValue = params.powerLawConstant * Math.pow(daysSince1970, params.powerLawExponent);
+              if (powerLawValue <= 0) powerLawValue = 0.001; // Ensure positive for log scale
+              if (powerLawValue > 1e10) powerLawValue = 1e10; // Cap at 10 billion for visibility on log scale
 
-              // Apply QCBD impact: smoothly transition from combinedValueBeforeQCB towards destructionValue
-              const transitionFactor = getQCBDTransitionFactor(year, qcbDateYear, qcbTransitionDuration);
-              let finalCombinedValue = combinedValueBeforeQCB * (1 - transitionFactor) + destructionValue * transitionFactor;
+              let finalCombinedValue;
+
+              // Apply QCBD effect
+              if (year < params.qcbDateYear) {
+                  // Before QCBD: sum of all components
+                  finalCombinedValue = sumOfIndividualWaveComponents + totalBaselineShift + powerLawValue;
+              } else {
+                  // After QCBD: blend towards socialDistrustValue, with sinusoids oscillating around it
+                  const transitionFactor = getQCBDTransitionFactor(year, params.qcbDateYear, params.qcbTransitionDuration);
+                  
+                  // Value if QCBD has full effect: socialDistrustValue + current pure oscillations
+                  let qcbdEffectValue = params.socialDistrustValue + sumOfPureOscillations;
+
+                  // Blend from the pre-destruction value (all components) to the qcbdEffectValue
+                  // This ensures a smooth transition to the new behavior
+                  finalCombinedValue = (sumOfIndividualWaveComponents + totalBaselineShift + powerLawValue) * (1 - transitionFactor) + qcbdEffectValue * transitionFactor;
+              }
               
               // Ensure the final combined value is always positive for log scale
               combinedData.push(Math.max(0.001, finalCombinedValue));
@@ -433,7 +454,13 @@
               wave3Freq: wave3Freq, wave3Amp: wave3Amp, wave3YShift: wave3YShift, wave3Phase: wave3Phase, wave3FreqGrowth: wave3FreqGrowth, wave3AmpGrowth: wave3AmpGrowth,
               myOffset: myOffset,
               myStart: myStart,
-              baselineGrowthFactor: baselineGrowthFactor
+              baselineGrowthFactor: baselineGrowthFactor,
+              // Include QCBD parameters in the fitting
+              qcbDateYear: qcbDateYear,
+              socialDistrustValue: socialDistrustValue, // Renamed
+              qcbTransitionDuration: qcbTransitionDuration,
+              powerLawConstant: powerLawConstant,
+              powerLawExponent: powerLawExponent
           };
 
           // Calculate initial error with current parameters
@@ -453,7 +480,13 @@
                   { type: 'wave3Freq', scale: 0.005 }, { type: 'wave3Amp', scale: 5 }, { type: 'wave3YShift', scale: 50 }, { type: 'wave3Phase', scale: 0.1 }, { type: 'wave3FreqGrowth', scale: 0.001 }, { type: 'wave3AmpGrowth', scale: 1 },
                   { type: 'myOffset', scale: 10 },
                   { type: 'myStart', scale: 5 },
-                  { type: 'baselineGrowthFactor', scale: 0.01 }
+                  { type: 'baselineGrowthFactor', scale: 0.01 },
+                  // Add QCBD parameters to fitting choices
+                  { type: 'qcbDateYear', scale: 0.1 },
+                  { type: 'socialDistrustValue', scale: 50 }, // Renamed
+                  { type: 'qcbTransitionDuration', scale: 0.05 },
+                  { type: 'powerLawConstant', scale: 1e-173 }, // Adjust scale carefully for small numbers
+                  { type: 'powerLawExponent', scale: 0.1 }
               ];
               const chosenParam = paramChoices[Math.floor(Math.random() * paramChoices.length)];
               const perturbation = (Math.random() * 2 - 1) * chosenParam.scale * learningRate;
@@ -477,6 +510,23 @@
                       break;
                   case 'baselineGrowthFactor':
                       testParams[chosenParam.type] = Math.min(Math.max(testParams[chosenParam.type], -0.2), 0.2); // Clamped to -0.2 to 0.2
+                      break;
+                  // QCBD parameter specific clamping
+                  case 'qcbDateYear':
+                      testParams[chosenParam.type] = Math.min(Math.max(testParams[chosenParam.type], 2025), 2040); // Sensible year range
+                      break;
+                  case 'socialDistrustValue': // Renamed
+                      testParams[chosenParam.type] = Math.max(testParams[chosenParam.type], 0.001); // Must be positive
+                      break;
+                  case 'qcbTransitionDuration':
+                      testParams[chosenParam.type] = Math.min(Math.max(testParams[chosenParam.type], 0.1), 5.0); // 0.1 to 5 years
+                      break;
+                  case 'powerLawConstant':
+                      // Ensure constant is positive and not excessively large/small
+                      testParams[chosenParam.type] = Math.min(Math.max(testParams[chosenParam.type], 1e-200), 1e-100); 
+                      break;
+                  case 'powerLawExponent':
+                      testParams[chosenParam.type] = Math.min(Math.max(testParams[chosenParam.type], 30), 50); // Sensible exponent range
                       break;
                   // For phase and growth factors, ensure they are finite, default to 0 if not.
                   default:
@@ -509,7 +559,12 @@
               const element = document.getElementById(id);
               if (element) {
                   if (Number.isFinite(value)) {
-                      element.value = value.toFixed(3);
+                      // Special handling for powerLawConstant to keep it in exponential format
+                      if (id === 'powerLawConstantInput') {
+                          element.value = value.toExponential(3);
+                      } else {
+                          element.value = value.toFixed(3);
+                      }
                   } else {
                       // Fallback for NaN or Infinity
                       element.value = '0.000'; // Default to 0.000 for non-finite values
@@ -543,11 +598,54 @@
           myStart = currentBestParams.myStart; updateInputField('myStartInput', myStart);
           baselineGrowthFactor = currentBestParams.baselineGrowthFactor; updateInputField('baselineGrowthFactorInput', baselineGrowthFactor);
 
+          qcbDateYear = currentBestParams.qcbDateYear; updateInputField('qcbDateInput', qcbDateYear);
+          socialDistrustValue = currentBestParams.socialDistrustValue; updateInputField('socialDistrustValueInput', socialDistrustValue); // Renamed
+          qcbTransitionDuration = currentBestParams.qcbTransitionDuration; updateInputField('qcbTransitionInput', qcbTransitionDuration);
+          powerLawConstant = currentBestParams.powerLawConstant; updateInputField('powerLawConstantInput', powerLawConstant);
+          powerLawExponent = currentBestParams.powerLawExponent; updateInputField('powerLawExponentInput', powerLawExponent);
+
           document.getElementById('statusMessage').innerText = `Fitting complete. Best error: ${minError.toFixed(6)}`;
           document.getElementById('fitBtn').disabled = false;
           console.log(`Fitting complete. Best error: ${minError.toFixed(6)}`);
           console.log('New optimized parameters:', currentBestParams);
           myGenerateLogLogData();
+      }
+
+      /**
+       * Initializes the input fields with the current global variable values.
+       * This function is called once on page load to ensure UI consistency.
+       */
+      function initializeInputFields() {
+          document.getElementById('myOffsetInput').value = myOffset.toFixed(3);
+          document.getElementById('myStartInput').value = myStart.toFixed(3);
+          document.getElementById('baselineGrowthFactorInput').value = baselineGrowthFactor.toFixed(3);
+
+          document.getElementById('qcbDateInput').value = qcbDateYear.toFixed(3);
+          document.getElementById('socialDistrustValueInput').value = socialDistrustValue.toFixed(3);
+          document.getElementById('qcbTransitionInput').value = qcbTransitionDuration.toFixed(3);
+          document.getElementById('powerLawConstantInput').value = powerLawConstant.toExponential(3); // Use toExponential for scientific notation
+          document.getElementById('powerLawExponentInput').value = powerLawExponent.toFixed(3);
+
+          document.getElementById('wave1FreqInput').value = wave1Freq.toFixed(3);
+          document.getElementById('wave1AmpInput').value = wave1Amp.toFixed(3);
+          document.getElementById('wave1YShiftInput').value = wave1YShift.toFixed(3);
+          document.getElementById('wave1PhaseInput').value = wave1Phase.toFixed(3);
+          document.getElementById('wave1FreqGrowthInput').value = wave1FreqGrowth.toFixed(3);
+          document.getElementById('wave1AmpGrowthInput').value = wave1AmpGrowth.toFixed(3);
+
+          document.getElementById('wave2FreqInput').value = wave2Freq.toFixed(3);
+          document.getElementById('wave2AmpInput').value = wave2Amp.toFixed(3);
+          document.getElementById('wave2YShiftInput').value = wave2YShift.toFixed(3);
+          document.getElementById('wave2PhaseInput').value = wave2Phase.toFixed(3);
+          document.getElementById('wave2FreqGrowthInput').value = wave2FreqGrowth.toFixed(3);
+          document.getElementById('wave2AmpGrowthInput').value = wave2AmpGrowth.toFixed(3);
+
+          document.getElementById('wave3FreqInput').value = wave3Freq.toFixed(3);
+          document.getElementById('wave3AmpInput').value = wave3Amp.toFixed(3);
+          document.getElementById('wave3YShiftInput').value = wave3YShift.toFixed(3);
+          document.getElementById('wave3PhaseInput').value = wave3Phase.toFixed(3);
+          document.getElementById('wave3FreqGrowthInput').value = wave3FreqGrowth.toFixed(3);
+          document.getElementById('wave3AmpGrowthInput').value = wave3AmpGrowth.toFixed(3);
       }
 
 
@@ -575,13 +673,17 @@
             { freq: wave3Freq, amp: wave3Amp, yShift: wave3YShift, phase: wave3Phase, freqGrowth: wave3FreqGrowth, ampGrowth: wave3AmpGrowth }
         ];
 
-        // Loop through years from 2015 to 2035 with a step of 0.01 for more data points
-        for (let year = 2015; year <= 2035; year = parseFloat((year + 0.01).toFixed(2))) { // Changed step to 0.01 for 10x more data points
+        // Loop through years from 2015 to 2035 with a step of 0.001 for more data points
+        for (let year = 2015; year <= 2035; year = parseFloat((year + 0.001).toFixed(3))) { // Changed step to 0.001
           let logYear = Math.log10(year - 1969);
           myYears.push(year);
           let relativeLogYear = logYear - startLogYear; // Time relative to plot start in log scale
+          
+          // Calculate days since 1970-01-01 for the power law equation
+          const daysSince1970 = (year - 1970) * 365.25;
 
           let sumOfIndividualWaveComponents = 0; // Sum of waves, each with its own trough controlled
+          let sumOfPureOscillations = 0; // Sum of just the oscillating parts of the waves
 
           let baseline = myOffset * Math.exp(logYear * baselineGrowthFactor);
           let totalBaselineShift = baseline + myStart; // Combine baseline and constant shift
@@ -605,23 +707,40 @@
             // Individual wave component, with its trough controlled by effectiveTroughValue
             let individualWaveComponent = pureOscillation + effectiveTroughValue + myAmp; // Summing up the full wave value
             sumOfIndividualWaveComponents += individualWaveComponent;
+            sumOfPureOscillations += pureOscillation; // Collect pure oscillations
 
             // Individual waves for plotting (green lines) directly use their trough-controlled value
-            myWaves[i].push(Math.max(0.001, individualWaveComponent));
+            myWaves[i].push(Math.max(0.001, individualWaveComponent)); // Pushing to the correct array for each wave
           }
 
+          // Calculate the power law value
+          let powerLawValue = powerLawConstant * Math.pow(daysSince1970, powerLawExponent);
+          if (powerLawValue <= 0) powerLawValue = 0.001; // Ensure positive for log scale
+          if (powerLawValue > 1e10) powerLawValue = 1e10; // Cap at 10 billion for visibility on log scale
+
           // Calculate the QCBD Impact line value (red dashed trace)
-          // This still uses destructionValue as a target floor for this specific line.
-          const qcbLineValueForPlot = getQCBDImpactLineValue(year, qcbDateYear, destructionValue, qcbTransitionDuration);
+          // This line shows the power law and then transitions to the socialDistrustValue.
+          const qcbLineValueForPlot = getQCBDImpactLineValue(year, qcbDateYear, socialDistrustValue, qcbTransitionDuration);
           qcbLineData.push(qcbLineValueForPlot); // Store for the separate red dashed trace
 
-          // Calculate the initial combined value before QCBD impact
-          let combinedValueBeforeQCB = sumOfIndividualWaveComponents + totalBaselineShift;
+          let finalCombinedValue;
 
-          // Apply QCBD impact: smoothly transition from combinedValueBeforeQCB towards destructionValue
-          const transitionFactor = getQCBDTransitionFactor(year, qcbDateYear, qcbTransitionDuration);
-          let finalCombinedValue = combinedValueBeforeQCB * (1 - transitionFactor) + destructionValue * transitionFactor;
+          // Apply QCBD effect
+          if (year < qcbDateYear) {
+              // Before QCBD: sum of all components
+              finalCombinedValue = sumOfIndividualWaveComponents + totalBaselineShift + powerLawValue;
+          } else {
+              // After QCBD: blend towards socialDistrustValue, with sinusoids oscillating around it
+              const transitionFactor = getQCBDTransitionFactor(year, qcbDateYear, qcbTransitionDuration);
+              
+              // Value if QCBD has full effect: socialDistrustValue + current pure oscillations
+              let qcbdEffectValue = socialDistrustValue + sumOfPureOscillations;
 
+              // Blend from the pre-destruction value (all components) to the qcbdEffectValue
+              // This ensures a smooth transition to the new behavior
+              finalCombinedValue = (sumOfIndividualWaveComponents + totalBaselineShift + powerLawValue) * (1 - transitionFactor) + qcbdEffectValue * transitionFactor;
+          }
+          
           // Ensure the final combined value is always positive for log scale
           myCombined.push(Math.max(0.001, finalCombinedValue));
         }
@@ -637,7 +756,7 @@
           x: myYears,
           y: wave,
           mode: 'lines',
-          line: { color: 'green', width: 1 },
+          line: { color: 'green', width: 2 }, // Increased width for visibility
           name: 'Wave ' + (i + 1)
         }));
 
@@ -776,7 +895,7 @@
 
               // Amplitude and Phase estimation for this frequency
               const amp = Math.sqrt(sumSin * sumSin + sumCos * sumCos) / N * 2; // Factor of 2 for single-sided spectrum
-              const phase = Math.atan2(sumCos, sumSin); // atan2(y, x) -> atan2(sumCos, sumSin) is typically used for phase
+              const phase = Math.atan2(sumCos, sumSin); // atan2(y, x) -> atan2(sumCos, sin) is typically used for phase
 
               spectralResults.push({ freq: freq, amp: amp, phase: phase });
           }
@@ -851,6 +970,8 @@
       // Also call myAddBitcoinToPlot() on page load to automatically display BTC data
       myGenerateLogLogData();
       myAddBitcoinToPlot();
+      // Initialize input fields with global variable values after everything else
+      initializeInputFields();
     </script>
   </body>
 </html>
