@@ -765,6 +765,28 @@
       }
 
 
+      /**
+       * Performs a simple linear regression to find slope and intercept.
+       * @param {Array<number>} xData - Array of x values.
+       * @param {Array<number>} yData - Array of y values.
+       * @returns {{slope: number, intercept: number}} The calculated slope and intercept.
+       */
+      function linearRegression(xData, yData) {
+          let N = xData.length;
+          let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+
+          for (let i = 0; i < N; i++) {
+              sumX += xData[i];
+              sumY += yData[i];
+              sumXY += xData[i] * yData[i];
+              sumXX += xData[i] * xData[i];
+          }
+
+          let slope = (N * sumXY - sumX * sumY) / (N * sumXX - sumX * sumX);
+          let intercept = (sumY - slope * sumX) / N;
+
+          return { slope, intercept };
+      }
       
       /**
        * Updates sinusoidal parameters (freq, phase) using a spectral analysis
