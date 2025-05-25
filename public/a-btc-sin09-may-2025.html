@@ -50,6 +50,11 @@
 
     <div class="controls">
       <input type="button" id="fitBtn" value="Fit to BTC Data" onclick="fitToBTCData()" style="padding: 8px 15px; cursor: pointer;">
+      <input type="button" id="FFTonBTC" value="FFT on BTC" onclick="updateSinusoidsWithFFTAnalysis()" style="padding: 8px 15px; cursor: pointer;">
+
+
+
+      
       <div id="statusMessage" style="margin-top: 10px; font-weight: bold;"></div>
       <br>
 
@@ -757,6 +762,128 @@
 
         // Create the plot using Plotly with the traces and layout
         Plotly.newPlot('myPlot', myTraces, myLayout);
+      }
+
+
+      
+      /**
+       * Updates sinusoidal parameters (freq, phase) using a spectral analysis
+       * (correlation-based frequency detection) on detrended BTC log data.
+       * This serves as an initial guess for the optimizer for the wave components.
+       * Global baseline parameters are NOT set by this function.
+       */
+      async function updateSinusoidsWithFFTAnalysis() {
+          if (btcLogPricesGlobal.length === 0 || btcDatesGlobal.length === 0) {
+              document.getElementById('statusMessage').innerText = 'Please load BTC data first!';
+              await myAddBitcoinToPlot(); // Attempt to fetch if not already present
+              if (btcLogPricesGlobal.length === 0) {
+                  document.getElementById('statusMessage').innerText = 'Failed to get BTC data for FFT analysis.';
+                  return;
+              }
+          }
+
+          document.getElementById('statusMessage').innerText = 'Performing FFT analysis...';
+          document.getElementById('fftBtn').disabled = true;
+
+          console.log("Initializing wave parameters with spectral analysis...");
+
+          // 1. Convert BTC dates to log-years
+          const btcLogYears = btcDatesGlobal.map(year => Math.log10(year - 1969));
+
+          // 2. Detrend the log prices using linear regression
+          // This trend is only used for detrending the data for spectral analysis,
+          // not to set the global baseline parameters directly.
+          const { slope: tempTrendSlope, intercept: tempTrendIntercept } = linearRegression(btcLogYears, btcLogPricesGlobal);
+          const detrendedLogPrices = btcLogPricesGlobal.map((logPrice, i) => logPrice - (tempTrendSlope * btcLogYears[i] + tempTrendIntercept));
+
+          // 3. Perform frequency search (correlation-based)
+          const spectralResults = [];
+          const minFreq = 0.001; // Minimum frequency to search (cycles per log-year)
+          const maxFreq = 0.5;   // Maximum frequency to search (cycles per log-year)
+          const freqStep = 0.0005; // Step size for frequency search
+
+          for (let freq = minFreq; freq <= maxFreq; freq += freqStep) {
+              let sumSin = 0;
+              let sumCos = 0;
+              let N = detrendedLogPrices.length;
+
+              for (let i = 0; i < N; i++) {
+                  const angle = 2 * Math.PI * freq * btcLogYears[i];
+                  sumSin += detrendedLogPrices[i] * Math.sin(angle);
+                  sumCos += detrendedLogPrices[i] * Math.cos(angle);
+              }
+
+              // Amplitude and Phase estimation for this frequency
+              const amp = Math.sqrt(sumSin * sumSin + sumCos * sumCos) / N * 2; // Factor of 2 for single-sided spectrum
+              const phase = Math.atan2(sumCos, sumSin); // atan2(y, x) -> atan2(sumCos, sumSin) is typically used for phase
+
+              spectralResults.push({ freq: freq, amp: amp, phase: phase });
+          }
+
+          // 4. Sort and select top 3 distinct frequencies
+          spectralResults.sort((a, b) => b.amp - a.amp); // Sort by amplitude (power) descending
+
+          const selectedWaves = [];
+          const minFreqSeparation = 0.02; // Minimum frequency difference to consider waves distinct
+
+          for (const result of spectralResults) {
+              if (selectedWaves.length >= 3) break; // We need only 3 waves
+
+              let isDistinct = true;
+              for (const existingWave of selectedWaves) {
+                  // Check if this frequency is too close to an already selected one,
+                  // or if it's a simple harmonic (e.g., 2x, 3x)
+                  if (Math.abs(result.freq - existingWave.freq) < minFreqSeparation ||
+                      (existingWave.freq > 0 && Math.abs(result.freq / existingWave.freq - Math.round(result.freq / existingWave.freq)) < 0.05) ||
+                      (result.freq > 0 && Math.abs(existingWave.freq / result.freq - Math.round(existingWave.freq / result.freq)) < 0.05)
+                  ) {
+                      isDistinct = false;
+                      break;
+                  }
+              }
+
+              if (isDistinct) {
+                  selectedWaves.push(result);
+              }
+          }
+          
+          // Ensure we have 3 waves, fill with sensible defaults if not enough distinct ones found
+          while (selectedWaves.length < 3) {
+              // Use default frequencies and phases if spectral analysis doesn't find enough distinct ones
+              // Amplitudes are NOT set here, they retain their current values.
+              selectedWaves.push({ freq: 0.01 + selectedWaves.length * 0.02, amp: 0, phase: 0 }); 
+          }
+
+          // 5. Update global wave parameters (only frequency and phase)
+          // Amplitudes and Y-Shifts are left at their default/user-set values for the optimizer to find.
+          wave1Freq = selectedWaves[0].freq;
+          wave1Phase = selectedWaves[0].phase;
+
+          wave2Freq = selectedWaves[1].freq;
+          wave2Phase = selectedWaves[1].phase;
+
+          wave3Freq = selectedWaves[2].freq;
+          wave3Phase = selectedWaves[2].phase;
+
+          // Update input fields for immediate visual feedback
+          document.getElementById('wave1FreqInput').value = wave1Freq.toFixed(3);
+          document.getElementById('wave1PhaseInput').value = wave1Phase.toFixed(3);
+
+          document.getElementById('wave2FreqInput').value = wave2Freq.toFixed(3);
+          document.getElementById('wave2PhaseInput').value = wave2Phase.toFixed(3);
+
+          document.getElementById('wave3FreqInput').value = wave3Freq.toFixed(3);
+          document.getElementById('wave3PhaseInput').value = wave3Phase.toFixed(3);
+
+          console.log("Wave parameter initialization complete via spectral analysis.", {
+              wave1: { freq: wave1Freq, phase: wave1Phase },
+              wave2: { freq: wave2Freq, phase: wave2Phase },
+              wave3: { freq: wave3Freq, phase: wave3Phase }
+          });
+
+          myGenerateLogLogData(); // Redraw graph with new parameters
+          document.getElementById('statusMessage').innerText = 'FFT analysis complete. Wave frequencies and phases updated.';
+          document.getElementById('fftBtn').disabled = false;
       }
 
       // Call the function to generate and display the graph on page load
