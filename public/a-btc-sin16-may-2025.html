@@ -70,8 +70,8 @@
         <div style="border: 1px solid #ccc; padding: 10px; width: fit-content;">
           <h4>QCBD Parameters <small>(Quantum Crypto Breaking Date)</small></h4>
           <label>QCBD Year:</label>
-          <input type="text" id="qcbDateInput" value="2030.0" size="8" onchange="qcbDateYear = parseFloat(this.value); myGenerateLogLogData();"><br>
-          <label>Social Distrust (Target Estimate):</label> <input type="text" id="socialDistrustValueInput" value="500" size="10" onchange="socialDistrustValue = parseFloat(this.value); myGenerateLogLogData();"><br>
+          <input type="text" id="qcbDateInput" value="2029.0" size="8" onchange="qcbDateYear = parseFloat(this.value); myGenerateLogLogData();"><br>
+          <label>Social Distrust (Target Estimate):</label> <input type="text" id="socialDistrustValueInput" value="50000" size="10" onchange="socialDistrustValue = parseFloat(this.value); myGenerateLogLogData();"><br>
           <label>QCBD Transition (Years):</label>
           <input type="text" id="qcbTransitionInput" value="0.5" size="6" onchange="qcbTransitionDuration = parseFloat(this.value); myGenerateLogLogData();"><br>
           <div style="margin-top: 15px; font-weight: bold;">Quantum Computing Power Law:</div>
@@ -163,9 +163,9 @@
       let baselineGrowthFactor = 0.0; // Adjusted default to be flat initially
 
       // Global variables for QCBD and Social Distrust
-      let qcbDateYear = 2030.0; // Quantum Crypto Breaking Date (Year)
+      let qcbDateYear = 2029.0; // Quantum Crypto Breaking Date (Year)
       // socialDistrustValue now represents the TARGET ESTIMATE for the combined line.
-      let socialDistrustValue = 500; 
+      let socialDistrustValue = 50000; 
       let qcbTransitionDuration = 0.5; // Duration in years over which the QCBD impact smooths
 
       // Power Law Equation parameters for QCBD graph (now dynamic)
