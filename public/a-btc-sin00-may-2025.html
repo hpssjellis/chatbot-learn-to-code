@@ -97,6 +97,8 @@
           <input type="text" value="0.0" size="6" id="wave1FreqGrowthInput" onchange="wave1FreqGrowth = parseFloat(this.value); myGenerateLogLogData();"><br>
           <label>Amp Growth Factor:</label>
           <input type="text" value="0.0" size="6" id="wave1AmpGrowthInput" onchange="wave1AmpGrowth = parseFloat(this.value); myGenerateLogLogData();"><br>
+          <label>Amp Growth Strength:</label>
+          <input type="text" value="1.0" size="6" id="wave1AmpGrowthStrengthInput" onchange="wave1AmpGrowthStrength = parseFloat(this.value); myGenerateLogLogData();"><br>
         </div>
 
         <div class="wave-group">
@@ -113,6 +115,8 @@
           <input type="text" value="0.0" size="6" id="wave2FreqGrowthInput" onchange="wave2FreqGrowth = parseFloat(this.value); myGenerateLogLogData();"><br>
           <label>Amp Growth Factor:</label>
           <input type="text" value="0.0" size="6" id="wave2AmpGrowthInput" onchange="wave2AmpGrowth = parseFloat(this.value); myGenerateLogLogData();"><br>
+          <label>Amp Growth Strength:</label>
+          <input type="text" value="1.0" size="6" id="wave2AmpGrowthStrengthInput" onchange="wave2AmpGrowthStrength = parseFloat(this.value); myGenerateLogLogData();"><br>
         </div>
 
         <div class="wave-group">
@@ -129,6 +133,8 @@
           <input type="text" value="0.0" size="6" id="wave3FreqGrowthInput" onchange="wave3FreqGrowth = parseFloat(this.value); myGenerateLogLogData();"><br>
           <label>Amp Growth Factor:</label>
           <input type="text" value="0.0" size="6" id="wave3AmpGrowthInput" onchange="wave3AmpGrowth = parseFloat(this.value); myGenerateLogLogData();"><br>
+          <label>Amp Growth Strength:</label>
+          <input type="text" value="1.0" size="6" id="wave3AmpGrowthStrengthInput" onchange="wave3AmpGrowthStrength = parseFloat(this.value); myGenerateLogLogData();"><br>
         </div>
       </div>
     </div>
@@ -137,41 +143,44 @@
 
     <script>
       // GLOBAL VARIABLES for sinusoidal model parameters - now individual variables for clarity
-      let wave1Freq = 15.0; // Adjusted default
-      let wave1Amp = 1;     // Adjusted default
+      let wave1Freq = 7.0; // Adjusted default
+      let wave1Amp = 10000;     // Adjusted default
       let wave1YShift = 0.001; // This now represents the desired trough value for the individual wave
-      let wave1Phase = 2.0;
-      let wave1FreqGrowth = 0.8; // Adjusted default for multiplicative growth
-      let wave1AmpGrowth = 333333.0;    // Adjusted default for linear growth
+      let wave1Phase = 0.0;
+      let wave1FreqGrowth = 0.0; // Adjusted default for multiplicative growth
+      let wave1AmpGrowth = 0.0;    // Adjusted default for multiplicative growth
+      let wave1AmpGrowthStrength = 1.0; // NEW: Multiplier for Amp Growth Factor
 
-      let wave2Freq = 40; // Adjusted default
-      let wave2Amp = 1;     // Adjusted default
+      let wave2Freq = 77; // Adjusted default
+      let wave2Amp = 5000;     // Adjusted default
       let wave2YShift = 0.001; // This now represents the desired trough value for the individual wave
       let wave2Phase = 0.0;
-      let wave2FreqGrowth = 1; // Adjusted default for multiplicative growth
-      let wave2AmpGrowth = 333333.0;    // Adjusted default for linear growth
+      let wave2FreqGrowth = 0.0; // Adjusted default for multiplicative growth
+      let wave2AmpGrowth = 0.0;    // Adjusted default for multiplicative growth
+      let wave2AmpGrowthStrength = 1.0; // NEW: Multiplier for Amp Growth Factor
 
-      let wave3Freq = 555;  // Adjusted default
-      let wave3Amp = 2;    // Adjusted default
+      let wave3Freq = 777;  // Adjusted default
+      let wave3Amp = 5000;    // Adjusted default
       let wave3YShift = 0.001; // This now represents the desired trough value for the individual wave
       let wave3Phase = 0.0;
       let wave3FreqGrowth = 0.0; // Adjusted default for multiplicative growth
-      let wave3AmpGrowth = 0.0;   // Adjusted default for linear growth
+      let wave3AmpGrowth = 0.0;   // Adjusted default for multiplicative growth
+      let wave3AmpGrowthStrength = 1.0; // NEW: Multiplier for Amp Growth Factor
 
       let myOffset = 0.0; // Adjusted default to be very small
       let myStart = 0.0; // Adjusted default to be very small
       let baselineGrowthFactor = 0.0; // Adjusted default to be flat initially
 
       // Global variables for QCBD and Social Distrust
-      let qcbDateYear = 2031.5; // Quantum Crypto Breaking Date (Year)
+      let qcbDateYear = 2030.0; // Quantum Crypto Breaking Date (Year)
       // socialDistrustValue now represents the TARGET ESTIMATE for the combined line.
-      let socialDistrustValue = 50000; 
+      let socialDistrustValue = 500; 
       let qcbTransitionDuration = 0.5; // Duration in years over which the QCBD impact smooths
 
       // Power Law Equation parameters for QCBD graph (now dynamic)
       // Recalculated constant and exponent to make y=1 on 2011-03-26 (15060 days) and y=69000 on 2024-01-01 (19723.5 days)
       let powerLawConstant = 3.147e-173; // Recalculated value
-      let powerLawExponent = 41.0; // Recalculated value
+      let powerLawExponent = 41.2; // Recalculated value
 
       // Global variable to store the BTC trace after it's fetched
       let btcTraceGlobal = null;
@@ -250,8 +259,8 @@
           let myFreq = params.freq * (1 + relativeLogYear * params.freqGrowth);
           if (myFreq < 0.0001) myFreq = 0.0001; // Ensure frequency remains positive
 
-          // Amplitude grows linearly with relativeLogYear
-          let myAmp  = params.amp + (relativeLogYear * params.ampGrowth);
+          // Amplitude grows multiplicatively (exponentially) with relativeLogYear, now with an additional strength factor
+          let myAmp  = params.amp * (1 + relativeLogYear * params.ampGrowth * params.ampGrowthStrength);
           if (myAmp < 0.1) myAmp = 0.1; // Ensure amplitude remains positive
 
           // Y-Shift (Trough Value) must be at least 0.001 for log scale
@@ -295,11 +304,11 @@
               let baseline = params.myOffset * Math.exp(logYear * params.baselineGrowthFactor);
               let totalBaselineShift = baseline + params.myStart; // Combine baseline and constant shift
 
-              // Collect parameters for each wave
+              // Collect parameters for each wave, including the new ampGrowthStrength
               const waveParams = [
-                  { freq: params.wave1Freq, amp: params.wave1Amp, yShift: params.wave1YShift, phase: params.wave1Phase, freqGrowth: params.wave1FreqGrowth, ampGrowth: params.wave1AmpGrowth },
-                  { freq: params.wave2Freq, amp: params.wave2Amp, yShift: params.wave2YShift, phase: params.wave2Phase, freqGrowth: params.wave2FreqGrowth, ampGrowth: params.wave2AmpGrowth },
-                  { freq: params.wave3Freq, amp: params.wave3Amp, yShift: params.wave3YShift, phase: params.wave3Phase, freqGrowth: params.wave3FreqGrowth, ampGrowth: params.wave3AmpGrowth }
+                  { freq: params.wave1Freq, amp: params.wave1Amp, yShift: params.wave1YShift, phase: params.wave1Phase, freqGrowth: params.wave1FreqGrowth, ampGrowth: params.wave1AmpGrowth, ampGrowthStrength: params.wave1AmpGrowthStrength },
+                  { freq: params.wave2Freq, amp: params.wave2Amp, yShift: params.wave2YShift, phase: params.wave2Phase, freqGrowth: params.wave2FreqGrowth, ampGrowth: params.wave2AmpGrowth, ampGrowthStrength: params.wave2AmpGrowthStrength },
+                  { freq: params.wave3Freq, amp: params.wave3Amp, yShift: params.wave3YShift, phase: params.wave3Phase, freqGrowth: params.wave3FreqGrowth, ampGrowth: params.wave3AmpGrowth, ampGrowthStrength: params.wave3AmpGrowthStrength }
               ];
 
               for (let i = 0; i < 3; i++) {
@@ -310,8 +319,8 @@
                   let myFreq = currentWave.freq * (1 + relativeLogYear * currentWave.freqGrowth);
                   if (myFreq < 0.0001) myFreq = 0.0001; // Ensure frequency remains positive
 
-                  // Amplitude grows linearly with relativeLogYear
-                  let myAmp = currentWave.amp + (relativeLogYear * currentWave.ampGrowth);
+                  // Amplitude grows multiplicatively (exponentially) with relativeLogYear, now with an additional strength factor
+                  let myAmp = currentWave.amp * (1 + relativeLogYear * currentWave.ampGrowth * currentWave.ampGrowthStrength);
                   if (myAmp < 0.1) myAmp = 0.1; // Ensure amplitude remains positive
 
                   // Y-Shift (Trough Value) must be at least 0.001 for log scale
@@ -449,9 +458,9 @@
 
           // Make a deep copy of current global parameters to start optimization from
           let currentBestParams = {
-              wave1Freq: wave1Freq, wave1Amp: wave1Amp, wave1YShift: wave1YShift, wave1Phase: wave1Phase, wave1FreqGrowth: wave1FreqGrowth, wave1AmpGrowth: wave1AmpGrowth,
-              wave2Freq: wave2Freq, wave2Amp: wave2Amp, wave2YShift: wave2YShift, wave2Phase: wave2Phase, wave2FreqGrowth: wave2FreqGrowth, wave2AmpGrowth: wave2AmpGrowth,
-              wave3Freq: wave3Freq, wave3Amp: wave3Amp, wave3YShift: wave3YShift, wave3Phase: wave3Phase, wave3FreqGrowth: wave3FreqGrowth, wave3AmpGrowth: wave3AmpGrowth,
+              wave1Freq: wave1Freq, wave1Amp: wave1Amp, wave1YShift: wave1YShift, wave1Phase: wave1Phase, wave1FreqGrowth: wave1FreqGrowth, wave1AmpGrowth: wave1AmpGrowth, wave1AmpGrowthStrength: wave1AmpGrowthStrength,
+              wave2Freq: wave2Freq, wave2Amp: wave2Amp, wave2YShift: wave2YShift, wave2Phase: wave2Phase, wave2FreqGrowth: wave2FreqGrowth, wave2AmpGrowth: wave2AmpGrowth, wave2AmpGrowthStrength: wave2AmpGrowthStrength,
+              wave3Freq: wave3Freq, wave3Amp: wave3Amp, wave3YShift: wave3YShift, wave3Phase: wave3Phase, wave3FreqGrowth: wave3FreqGrowth, wave3AmpGrowth: wave3AmpGrowth, wave3AmpGrowthStrength: wave3AmpGrowthStrength,
               myOffset: myOffset,
               myStart: myStart,
               baselineGrowthFactor: baselineGrowthFactor,
@@ -475,9 +484,9 @@
               let testParams = JSON.parse(JSON.stringify(currentBestParams)); // Deep copy for perturbation
 
               const paramChoices = [
-                  { type: 'wave1Freq', scale: 0.005 }, { type: 'wave1Amp', scale: 5 }, { type: 'wave1YShift', scale: 50 }, { type: 'wave1Phase', scale: 0.1 }, { type: 'wave1FreqGrowth', scale: 0.001 }, { type: 'wave1AmpGrowth', scale: 1 },
-                  { type: 'wave2Freq', scale: 0.005 }, { type: 'wave2Amp', scale: 5 }, { type: 'wave2YShift', scale: 50 }, { type: 'wave2Phase', scale: 0.1 }, { type: 'wave2FreqGrowth', scale: 0.001 }, { type: 'wave2AmpGrowth', scale: 1 },
-                  { type: 'wave3Freq', scale: 0.005 }, { type: 'wave3Amp', scale: 5 }, { type: 'wave3YShift', scale: 50 }, { type: 'wave3Phase', scale: 0.1 }, { type: 'wave3FreqGrowth', scale: 0.001 }, { type: 'wave3AmpGrowth', scale: 1 },
+                  { type: 'wave1Freq', scale: 0.005 }, { type: 'wave1Amp', scale: 5 }, { type: 'wave1YShift', scale: 50 }, { type: 'wave1Phase', scale: 0.1 }, { type: 'wave1FreqGrowth', scale: 0.001 }, { type: 'wave1AmpGrowth', scale: 0.01 }, { type: 'wave1AmpGrowthStrength', scale: 0.1 }, // Adjusted AmpGrowth scale, NEW strength scale
+                  { type: 'wave2Freq', scale: 0.005 }, { type: 'wave2Amp', scale: 5 }, { type: 'wave2YShift', scale: 50 }, { type: 'wave2Phase', scale: 0.1 }, { type: 'wave2FreqGrowth', scale: 0.001 }, { type: 'wave2AmpGrowth', scale: 0.01 }, { type: 'wave2AmpGrowthStrength', scale: 0.1 }, // Adjusted AmpGrowth scale, NEW strength scale
+                  { type: 'wave3Freq', scale: 0.005 }, { type: 'wave3Amp', scale: 5 }, { type: 'wave3YShift', scale: 50 }, { type: 'wave3Phase', scale: 0.1 }, { type: 'wave3FreqGrowth', scale: 0.001 }, { type: 'wave3AmpGrowth', scale: 0.01 }, { type: 'wave3AmpGrowthStrength', scale: 0.1 }, // Adjusted AmpGrowth scale, NEW strength scale
                   { type: 'myOffset', scale: 10 },
                   { type: 'myStart', scale: 5 },
                   { type: 'baselineGrowthFactor', scale: 0.01 },
@@ -510,6 +519,14 @@
                       break;
                   case 'baselineGrowthFactor':
                       testParams[chosenParam.type] = Math.min(Math.max(testParams[chosenParam.type], -0.2), 0.2); // Clamped to -0.2 to 0.2
+                      break;
+                  // Amp Growth Factors can now be clamped to sensible positive values for multiplicative growth
+                  case 'wave1AmpGrowth': case 'wave2AmpGrowth': case 'wave3AmpGrowth':
+                      testParams[chosenParam.type] = Math.max(0.0, testParams[chosenParam.type]); // Allow 0 or positive growth
+                      break;
+                  // NEW: Amp Growth Strength clamping
+                  case 'wave1AmpGrowthStrength': case 'wave2AmpGrowthStrength': case 'wave3AmpGrowthStrength':
+                      testParams[chosenParam.type] = Math.max(0.1, testParams[chosenParam.type]); // Must be positive, at least 0.1
                       break;
                   // QCBD parameter specific clamping
                   case 'qcbDateYear':
@@ -579,6 +596,7 @@
           wave1Phase = currentBestParams.wave1Phase; updateInputField('wave1PhaseInput', wave1Phase);
           wave1FreqGrowth = currentBestParams.wave1FreqGrowth; updateInputField('wave1FreqGrowthInput', wave1FreqGrowth);
           wave1AmpGrowth = currentBestParams.wave1AmpGrowth; updateInputField('wave1AmpGrowthInput', wave1AmpGrowth);
+          wave1AmpGrowthStrength = currentBestParams.wave1AmpGrowthStrength; updateInputField('wave1AmpGrowthStrengthInput', wave1AmpGrowthStrength);
 
           wave2Freq = currentBestParams.wave2Freq; updateInputField('wave2FreqInput', wave2Freq);
           wave2Amp = currentBestParams.wave2Amp; updateInputField('wave2AmpInput', wave2Amp);
@@ -586,6 +604,7 @@
           wave2Phase = currentBestParams.wave2Phase; updateInputField('wave2PhaseInput', wave2Phase);
           wave2FreqGrowth = currentBestParams.wave2FreqGrowth; updateInputField('wave2FreqGrowthInput', wave2FreqGrowth);
           wave2AmpGrowth = currentBestParams.wave2AmpGrowth; updateInputField('wave2AmpGrowthInput', wave2AmpGrowth);
+          wave2AmpGrowthStrength = currentBestParams.wave2AmpGrowthStrength; updateInputField('wave2AmpGrowthStrengthInput', wave2AmpGrowthStrength);
 
           wave3Freq = currentBestParams.wave3Freq; updateInputField('wave3FreqInput', wave3Freq);
           wave3Amp = currentBestParams.wave3Amp; updateInputField('wave3AmpInput', wave3Amp);
@@ -593,13 +612,14 @@
           wave3Phase = currentBestParams.wave3Phase; updateInputField('wave3PhaseInput', wave3Phase);
           wave3FreqGrowth = currentBestParams.wave3FreqGrowth; updateInputField('wave3FreqGrowthInput', wave3FreqGrowth);
           wave3AmpGrowth = currentBestParams.wave3AmpGrowth; updateInputField('wave3AmpGrowthInput', wave3AmpGrowth);
+          wave3AmpGrowthStrength = currentBestParams.wave3AmpGrowthStrength; updateInputField('wave3AmpGrowthStrengthInput', wave3AmpGrowthStrength);
 
           myOffset = currentBestParams.myOffset; updateInputField('myOffsetInput', myOffset);
           myStart = currentBestParams.myStart; updateInputField('myStartInput', myStart);
           baselineGrowthFactor = currentBestParams.baselineGrowthFactor; updateInputField('baselineGrowthFactorInput', baselineGrowthFactor);
 
           qcbDateYear = currentBestParams.qcbDateYear; updateInputField('qcbDateInput', qcbDateYear);
-          socialDistrustValue = currentBestParams.socialDistrustValue; updateInputField('socialDistrustValueInput', socialDistrustValue); // Renamed
+          socialDistrustValue = currentBestParams.ampGrowthStrength; updateInputField('socialDistrustValueInput', socialDistrustValue); // Renamed
           qcbTransitionDuration = currentBestParams.qcbTransitionDuration; updateInputField('qcbTransitionInput', qcbTransitionDuration);
           powerLawConstant = currentBestParams.powerLawConstant; updateInputField('powerLawConstantInput', powerLawConstant);
           powerLawExponent = currentBestParams.powerLawExponent; updateInputField('powerLawExponentInput', powerLawExponent);
@@ -609,43 +629,6 @@
           console.log(`Fitting complete. Best error: ${minError.toFixed(6)}`);
           console.log('New optimized parameters:', currentBestParams);
           myGenerateLogLogData();
-      }
-
-      /**
-       * Initializes the input fields with the current global variable values.
-       * This function is called once on page load to ensure UI consistency.
-       */
-      function initializeInputFields() {
-          document.getElementById('myOffsetInput').value = myOffset.toFixed(3);
-          document.getElementById('myStartInput').value = myStart.toFixed(3);
-          document.getElementById('baselineGrowthFactorInput').value = baselineGrowthFactor.toFixed(3);
-
-          document.getElementById('qcbDateInput').value = qcbDateYear.toFixed(3);
-          document.getElementById('socialDistrustValueInput').value = socialDistrustValue.toFixed(3);
-          document.getElementById('qcbTransitionInput').value = qcbTransitionDuration.toFixed(3);
-          document.getElementById('powerLawConstantInput').value = powerLawConstant.toExponential(3); // Use toExponential for scientific notation
-          document.getElementById('powerLawExponentInput').value = powerLawExponent.toFixed(3);
-
-          document.getElementById('wave1FreqInput').value = wave1Freq.toFixed(3);
-          document.getElementById('wave1AmpInput').value = wave1Amp.toFixed(3);
-          document.getElementById('wave1YShiftInput').value = wave1YShift.toFixed(3);
-          document.getElementById('wave1PhaseInput').value = wave1Phase.toFixed(3);
-          document.getElementById('wave1FreqGrowthInput').value = wave1FreqGrowth.toFixed(3);
-          document.getElementById('wave1AmpGrowthInput').value = wave1AmpGrowth.toFixed(3);
-
-          document.getElementById('wave2FreqInput').value = wave2Freq.toFixed(3);
-          document.getElementById('wave2AmpInput').value = wave2Amp.toFixed(3);
-          document.getElementById('wave2YShiftInput').value = wave2YShift.toFixed(3);
-          document.getElementById('wave2PhaseInput').value = wave2Phase.toFixed(3);
-          document.getElementById('wave2FreqGrowthInput').value = wave2FreqGrowth.toFixed(3);
-          document.getElementById('wave2AmpGrowthInput').value = wave2AmpGrowth.toFixed(3);
-
-          document.getElementById('wave3FreqInput').value = wave3Freq.toFixed(3);
-          document.getElementById('wave3AmpInput').value = wave3Amp.toFixed(3);
-          document.getElementById('wave3YShiftInput').value = wave3YShift.toFixed(3);
-          document.getElementById('wave3PhaseInput').value = wave3Phase.toFixed(3);
-          document.getElementById('wave3FreqGrowthInput').value = wave3FreqGrowth.toFixed(3);
-          document.getElementById('wave3AmpGrowthInput').value = wave3AmpGrowth.toFixed(3);
       }
 
 
@@ -666,11 +649,11 @@
         const startPlotYear = 2015;
         const startLogYear = Math.log10(startPlotYear - 1969);
 
-        // Collect parameters for each wave
+        // Collect parameters for each wave, including the new ampGrowthStrength
         const waveParameters = [
-            { freq: wave1Freq, amp: wave1Amp, yShift: wave1YShift, phase: wave1Phase, freqGrowth: wave1FreqGrowth, ampGrowth: wave1AmpGrowth },
-            { freq: wave2Freq, amp: wave2Amp, yShift: wave2YShift, phase: wave2Phase, freqGrowth: wave2FreqGrowth, ampGrowth: wave2AmpGrowth },
-            { freq: wave3Freq, amp: wave3Amp, yShift: wave3YShift, phase: wave3Phase, freqGrowth: wave3FreqGrowth, ampGrowth: wave3AmpGrowth }
+            { freq: wave1Freq, amp: wave1Amp, yShift: wave1YShift, phase: wave1Phase, freqGrowth: wave1FreqGrowth, ampGrowth: wave1AmpGrowth, ampGrowthStrength: wave1AmpGrowthStrength },
+            { freq: wave2Freq, amp: wave2Amp, yShift: wave2YShift, phase: wave2Phase, freqGrowth: wave2FreqGrowth, ampGrowth: wave2AmpGrowth, ampGrowthStrength: wave2AmpGrowthStrength },
+            { freq: wave3Freq, amp: wave3Amp, yShift: wave3YShift, phase: wave3Phase, freqGrowth: wave3FreqGrowth, ampGrowth: wave3AmpGrowth, ampGrowthStrength: wave3AmpGrowthStrength }
         ];
 
         // Loop through years from 2015 to 2035 with a step of 0.001 for more data points
@@ -694,8 +677,8 @@
             let myFreq = currentWave.freq * (1 + relativeLogYear * currentWave.freqGrowth);
             if (myFreq < 0.0001) myFreq = 0.0001; // Ensure frequency remains positive
 
-            // Amplitude grows linearly with relativeLogYear
-            let myAmp = currentWave.amp + (relativeLogYear * currentWave.ampGrowth);
+            // Amplitude grows multiplicatively (exponentially) with relativeLogYear, now with an additional strength factor
+            let myAmp = currentWave.amp * (1 + relativeLogYear * currentWave.ampGrowth * currentWave.ampGrowthStrength);
             if (myAmp < 0.1) myAmp = 0.1; // Ensure amplitude remains positive
 
             // Y-Shift (Trough Value) must be at least 0.001 for log scale
@@ -965,6 +948,47 @@
           document.getElementById('statusMessage').innerText = 'FFT analysis complete. Wave frequencies and phases updated.';
           document.getElementById('fftBtn').disabled = false;
       }
+
+      /**
+       * Initializes the input fields with the current global variable values.
+       * This function is called once on page load to ensure UI consistency.
+       */
+      function initializeInputFields() {
+          document.getElementById('myOffsetInput').value = myOffset.toFixed(3);
+          document.getElementById('myStartInput').value = myStart.toFixed(3);
+          document.getElementById('baselineGrowthFactorInput').value = baselineGrowthFactor.toFixed(3);
+
+          document.getElementById('qcbDateInput').value = qcbDateYear.toFixed(3);
+          document.getElementById('socialDistrustValueInput').value = socialDistrustValue.toFixed(3);
+          document.getElementById('qcbTransitionInput').value = qcbTransitionDuration.toFixed(3);
+          document.getElementById('powerLawConstantInput').value = powerLawConstant.toExponential(3); // Use toExponential for scientific notation
+          document.getElementById('powerLawExponentInput').value = powerLawExponent.toFixed(3);
+
+          document.getElementById('wave1FreqInput').value = wave1Freq.toFixed(3);
+          document.getElementById('wave1AmpInput').value = wave1Amp.toFixed(3);
+          document.getElementById('wave1YShiftInput').value = wave1YShift.toFixed(3);
+          document.getElementById('wave1PhaseInput').value = wave1Phase.toFixed(3);
+          document.getElementById('wave1FreqGrowthInput').value = wave1FreqGrowth.toFixed(3);
+          document.getElementById('wave1AmpGrowthInput').value = wave1AmpGrowth.toFixed(3);
+          document.getElementById('wave1AmpGrowthStrengthInput').value = wave1AmpGrowthStrength.toFixed(3);
+
+          document.getElementById('wave2FreqInput').value = wave2Freq.toFixed(3);
+          document.getElementById('wave2AmpInput').value = wave2Amp.toFixed(3);
+          document.getElementById('wave2YShiftInput').value = wave2YShift.toFixed(3);
+          document.getElementById('wave2PhaseInput').value = wave2Phase.toFixed(3);
+          document.getElementById('wave2FreqGrowthInput').value = wave2FreqGrowth.toFixed(3);
+          document.getElementById('wave2AmpGrowthInput').value = wave2AmpGrowth.toFixed(3);
+          document.getElementById('wave2AmpGrowthStrengthInput').value = wave2AmpGrowthStrength.toFixed(3);
+
+          document.getElementById('wave3FreqInput').value = wave3Freq.toFixed(3);
+          document.getElementById('wave3AmpInput').value = wave3Amp.toFixed(3);
+          document.getElementById('wave3YShiftInput').value = wave3YShift.toFixed(3);
+          document.getElementById('wave3PhaseInput').value = wave3Phase.toFixed(3);
+          document.getElementById('wave3FreqGrowthInput').value = wave3FreqGrowth.toFixed(3);
+          document.getElementById('wave3AmpGrowthInput').value = wave3AmpGrowth.toFixed(3);
+          document.getElementById('wave3AmpGrowthStrengthInput').value = wave3AmpGrowthStrength.toFixed(3);
+      }
+
 
       // Call the function to generate and display the graph on page load
       // Also call myAddBitcoinToPlot() on page load to automatically display BTC data
