@@ -162,15 +162,7 @@
           <h3>Independent Power Law Parameters <small>(Not Affecting Combined Line)</small></h3>
           <p style="font-size: 0.9em; color: #777;">These lines are for visual comparison and are separate from the combined sinusoidal model.</p>
           
-          <h4>Expected BTC</h4>
-          <div class="input-group">
-            <label for="independentPowerLawAmplitudeInput">Amplitude:</label>
-            <input type="text" id="independentPowerLawAmplitudeInput" value="3.147e-173" size="15" onchange="independentPowerLawAmplitude = parseFloat(this.value); myGenerateLogLogData();">
-          </div>
-          <div class="input-group">
-            <label for="independentPowerLawExponentInput">Exponent:</label>
-            <input type="text" id="independentPowerLawExponentInput" value="41.2" size="10" onchange="independentPowerLawExponent = parseFloat(this.value); myGenerateLogLogData();">
-          </div>
+
 
           <h4>Max Independent Power Law</h4>
           <div class="input-group">
@@ -180,6 +172,16 @@
           <div class="input-group">
             <label for="independentPowerLawExponentMaxInput">Exponent (Max):</label>
             <input type="text" id="independentPowerLawExponentMaxInput" value="41.5" size="10" onchange="independentPowerLawExponentMax = parseFloat(this.value); myGenerateLogLogData();">
+          </div>
+
+          <h4>Expected BTC</h4>
+          <div class="input-group">
+            <label for="independentPowerLawAmplitudeInput">Amplitude:</label>
+            <input type="text" id="independentPowerLawAmplitudeInput" value="3.147e-173" size="15" onchange="independentPowerLawAmplitude = parseFloat(this.value); myGenerateLogLogData();">
+          </div>
+          <div class="input-group">
+            <label for="independentPowerLawExponentInput">Exponent:</label>
+            <input type="text" id="independentPowerLawExponentInput" value="41.2" size="10" onchange="independentPowerLawExponent = parseFloat(this.value); myGenerateLogLogData();">
           </div>
 
           <h4>Min Independent Power Law</h4>
