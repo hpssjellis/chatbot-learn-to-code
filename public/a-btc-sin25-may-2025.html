@@ -666,7 +666,7 @@
           x: myYears,
           y: wave,
           mode: 'lines',
-          line: { color: 'green', width: 2, dash: 'dot' }, // Changed to dot for clarity, can be solid green too
+          line: { color: 'green', width: 1 }, // Changed to dot for clarity, can be solid green too
           name: 'Wave ' + (i + 1)
         }));
 
@@ -684,7 +684,7 @@
             x: myYears,
             y: independentPowerLawData,
             mode: 'lines',
-            line: { color: 'green', width: 2, dash: 'solid' }, // Solid green
+            line: { color: 'yellow', width: 3, dash: 'solid' }, // Solid green
             name: 'Independent Power Law'
         });
 
@@ -693,7 +693,7 @@
             x: myYears, 
             y: qcbCrashLineData,
             mode: 'lines',
-            line: { color: 'red', width: 2, dash: 'dashdot' }, 
+            line: { color: 'red', width: 3, dash: 'dashdot' }, 
             name: 'QCBD Crash Line'
         });
 
