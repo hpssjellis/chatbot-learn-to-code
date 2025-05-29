@@ -862,8 +862,8 @@
           // QCBD Parameters
           qcbDateYear = 2029.8;
           socialDistrustValue = 100; 
-          qcbTransitionDuration = 0.5;
-          qcbCrashStrength = 5.0; 
+          qcbTransitionDuration = 2.0;
+          qcbCrashStrength = 2.0; 
           qcbAmplitudeDampening = 0.005; 
           document.getElementById('qcbDateInput').value = qcbDateYear.toFixed(3);
           document.getElementById('socialDistrustValueInput').value = socialDistrustValue.toFixed(3);
@@ -871,21 +871,21 @@
           document.getElementById('qcbCrashStrengthInput').value = qcbCrashStrength.toFixed(3); 
           document.getElementById('qcbAmplitudeDampeningInput').value = qcbAmplitudeDampening.toFixed(3); 
 
-          // Independent Power Law Parameters (Expected)
-          independentPowerLawAmplitude = 3.147e-173; 
-          independentPowerLawExponent = 41.25; 
-          document.getElementById('independentPowerLawAmplitudeInput').value = independentPowerLawAmplitude.toExponential(3); 
-          document.getElementById('independentPowerLawExponentInput').value = independentPowerLawExponent.toFixed(3);
-
           // Independent Power Law Parameters (Max)
-          independentPowerLawAmplitudeMax = 1.0e-170; 
-          independentPowerLawExponentMax = 41.5; 
+          independentPowerLawAmplitudeMax = 1.0e-173; 
+          independentPowerLawExponentMax = 41.6; 
           document.getElementById('independentPowerLawAmplitudeMaxInput').value = independentPowerLawAmplitudeMax.toExponential(3); 
           document.getElementById('independentPowerLawExponentMaxInput').value = independentPowerLawExponentMax.toFixed(3);
 
+          // Independent Power Law Parameters (Expected)
+          independentPowerLawAmplitude = 3.147e-173; 
+          independentPowerLawExponent = 41.250; 
+          document.getElementById('independentPowerLawAmplitudeInput').value = independentPowerLawAmplitude.toExponential(3); 
+          document.getElementById('independentPowerLawExponentInput').value = independentPowerLawExponent.toFixed(3);
+
           // Independent Power Law Parameters (Min)
-          independentPowerLawAmplitudeMin = 1.0e-175; 
-          independentPowerLawExponentMin = 41.0; 
+          independentPowerLawAmplitudeMin = 3.147e-178; 
+          independentPowerLawExponentMin = 42.0; 
           document.getElementById('independentPowerLawAmplitudeMinInput').value = independentPowerLawAmplitudeMin.toExponential(3); 
           document.getElementById('independentPowerLawExponentMinInput').value = independentPowerLawExponentMin.toFixed(3);
 
