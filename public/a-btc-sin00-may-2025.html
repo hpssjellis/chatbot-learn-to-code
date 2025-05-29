@@ -56,6 +56,19 @@
           <div style="border: 1px solid #ddd; padding: 15px; background-color: #f9f9f9; border-radius: 5px; flex: 1 1 450px; max-width: 550px;">
             <h3 style="font-size: 1.3em; margin-top: 0; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Independent Power Law Parameters <small>(Not Affecting Combined Line)</small></h3>
             <p style="font-size: 0.9em; color: #777; margin-bottom: 10px;">These lines are for visual comparison and are separate from the combined sinusoidal model.</p>
+
+
+            
+            <h4 style="font-size: 1.1em; margin-top: 15px; margin-bottom: 10px;">Max Independent Power Law</h4>
+            <div style="margin-bottom: 10px;">
+              <label for="independentPowerLawAmplitudeMaxInput" style="display: block; margin-bottom: 2px; font-weight: bold;">Amplitude (Max):</label>
+              <input type="text" id="independentPowerLawAmplitudeMaxInput" value="1.0e-170" size="15" onchange="independentPowerLawAmplitudeMax = parseFloat(this.value); myGenerateLogLogData();" style="width: calc(100% - 10px); padding: 5px; border: 1px solid #ccc; border-radius: 3px;">
+            </div>
+            <div style="margin-bottom: 10px;">
+              <label for="independentPowerLawExponentMaxInput" style="display: block; margin-bottom: 2px; font-weight: bold;">Exponent (Max):</label>
+              <input type="text" id="independentPowerLawExponentMaxInput" value="41.5" size="10" onchange="independentPowerLawExponentMax = parseFloat(this.value); myGenerateLogLogData();" style="width: calc(100% - 10px); padding: 5px; border: 1px solid #ccc; border-radius: 3px;">
+            </div>
+
             
             <h4 style="font-size: 1.1em; margin-top: 15px; margin-bottom: 10px;">Expected BTC</h4>
             <div style="margin-bottom: 10px;">
@@ -67,15 +80,6 @@
               <input type="text" id="independentPowerLawExponentInput" value="41.2" size="10" onchange="independentPowerLawExponent = parseFloat(this.value); myGenerateLogLogData();" style="width: calc(100% - 10px); padding: 5px; border: 1px solid #ccc; border-radius: 3px;">
             </div>
 
-            <h4 style="font-size: 1.1em; margin-top: 15px; margin-bottom: 10px;">Max Independent Power Law</h4>
-            <div style="margin-bottom: 10px;">
-              <label for="independentPowerLawAmplitudeMaxInput" style="display: block; margin-bottom: 2px; font-weight: bold;">Amplitude (Max):</label>
-              <input type="text" id="independentPowerLawAmplitudeMaxInput" value="1.0e-170" size="15" onchange="independentPowerLawAmplitudeMax = parseFloat(this.value); myGenerateLogLogData();" style="width: calc(100% - 10px); padding: 5px; border: 1px solid #ccc; border-radius: 3px;">
-            </div>
-            <div style="margin-bottom: 10px;">
-              <label for="independentPowerLawExponentMaxInput" style="display: block; margin-bottom: 2px; font-weight: bold;">Exponent (Max):</label>
-              <input type="text" id="independentPowerLawExponentMaxInput" value="41.5" size="10" onchange="independentPowerLawExponentMax = parseFloat(this.value); myGenerateLogLogData();" style="width: calc(100% - 10px); padding: 5px; border: 1px solid #ccc; border-radius: 3px;">
-            </div>
 
             <h4 style="font-size: 1.1em; margin-top: 15px; margin-bottom: 10px;">Min Independent Power Law</h4>
             <div style="margin-bottom: 10px;">
@@ -858,8 +862,8 @@
           // QCBD Parameters
           qcbDateYear = 2029.8;
           socialDistrustValue = 100; 
-          qcbTransitionDuration = 0.5;
-          qcbCrashStrength = 5.0; 
+          qcbTransitionDuration = 2.0;
+          qcbCrashStrength = 2.0; 
           qcbAmplitudeDampening = 0.005; 
           document.getElementById('qcbDateInput').value = qcbDateYear.toFixed(3);
           document.getElementById('socialDistrustValueInput').value = socialDistrustValue.toFixed(3);
@@ -867,35 +871,35 @@
           document.getElementById('qcbCrashStrengthInput').value = qcbCrashStrength.toFixed(3); 
           document.getElementById('qcbAmplitudeDampeningInput').value = qcbAmplitudeDampening.toFixed(3); 
 
-          // Independent Power Law Parameters (Expected)
-          independentPowerLawAmplitude = 3.147e-173; 
-          independentPowerLawExponent = 41.25; 
-          document.getElementById('independentPowerLawAmplitudeInput').value = independentPowerLawAmplitude.toExponential(3); 
-          document.getElementById('independentPowerLawExponentInput').value = independentPowerLawExponent.toFixed(3);
-
           // Independent Power Law Parameters (Max)
-          independentPowerLawAmplitudeMax = 1.0e-170; 
-          independentPowerLawExponentMax = 41.5; 
+          independentPowerLawAmplitudeMax = 1.200e-119; 
+          independentPowerLawExponentMax = 29; 
           document.getElementById('independentPowerLawAmplitudeMaxInput').value = independentPowerLawAmplitudeMax.toExponential(3); 
           document.getElementById('independentPowerLawExponentMaxInput').value = independentPowerLawExponentMax.toFixed(3);
 
+          // Independent Power Law Parameters (Expected)
+          independentPowerLawAmplitude = 3.147e-173; 
+          independentPowerLawExponent = 41.250; 
+          document.getElementById('independentPowerLawAmplitudeInput').value = independentPowerLawAmplitude.toExponential(3); 
+          document.getElementById('independentPowerLawExponentInput').value = independentPowerLawExponent.toFixed(3);
+
           // Independent Power Law Parameters (Min)
-          independentPowerLawAmplitudeMin = 1.0e-175; 
-          independentPowerLawExponentMin = 41.0; 
+          independentPowerLawAmplitudeMin = 1.2e-211; 
+          independentPowerLawExponentMin = 50.02; 
           document.getElementById('independentPowerLawAmplitudeMinInput').value = independentPowerLawAmplitudeMin.toExponential(3); 
           document.getElementById('independentPowerLawExponentMinInput').value = independentPowerLawExponentMin.toFixed(3);
 
 
           // Wave 1 Parameters
           wave1Freq = 33; 
-          wave1Amp = 88;     
-          wave1YShift = 5555; 
-          wave1Phase = 1.0;
+          wave1Amp = 133;     
+          wave1YShift = 888; 
+          wave1Phase = 3.0;
           wave1FreqGrowth = 0.6; 
-          wave1AmpGrowth = 32.0;    
-          wave1AmpGrowthStrength = 2.1; 
+          wave1AmpGrowth = 38.0;    
+          wave1AmpGrowthStrength = 1.3; 
           wave1ExpBase = 9.0; 
-          wave1ExpGrowth = 99.0; 
+          wave1ExpGrowth = 88.0; 
           document.getElementById('wave1FreqInput').value = wave1Freq.toFixed(3);
           document.getElementById('wave1AmpInput').value = wave1Amp.toFixed(3);
           document.getElementById('wave1YShiftInput').value = wave1YShift.toFixed(3);
@@ -908,12 +912,12 @@
 
           // Wave 2 Parameters
           wave2Freq = 99; 
-          wave2Amp = 8.0;     
+          wave2Amp = 111.0;     
           wave2YShift = 2222.0; 
-          wave2Phase = 2.0;
+          wave2Phase = 4.0;
           wave2FreqGrowth = 0.0; 
-          wave2AmpGrowth = 32.0;    
-          wave2AmpGrowthStrength = 3.0; 
+          wave2AmpGrowth = 62.0;    
+          wave2AmpGrowthStrength = 1.0; 
           wave2ExpBase = 7.0; 
           wave2ExpGrowth = 99.0; 
           document.getElementById('wave2FreqInput').value = wave2Freq.toFixed(3);
@@ -928,12 +932,12 @@
 
           // Wave 3 Parameters
           wave3Freq = 444;  
-          wave3Amp = 1.9;    
+          wave3Amp = 100;    
           wave3YShift = 3000.0; 
           wave3Phase = 0.0;
           wave3FreqGrowth = 0.2; 
-          wave3AmpGrowth = 32.0;   
-          wave3AmpGrowthStrength = 3.1; 
+          wave3AmpGrowth = 35.0;   
+          wave3AmpGrowthStrength = 1.8; 
           wave3ExpBase = 9.0; 
           wave3ExpGrowth = 99.0; 
           document.getElementById('wave3FreqInput').value = wave3Freq.toFixed(3);
