@@ -56,6 +56,19 @@
           <div style="border: 1px solid #ddd; padding: 15px; background-color: #f9f9f9; border-radius: 5px; flex: 1 1 450px; max-width: 550px;">
             <h3 style="font-size: 1.3em; margin-top: 0; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Independent Power Law Parameters <small>(Not Affecting Combined Line)</small></h3>
             <p style="font-size: 0.9em; color: #777; margin-bottom: 10px;">These lines are for visual comparison and are separate from the combined sinusoidal model.</p>
+
+
+            
+            <h4 style="font-size: 1.1em; margin-top: 15px; margin-bottom: 10px;">Max Independent Power Law</h4>
+            <div style="margin-bottom: 10px;">
+              <label for="independentPowerLawAmplitudeMaxInput" style="display: block; margin-bottom: 2px; font-weight: bold;">Amplitude (Max):</label>
+              <input type="text" id="independentPowerLawAmplitudeMaxInput" value="1.0e-170" size="15" onchange="independentPowerLawAmplitudeMax = parseFloat(this.value); myGenerateLogLogData();" style="width: calc(100% - 10px); padding: 5px; border: 1px solid #ccc; border-radius: 3px;">
+            </div>
+            <div style="margin-bottom: 10px;">
+              <label for="independentPowerLawExponentMaxInput" style="display: block; margin-bottom: 2px; font-weight: bold;">Exponent (Max):</label>
+              <input type="text" id="independentPowerLawExponentMaxInput" value="41.5" size="10" onchange="independentPowerLawExponentMax = parseFloat(this.value); myGenerateLogLogData();" style="width: calc(100% - 10px); padding: 5px; border: 1px solid #ccc; border-radius: 3px;">
+            </div>
+
             
             <h4 style="font-size: 1.1em; margin-top: 15px; margin-bottom: 10px;">Expected BTC</h4>
             <div style="margin-bottom: 10px;">
@@ -67,15 +80,6 @@
               <input type="text" id="independentPowerLawExponentInput" value="41.2" size="10" onchange="independentPowerLawExponent = parseFloat(this.value); myGenerateLogLogData();" style="width: calc(100% - 10px); padding: 5px; border: 1px solid #ccc; border-radius: 3px;">
             </div>
 
-            <h4 style="font-size: 1.1em; margin-top: 15px; margin-bottom: 10px;">Max Independent Power Law</h4>
-            <div style="margin-bottom: 10px;">
-              <label for="independentPowerLawAmplitudeMaxInput" style="display: block; margin-bottom: 2px; font-weight: bold;">Amplitude (Max):</label>
-              <input type="text" id="independentPowerLawAmplitudeMaxInput" value="1.0e-170" size="15" onchange="independentPowerLawAmplitudeMax = parseFloat(this.value); myGenerateLogLogData();" style="width: calc(100% - 10px); padding: 5px; border: 1px solid #ccc; border-radius: 3px;">
-            </div>
-            <div style="margin-bottom: 10px;">
-              <label for="independentPowerLawExponentMaxInput" style="display: block; margin-bottom: 2px; font-weight: bold;">Exponent (Max):</label>
-              <input type="text" id="independentPowerLawExponentMaxInput" value="41.5" size="10" onchange="independentPowerLawExponentMax = parseFloat(this.value); myGenerateLogLogData();" style="width: calc(100% - 10px); padding: 5px; border: 1px solid #ccc; border-radius: 3px;">
-            </div>
 
             <h4 style="font-size: 1.1em; margin-top: 15px; margin-bottom: 10px;">Min Independent Power Law</h4>
             <div style="margin-bottom: 10px;">
