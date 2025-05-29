@@ -30,3 +30,9 @@ https://hpssjellis.github.io/chatbot-learn-to-code/public/index.html
 
 
 
+
+
+latest power-lw
+
+![image](https://github.com/user-attachments/assets/6f4ba2e3-b102-4d73-9ba5-7dfa9a58ad73)
+
