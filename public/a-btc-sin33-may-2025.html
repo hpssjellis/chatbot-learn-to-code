@@ -442,7 +442,7 @@
        * triggers a full redraw of the graph including the BTC data.
        */
       async function myAddBitcoinToPlot() {
-          const url = 'https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1w&limit=1000';
+          const url = 'https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1w&limit=3000';
           try {
               document.getElementById('statusMessage').innerText = 'Fetching BTC data...';
               const response = await fetch(url);
