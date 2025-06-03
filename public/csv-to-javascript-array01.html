@@ -61,7 +61,7 @@
                 id="copyButton"
                 class="mt-4 w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 transition duration-300 ease-in-out transform hover:scale-105"
             >
-                Copy to Clipboard
+                Copy as 'myBtcHistorical'
             </button>
         </div>
     </div>
@@ -73,7 +73,10 @@
             const processButton = document.getElementById('processButton');
             const outputArrayPre = document.getElementById('outputArray');
             const messageDiv = document.getElementById('message');
-            const copyButton = document.getElementById('copyButton'); // Reference to the new copy button
+            const copyButton = document.getElementById('copyButton');
+
+            // Variable to store the processed 2D array, accessible globally within this script
+            let myBtcHistorical = [];
 
             /**
              * Displays a message to the user.
@@ -98,6 +101,7 @@
                 // Clear previous messages and output
                 displayMessage('', '');
                 outputArrayPre.textContent = '';
+                myBtcHistorical = []; // Reset the stored array
 
                 if (!file) {
                     displayMessage('Please select a CSV file first.', 'error');
@@ -128,9 +132,12 @@
                             }
                         });
 
+                        // Store the processed array
+                        myBtcHistorical = dataArray;
+
                         // Display the resulting 2D array in a readable format
                         // JSON.stringify with 2 spaces for indentation makes it easy to read
-                        outputArrayPre.textContent = JSON.stringify(dataArray, null, 2);
+                        outputArrayPre.textContent = JSON.stringify(myBtcHistorical, null, 2);
                         displayMessage('CSV successfully converted to 2D array!', 'success');
 
                     } catch (error) {
@@ -151,8 +158,10 @@
 
             // Add event listener for the copy to clipboard button
             copyButton.addEventListener('click', () => {
-                const textToCopy = outputArrayPre.textContent;
-                if (textToCopy) {
+                if (myBtcHistorical.length > 0) {
+                    // Format the array as a JavaScript const declaration
+                    const textToCopy = `const myBtcHistorical = ${JSON.stringify(myBtcHistorical, null, 2)};`;
+
                     // Create a temporary textarea element to hold the text
                     const tempTextArea = document.createElement('textarea');
                     tempTextArea.value = textToCopy;
@@ -165,9 +174,9 @@
                     // Remove the temporary textarea
                     document.body.removeChild(tempTextArea);
 
-                    displayMessage('Copied to clipboard!', 'success');
+                    displayMessage('Copied as \'const myBtcHistorical\' to clipboard!', 'success');
                 } else {
-                    displayMessage('No content to copy.', 'error');
+                    displayMessage('No content to copy. Please convert a CSV first.', 'error');
                 }
             });
         });
