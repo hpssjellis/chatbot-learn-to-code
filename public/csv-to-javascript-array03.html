@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BTC CSV to 2D Array Converter</title>
+    <!-- Tailwind CSS CDN for easy styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles to ensure Inter font and smooth rounded corners */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Light gray background */
+        }
+        .container {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+        }
+        pre {
+            white-space: pre-wrap; /* Wrap long lines */
+            word-break: break-all; /* Break words to prevent overflow */
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+    <div class="container bg-white p-8 rounded-xl shadow-lg w-full max-w-2xl">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">
+            BTC CSV to 2D Array Converter
+        </h1>
+
+        <div class="mb-6">
+            <label for="csvFile" class="block text-gray-700 text-sm font-semibold mb-2">
+                Upload your CSV file:
+            </label>
+            <input
+                type="file"
+                id="csvFile"
+                accept=".csv"
+                class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+            />
+        </div>
+
+        <button
+            id="processButton"
+            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-300 ease-in-out transform hover:scale-105"
+        >
+            Convert CSV to 2D Array
+        </button>
+
+        <div id="message" class="mt-4 text-sm text-red-600 text-center">
+            <!-- Messages (e.g., error, success) will be displayed here -->
+        </div>
+
+        <div class="mt-8">
+            <h2 class="text-xl font-semibold text-gray-800 mb-3">
+                Converted 2D Array:
+            </h2>
+            <pre
+                id="outputArray"
+                class="bg-gray-100 p-4 rounded-lg border border-gray-200 text-gray-800 text-sm overflow-auto max-h-96"
+            >
+                <!-- The 2D array will be displayed here -->
+            </pre>
+            <button
+                id="copyButton"
+                class="mt-4 w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 transition duration-300 ease-in-out transform hover:scale-105"
+            >
+                Copy as Processed JavaScript Arrays
+            </button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Get references to the HTML elements
+            const csvFileInput = document.getElementById('csvFile');
+            const processButton = document.getElementById('processButton');
+            const outputArrayPre = document.getElementById('outputArray');
+            const messageDiv = document.getElementById('message');
+            const copyButton = document.getElementById('copyButton');
+
+            // Variable to store the processed 2D array, accessible globally within this script
+            let myBtcHistorical = [];
+
+            // Define the Bitcoin Genesis date globally
+            const BITCOIN_GENESIS_DATE = new Date("2009-01-03T00:00:00Z"); // Use UTC to avoid timezone issues
+
+            /**
+             * Displays a message to the user.
+             * @param {string} msg - The message to display.
+             * @param {string} type - The type of message ('success' or 'error').
+             */
+            function displayMessage(msg, type) {
+                messageDiv.textContent = msg;
+                if (type === 'error') {
+                    messageDiv.className = 'mt-4 text-sm text-red-600 text-center';
+                } else if (type === 'success') {
+                    messageDiv.className = 'mt-4 text-sm text-green-600 text-center';
+                } else {
+                    messageDiv.className = 'mt-4 text-sm text-gray-700 text-center';
+                }
+            }
+
+            /**
+             * Processes the raw historical Bitcoin data into structured arrays.
+             * @param {Array<Array<string>>} historicalData - The 2D array from the CSV, e.g., [["YYYY-MM-DD", "price_string"]]
+             * @returns {{dates: string[], daysSinceGenesis: number[], logPrices: number[]}} - Object containing processed arrays.
+             */
+            function processEarlyBitcoinData(historicalData) {
+                const earlyDates = [];
+                const earlyDaysSinceGenesis = [];
+                const earlyLogPrices = [];
+
+                historicalData.forEach(item => {
+                    const dateStr = item[0];
+                    const priceStr = item[1];
+
+                    // 1. Parse Date
+                    // Append T00:00:00Z to ensure UTC interpretation and prevent timezone issues
+                    const date = new Date(dateStr + "T00:00:00Z");
+
+                    // 2. Calculate Days Since Genesis
+                    const timeDiff = date.getTime() - BITCOIN_GENESIS_DATE.getTime();
+                    // Convert milliseconds to days, rounding down
+                    const daysSinceGenesis = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+
+                    // 3. Parse Price and Calculate Log Price
+                    const price = parseFloat(priceStr);
+                    if (isNaN(price) || price <= 0) {
+                        console.warn(`Invalid price encountered for date ${dateStr}: ${priceStr}. Skipping this entry.`);
+                        return; // Skip this entry if price is invalid or non-positive
+                    }
+                    const logPrice = Math.log(price);
+
+                    earlyDates.push(dateStr);
+                    earlyDaysSinceGenesis.push(daysSinceGenesis);
+                    earlyLogPrices.push(logPrice);
+                });
+
+                // The CSV data is assumed to be in descending order (newer to older) as per the initial request.
+                // For prepending to existing chronological data (oldest to newest),
+                // we need to reverse these arrays so they are also oldest to newest.
+                return {
+                    dates: earlyDates.reverse(),
+                    daysSinceGenesis: earlyDaysSinceGenesis.reverse(),
+                    logPrices: earlyLogPrices.reverse()
+                };
+            }
+
+            // Add event listener to the process button
+            processButton.addEventListener('click', () => {
+                const file = csvFileInput.files[0]; // Get the selected file
+
+                // Clear previous messages and output
+                displayMessage('', '');
+                outputArrayPre.textContent = '';
+                myBtcHistorical = []; // Reset the stored array
+
+                if (!file) {
+                    displayMessage('Please select a CSV file first.', 'error');
+                    return;
+                }
+
+                // Create a new FileReader object
+                const reader = new FileReader();
+
+                // Define what happens when the file is loaded
+                reader.onload = (event) => {
+                    try {
+                        const csvContent = event.target.result; // Get the file content as a string
+                        const lines = csvContent.split('\n'); // Split content into lines
+
+                        const dataArray = [];
+
+                        // Iterate over each line to parse the CSV data
+                        lines.forEach(line => {
+                            // Trim whitespace and skip empty lines
+                            const trimmedLine = line.trim();
+                            if (trimmedLine) {
+                                // Split each line by comma to get individual values
+                                const values = trimmedLine.split(',');
+                                dataArray.push(values); // Add the array of values to the 2D array
+                            }
+                        });
+
+                        // Store the raw processed array
+                        myBtcHistorical = dataArray;
+
+                        // Display the raw 2D array in a readable format (still pretty-printed for display)
+                        outputArrayPre.textContent = JSON.stringify(myBtcHistorical, null, 2);
+                        displayMessage('CSV successfully converted to raw 2D array!', 'success');
+
+                    } catch (error) {
+                        displayMessage(`Error processing file: ${error.message}`, 'error');
+                        console.error('Error processing CSV:', error);
+                    }
+                };
+
+                // Define what happens if there's an error reading the file
+                reader.onerror = () => {
+                    displayMessage('Failed to read the file.', 'error');
+                    console.error('FileReader error:', reader.error);
+                };
+
+                // Read the file as text
+                reader.readAsText(file);
+            });
+
+            // Add event listener for the copy to clipboard button
+            copyButton.addEventListener('click', () => {
+                if (myBtcHistorical.length > 0) {
+                    // Process the historical data into the desired format
+                    const processedData = processEarlyBitcoinData(myBtcHistorical);
+
+                    // Format the processed data as JavaScript const declarations in a compressed format
+                    const textToCopy = `const earlyDates = ${JSON.stringify(processedData.dates)};\n` +
+                                       `const earlyDaysSinceGenesis = ${JSON.stringify(processedData.daysSinceGenesis)};\n` +
+                                       `const earlyLogPrices = ${JSON.stringify(processedData.logPrices)};`;
+
+                    // Create a temporary textarea element to hold the text
+                    const tempTextArea = document.createElement('textarea');
+                    tempTextArea.value = textToCopy;
+                    document.body.appendChild(tempTextArea);
+
+                    // Select the text and copy it
+                    tempTextArea.select();
+                    document.execCommand('copy'); // Use execCommand for broader compatibility within iframes
+
+                    // Remove the temporary textarea
+                    document.body.removeChild(tempTextArea);
+
+                    displayMessage('Copied processed arrays to clipboard (compressed format)!', 'success');
+                } else {
+                    displayMessage('No content to copy. Please convert a CSV first.', 'error');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
