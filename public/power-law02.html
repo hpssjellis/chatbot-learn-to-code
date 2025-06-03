@@ -39,7 +39,7 @@
 
             // Power Law formula: Price = 10^-17 * (days)^5.8
             // To calculate this on a log scale, it's easier to work with logarithms:
-            // log10(Price) = -17 + 5.8 * log10(days)
+            // log10(Price) = -17 + 5.8 * Math.log10(days)
             // Price = 10 ^ (-17 + 5.8 * log10(days))
             const log10Price = -17 + 5.8 * Math.log10(days);
             const price = Math.pow(10, log10Price);
@@ -117,7 +117,7 @@
             },
             xaxis: {
                 title: {
-                    text: 'Days Since Genesis (Log Scale)',
+                    text: 'Year (Log Scale)', // Changed x-axis title to Year
                     font: {
                         family: 'Inter, sans-serif',
                         size: 16,
@@ -129,13 +129,28 @@
                 linecolor: '#cccccc', // Axis line color
                 linewidth: 1,
                 mirror: true,
+                // Define custom tick values and text for years
+                tickvals: [
+                    daysSinceGenesis(new Date('2010-01-01')),
+                    daysSinceGenesis(new Date('2012-01-01')),
+                    daysSinceGenesis(new Date('2014-01-01')),
+                    daysSinceGenesis(new Date('2016-01-01')),
+                    daysSinceGenesis(new Date('2018-01-01')),
+                    daysSinceGenesis(new Date('2020-01-01')),
+                    daysSinceGenesis(new Date('2022-01-01')),
+                    daysSinceGenesis(new Date('2024-01-01')),
+                    daysSinceGenesis(new Date('2026-01-01')),
+                    daysSinceGenesis(new Date('2028-01-01')),
+                    daysSinceGenesis(new Date('2030-01-01'))
+                ],
+                ticktext: [
+                    '2010', '2012', '2014', '2016', '2018', '2020', '2022', '2024', '2026', '2028', '2030'
+                ],
+                tickangle: 45, // Angle the x-axis ticks at 45 degrees
                 rangeslider: { visible: true },
                 rangeselector: {
                     buttons: [
-                        { count: 1, label: '1y', step: 'year', stepmode: 'backward',
-                            // Note: 'year' stepmode on a log-days axis is an approximation.
-                            // For precise date range selection, custom logic would be needed.
-                        },
+                        { count: 1, label: '1y', step: 'year', stepmode: 'backward' },
                         { count: 5, label: '5y', step: 'year', stepmode: 'backward' },
                         { step: 'all' }
                     ]
