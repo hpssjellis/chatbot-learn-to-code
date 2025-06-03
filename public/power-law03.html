@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bitcoin Long-Term Power Law (Log-Log)</title>
+    <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+</head>
+<body style="font-family: 'Inter', sans-serif; margin: 0; padding: 20px; background-color: #f0f2f5; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh;">
+
+    <div style="background-color: #ffffff; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); width: 95%; max-width: 1200px; box-sizing: border-box;">
+        <h1 style="text-align: center; color: #333; margin-top: 0; margin-bottom: 20px; font-size: 2em;">Bitcoin Long-Term Power Law Prediction</h1>
+        <div id="powerLawChart" style="width: 100%; height: 600px; border-radius: 8px; overflow: hidden;"></div>
+    </div>
+
+    <script>
+        function myDaysSince2011(date) {
+            const baseDate = new Date('2011-01-01T00:00:00Z');
+            const diffTime = Math.abs(date.getTime() - baseDate.getTime());
+            return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        }
+
+        const xDays = [];
+        const displayDates = [];
+        const powerLawPrices = [];
+        const supportPrices = [];
+        const resistancePrices = [];
+
+        const startDate = new Date('2011-01-01T00:00:00Z');
+        const endDate = new Date('2030-12-31T00:00:00Z');
+
+        let currentDate = new Date(startDate);
+        while (currentDate <= endDate) {
+            const days = myDaysSince2011(currentDate);
+            xDays.push(days);
+            const formattedDate = currentDate.toISOString().split('T')[0];
+            displayDates.push(formattedDate);
+
+            const log10Price = -17 + 5.8 * Math.log10(days);
+            const price = Math.pow(10, log10Price);
+            powerLawPrices.push(price);
+            supportPrices.push(price * 0.5);
+            resistancePrices.push(price * 1.5);
+
+            currentDate.setDate(currentDate.getDate() + 30);
+        }
+
+        const tracePowerLaw = {
+            x: xDays,
+            y: powerLawPrices,
+            mode: 'lines',
+            name: 'Power Law',
+            line: { color: '#4CAF50', width: 3 },
+            hovertemplate: '<b>Date:</b> %{customdata}<br><b>Days:</b> %{x}<br><b>Price:</b> %{y:$,.2f}<extra></extra>',
+            customdata: displayDates
+        };
+
+        const traceResistance = {
+            x: xDays,
+            y: resistancePrices,
+            mode: 'lines',
+            name: 'Resistance',
+            line: { color: '#FF6347', width: 1.5, dash: 'dash' },
+            hovertemplate: '<b>Date:</b> %{customdata}<br><b>Days:</b> %{x}<br><b>Resistance:</b> %{y:$,.2f}<extra></extra>',
+            customdata: displayDates
+        };
+
+        const traceSupport = {
+            x: xDays,
+            y: supportPrices,
+            mode: 'lines',
+            name: 'Support',
+            line: { color: '#4682B4', width: 1.5, dash: 'dash' },
+            hovertemplate: '<b>Date:</b> %{customdata}<br><b>Days:</b> %{x}<br><b>Support:</b> %{y:$,.2f}<extra></extra>',
+            customdata: displayDates
+        };
+
+        const layout = {
+            title: {
+                text: 'Bitcoin Long-Term Power Law Prediction',
+                font: { family: 'Inter, sans-serif', size: 24, color: '#333' },
+                x: 0.5, xanchor: 'center'
+            },
+            xaxis: {
+                title: {
+                    text: 'Days Since Jan 1, 2011 (Log Scale)',
+                    font: { family: 'Inter, sans-serif', size: 16, color: '#555' }
+                },
+                type: 'log',
+                gridcolor: '#e0e0e0',
+                linecolor: '#cccccc',
+                linewidth: 1,
+                mirror: true,
+                tickvals: xDays.filter((_, i) => i % 6 === 0),
+                ticktext: displayDates.filter((_, i) => i % 6 === 0),
+                rangeslider: { visible: true },
+                rangeselector: {
+                    buttons: [
+                        { count: 1, label: '1y', step: 'year', stepmode: 'backward' },
+                        { count: 5, label: '5y', step: 'year', stepmode: 'backward' },
+                        { step: 'all' }
+                    ]
+                }
+            },
+            yaxis: {
+                title: {
+                    text: 'Price (USD) (Log Scale)',
+                    font: { family: 'Inter, sans-serif', size: 16, color: '#555' }
+                },
+                type: 'log',
+                autorange: true,
+                gridcolor: '#e0e0e0',
+                linecolor: '#cccccc',
+                linewidth: 1,
+                mirror: true,
+                tickprefix: '$'
+            },
+            margin: { l: 80, r: 50, b: 100, t: 80, pad: 4 },
+            hovermode: 'x unified',
+            showlegend: true,
+            legend: {
+                x: 0.01,
+                y: 0.99,
+                bgcolor: 'rgba(255, 255, 255, 0.8)',
+                bordercolor: '#ccc',
+                borderwidth: 1,
+                font: { family: 'Inter, sans-serif', size: 12, color: '#333' }
+            },
+            plot_bgcolor: '#f9f9f9',
+            paper_bgcolor: '#ffffff',
+            responsive: true
+        };
+
+        const config = {
+            responsive: true,
+            displayModeBar: true,
+            displaylogo: false
+        };
+
+        Plotly.newPlot('powerLawChart', [tracePowerLaw, traceResistance, traceSupport], layout, config);
+
+        window.addEventListener('resize', () => {
+            const chartDiv = document.getElementById('powerLawChart');
+            chartDiv.style.height = window.innerWidth < 768 ? '400px' : '600px';
+            Plotly.relayout(chartDiv, {});
+        });
+        window.dispatchEvent(new Event('resize'));
+    </script>
+</body>
+</html>
