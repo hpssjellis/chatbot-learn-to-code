@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BTC CSV to 2D Array Converter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles to ensure Inter font and smooth rounded corners */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Light gray background */
+        }
+        .container {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+        }
+        pre {
+            white-space: pre-wrap; /* Wrap long lines */
+            word-break: break-all; /* Break words to prevent overflow */
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+    <div class="container bg-white p-8 rounded-xl shadow-lg w-full max-w-2xl">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">
+            BTC CSV to 2D Array Converter
+        </h1>
+
+        <div class="mb-6">
+            <label for="csvFile" class="block text-gray-700 text-sm font-semibold mb-2">
+                Upload your CSV file:
+            </label>
+            <input
+                type="file"
+                id="csvFile"
+                accept=".csv"
+                class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+            />
+        </div>
+
+        <button
+            id="processButton"
+            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-300 ease-in-out transform hover:scale-105"
+        >
+            Convert CSV to 2D Array
+        </button>
+
+        <div id="message" class="mt-4 text-sm text-red-600 text-center">
+            </div>
+
+        <div class="mt-8">
+            <h2 class="text-xl font-semibold text-gray-800 mb-3">
+                Converted 2D Array:
+            </h2>
+            <pre
+                id="outputArray"
+                class="bg-gray-100 p-4 rounded-lg border border-gray-200 text-gray-800 text-sm overflow-auto max-h-96"
+            >
+                </pre>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Get references to the HTML elements
+            const csvFileInput = document.getElementById('csvFile');
+            const processButton = document.getElementById('processButton');
+            const outputArrayPre = document.getElementById('outputArray');
+            const messageDiv = document.getElementById('message');
+
+            /**
+             * Displays a message to the user.
+             * @param {string} msg - The message to display.
+             * @param {string} type - The type of message ('success' or 'error').
+             */
+            function displayMessage(msg, type) {
+                messageDiv.textContent = msg;
+                if (type === 'error') {
+                    messageDiv.className = 'mt-4 text-sm text-red-600 text-center';
+                } else if (type === 'success') {
+                    messageDiv.className = 'mt-4 text-sm text-green-600 text-center';
+                } else {
+                    messageDiv.className = 'mt-4 text-sm text-gray-700 text-center';
+                }
+            }
+
+            // Add event listener to the process button
+            processButton.addEventListener('click', () => {
+                const file = csvFileInput.files[0]; // Get the selected file
+
+                // Clear previous messages and output
+                displayMessage('', '');
+                outputArrayPre.textContent = '';
+
+                if (!file) {
+                    displayMessage('Please select a CSV file first.', 'error');
+                    return;
+                }
+
+                // Create a new FileReader object
+                const reader = new FileReader();
+
+                // Define what happens when the file is loaded
+                reader.onload = (event) => {
+                    try {
+                        const csvContent = event.target.result; // Get the file content as a string
+                        const lines = csvContent.split('\n'); // Split content into lines
+
+                        const dataArray = [];
+
+                        // Iterate over each line to parse the CSV data
+                        // Assuming the data is in descending order as per the request,
+                        // no explicit sorting is performed here.
+                        lines.forEach(line => {
+                            // Trim whitespace and skip empty lines
+                            const trimmedLine = line.trim();
+                            if (trimmedLine) {
+                                // Split each line by comma to get individual values
+                                const values = trimmedLine.split(',');
+                                dataArray.push(values); // Add the array of values to the 2D array
+                            }
+                        });
+
+                        // Display the resulting 2D array in a readable format
+                        // JSON.stringify with 2 spaces for indentation makes it easy to read
+                        outputArrayPre.textContent = JSON.stringify(dataArray, null, 2);
+                        displayMessage('CSV successfully converted to 2D array!', 'success');
+
+                    } catch (error) {
+                        displayMessage(`Error processing file: ${error.message}`, 'error');
+                        console.error('Error processing CSV:', error);
+                    }
+                };
+
+                // Define what happens if there's an error reading the file
+                reader.onerror = () => {
+                    displayMessage('Failed to read the file.', 'error');
+                    console.error('FileReader error:', reader.error);
+                };
+
+                // Read the file as text
+                reader.readAsText(file);
+            });
+        });
+    </script>
+</body>
+</html>
