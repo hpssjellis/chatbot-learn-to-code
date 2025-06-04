@@ -466,6 +466,13 @@
                   btcDaysSinceGenesisGlobal.push(days); // Store days since genesis
                   btcLogPricesGlobal.push(Math.log(price)); // Store log price
               });
+            // add the historical bitcoin 2011 to 2018
+            console.log('earlyDates.length')
+            console.log(earlyDates.length)
+            for (let myI=0; myI < earlyDates.length; myI++){
+
+              
+            }
 
               btcTraceGlobal = {
                   x: btcDaysSinceGenesisGlobal, // Use days since genesis for x-axis
