@@ -172,7 +172,7 @@
        */
       function initializeInputFields() {
           // QCBD Parameters
-          qcbDateYear = 2039.2;
+          qcbDateYear = 2034.2;
           socialDistrustValue = 100; 
           qcbTransitionDuration = 2.0;
           qcbCrashStrength = 2.0; 
@@ -452,7 +452,7 @@
               const response = await fetch(url);
               const data = await response.json();
 
-              // Clear previous BTC data arrays
+              // Clear previous BTC data arraysFvisible
               btcDatesGlobal = [];
               btcDaysSinceGenesisGlobal = [];
               btcLogPricesGlobal = [];
@@ -637,7 +637,7 @@
           mode: 'lines',
           line: { color: 'green', width: 1 }, 
           name: 'Wave ' + (i + 1),
-          visible: 'legendonly',
+        //  visible: 'legendonly',
           hovertemplate: '<b>Date:</b> %{customdata}<br><b>Days:</b> %{x}<br><b>Price:</b> %{y:$,.2f}<extra></extra>',
           customdata: displayDates
         }));
