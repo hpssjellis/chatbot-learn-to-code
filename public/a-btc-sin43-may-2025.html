@@ -462,7 +462,7 @@
               const dataReverse = data.slice().reverse();
 
               dataReverse.forEach(candle => {
-              data.forEach(candle => {
+            //  data.forEach(candle => {
                   const date = new Date(candle[0]); // Unix timestamp to Date object
                   const days = daysSinceGenesis(date); // Calculate days since genesis
                   const price = parseFloat(candle[4]); // Closing price
