@@ -457,7 +457,11 @@
               btcDaysSinceGenesisGlobal = [];
               btcLogPricesGlobal = [];
 
-              data.forEach(candle => {
+            //// Create a reversed copy
+             //const reversedArray = originalArray.slice().reverse();
+              const dataReverse = data.slice().reverse();
+
+              dataReverse.forEach(candle => {
                   const date = new Date(candle[0]); // Unix timestamp to Date object
                   const days = daysSinceGenesis(date); // Calculate days since genesis
                   const price = parseFloat(candle[4]); // Closing price
@@ -469,6 +473,11 @@
             // add the historical bitcoin 2011 to 2018
             console.log('earlyDates.length')
             console.log(earlyDates.length)
+
+
+
+
+            
             for (let myI=0; myI < earlyDates.length; myI++){
                 btcDatesGlobal.push(earlyDates[myI])
                 btcDaysSinceGenesisGlobal.push(earlyDaysSinceGenesis[myI]); // Store days since genesis
