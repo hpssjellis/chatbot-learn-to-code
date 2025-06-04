@@ -459,9 +459,10 @@
 
             //// Create a reversed copy
              //const reversedArray = originalArray.slice().reverse();
-              const dataReverse = data.slice().reverse();
+             // const dataReverse = data.slice().reverse();
 
-              dataReverse.forEach(candle => {
+            //  dataReverse.forEach(candle => {
+              data.forEach(candle => {
                   const date = new Date(candle[0]); // Unix timestamp to Date object
                   const days = daysSinceGenesis(date); // Calculate days since genesis
                   const price = parseFloat(candle[4]); // Closing price
@@ -478,7 +479,8 @@
 
 
             
-            for (let myI=0; myI < earlyDates.length; myI++){
+        //    for (let myI=0; myI < earlyDates.length; myI++){
+            for (let myI=earlyDates.length; myI > 0 ; myI--){
                 btcDatesGlobal.push(earlyDates[myI])
                 btcDaysSinceGenesisGlobal.push(earlyDaysSinceGenesis[myI]); // Store days since genesis
                 btcLogPricesGlobal.push(earlyLogPrices[myI]); // Store log price          
