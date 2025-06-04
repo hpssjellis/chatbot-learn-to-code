@@ -184,20 +184,20 @@
           document.getElementById('qcbAmplitudeDampeningInput').value = qcbAmplitudeDampening.toFixed(3); 
 
           // Independent Power Law Parameters (Max) - Adjusted values
-          independentPowerLawAmplitudeMax = 1.0e-16; 
-          independentPowerLawExponentMax = 5.85; 
+          independentPowerLawAmplitudeMax = 1.0e-13; 
+          independentPowerLawExponentMax = 4.95; 
           document.getElementById('independentPowerLawAmplitudeMaxInput').value = independentPowerLawAmplitudeMax.toExponential(3); 
           document.getElementById('independentPowerLawExponentMaxInput').value = independentPowerLawExponentMax.toFixed(3);
 
           // Independent Power Law Parameters (Expected) - Adjusted values
           independentPowerLawAmplitude = 1.0e-17; 
-          independentPowerLawExponent = 5.8; 
+          independentPowerLawExponent = 5.85; 
           document.getElementById('independentPowerLawAmplitudeInput').value = independentPowerLawAmplitude.toExponential(3); 
           document.getElementById('independentPowerLawExponentInput').value = independentPowerLawExponent.toFixed(3);
 
           // Independent Power Law Parameters (Min) - Adjusted values
           independentPowerLawAmplitudeMin = 1.0e-18; 
-          independentPowerLawExponentMin = 5.75; 
+          independentPowerLawExponentMin = 6.00; 
           document.getElementById('independentPowerLawAmplitudeMinInput').value = independentPowerLawAmplitudeMin.toExponential(3); 
           document.getElementById('independentPowerLawExponentMinInput').value = independentPowerLawExponentMin.toFixed(3);
 
@@ -457,7 +457,12 @@
               btcDaysSinceGenesisGlobal = [];
               btcLogPricesGlobal = [];
 
-              data.forEach(candle => {
+            //// Create a reversed copy
+             //const reversedArray = originalArray.slice().reverse();
+              const dataReverse = data.slice().reverse();
+
+              dataReverse.forEach(candle => {
+            //  data.forEach(candle => {
                   const date = new Date(candle[0]); // Unix timestamp to Date object
                   const days = daysSinceGenesis(date); // Calculate days since genesis
                   const price = parseFloat(candle[4]); // Closing price
@@ -467,9 +472,15 @@
                   btcLogPricesGlobal.push(Math.log(price)); // Store log price
               });
             // add the historical bitcoin 2011 to 2018
-            console.log('earlyDates.length')
-            console.log(earlyDates.length)
-            for (let myI=0; myI < earlyDates.length; myI++){
+         //   console.log('earlyDates.length')
+          //  console.log(earlyDates.length)
+
+
+
+
+            
+        //    for (let myI=0; myI < earlyDates.length; myI++){
+            for (let myI=earlyDates.length; myI > 0 ; myI--){
                 btcDatesGlobal.push(earlyDates[myI])
                 btcDaysSinceGenesisGlobal.push(earlyDaysSinceGenesis[myI]); // Store days since genesis
                 btcLogPricesGlobal.push(earlyLogPrices[myI]); // Store log price          
