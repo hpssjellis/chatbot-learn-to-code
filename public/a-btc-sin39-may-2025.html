@@ -470,8 +470,9 @@
             console.log('earlyDates.length')
             console.log(earlyDates.length)
             for (let myI=0; myI < earlyDates.length; myI++){
-
-              
+                btcDatesGlobal.push(earlyDates[myI])
+                btcDaysSinceGenesisGlobal.push(earlyDaysSinceGenesis[myI]); // Store days since genesis
+                btcLogPricesGlobal.push(earlyLogPrices[myI]); // Store log price          
             }
 
               btcTraceGlobal = {
