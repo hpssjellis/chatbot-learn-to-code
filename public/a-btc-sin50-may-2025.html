@@ -972,7 +972,7 @@
               }
 
               // Optional: Update UI periodically to show progress
-              if (iteration % 10 === 0 || iteration === optimizationIterations - 1) {
+              if (iteration % 4 === 0 || iteration === optimizationIterations - 1) {
                   document.getElementById('statusMessage').innerText = `Optimizing... Iteration ${iteration + 1}/${optimizationIterations}, Current Best Error: ${bestError.toFixed(3)}`;
                   // Re-plot to show intermediate results (can be slow, comment out if needed for speed)
                   // updateInputFieldsWithOptimizedParams(bestParams);
@@ -986,7 +986,7 @@
           updateInputFieldsWithOptimizedParams(bestParams);
           myGenerateLogLogData(); // Final plot update
 
-          document.getElementById('statusMessage').innerText = `Optimization complete! Final Error: ${bestError.toExponential(3)}`;
+          document.getElementById('statusMessage').innerText = `Optimization complete! Final Error: ${bestError.toFixed(3)}`;
           console.log("Optimization finished. Best parameters:", bestParams);
           console.log("Final Error:", bestError);
       }
