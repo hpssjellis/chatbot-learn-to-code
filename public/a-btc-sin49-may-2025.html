@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Vibe Coding BTC Sinusoids</title>
+    <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+    <style>
+      /* Absolute minimum CSS in style block */
+      body {
+        font-family: sans-serif;
+        margin: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div style="max-width: 1200px; margin: 0 auto; padding: 0 10px;">
+      <div style="margin-bottom: 20px;">
+        <h2 style="font-size: 2em; margin-bottom: 15px; text-align: center;">Vibe Coding BTC Sinusoids</h2>
+        <p style="margin-bottom: 10px;">The <a href="https://charts.bitbo.io/long-term-power-law/">power-law BTC equation</a> plotting BTC on a price-date log-log graph with max-min parameters. This is interesting, but anyone should be able to see the complex sinusoidal potential in that graph. This page is my attempt to give people their own control of this complexity.</p>
+
+        <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 10px;">
+            <!-- New Optimize Button -->
+            <button onclick="optimizeModel()" style="padding: 10px 20px; background-color: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 1.1em; align-self: flex-start;">Optimize Combined Line to BTC</button>
+        </div>
+        <div id="statusMessage" style="margin-top: 10px; padding: 10px; background-color: #e0f7fa; border: 1px solid #b2ebf2; border-radius: 5px; color: #00796b; font-size: 0.9em;">Status: Ready</div>
+        <br>
+
+        <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 20px; margin-bottom: 15px;">
+          <div style="border: 1px solid #ddd; padding: 15px; background-color: #f9f9f9; border-radius: 5px; flex: 1 1 450px; max-width: 550px;">
+            <h3 style="font-size: 1.3em; margin-top: 0; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">QCBD Parameters <small>(Quantum Crypto Breaking Date)</small></h3>
+            <div style="margin-bottom: 10px;">
+              <label for="qcbDateInput" style="display: block; margin-bottom: 2px; font-weight: bold;">QCBD Year:</label>
+              <input type="text" id="qcbDateInput" value="2030.0" size="8" onchange="qcbDateYear = parseFloat(this.value); myGenerateLogLogData();" style="width: calc(100% - 10px); padding: 5px; border: 1px solid #ccc; border-radius: 3px;">
+            </div>
+            <div style="margin-bottom: 10px;">
+              <label for="socialDistrustValueInput" style="display: block; margin-bottom: 2px; font-weight: bold;">Social Distrust (Crash Target): <small>(Set low for dramatic crash)</small></label>
+              <input type="text" id="socialDistrustValueInput" value="500" size="10" onchange="socialDistrustValue = parseFloat(this.value); myGenerateLogLogData();" style="width: calc(100% - 10px); padding: 5px; border: 1px solid #ccc; border-radius: 3px;">
+            </div>
+            <div style="margin-bottom: 10px;">
+              <label for="qcbTransitionInput" style="display: block; margin-bottom: 2px; font-weight: bold;">QCBD Transition (Years):</label>
+              <input type="text" id="qcbTransitionInput" value="0.5" size="6" onchange="qcbTransitionDuration = parseFloat(this.value); myGenerateLogLogData();" style="width: calc(100% - 10px); padding: 5px; border: 1px solid #ccc; border-radius: 3px;">
+            </div>
+            <div style="margin-bottom: 10px;">
+              <label for="qcbCrashStrengthInput" style="display: block; margin-bottom: 2px; font-weight: bold;">QCBD Crash Strength: <small>(Higher = faster drop)</small></label>
+              <input type="text" id="qcbCrashStrengthInput" value="5.0" size="6" onchange="qcbCrashStrength = parseFloat(this.value); myGenerateLogLogData();" style="width: calc(100% - 10px); padding: 5px; border: 1px solid #ccc; border-radius: 3px;">
+            </div>
+            <div style="margin-bottom: 10px;">
+              <label for="qcbAmplitudeDampeningInput" style="display: block; margin-bottom: 2px; font-weight: bold;">QCBD Amplitude Dampening: <small>(0.0 = flat, 1.0 = no dampening)</small></label>
+              <input type="text" id="qcbAmplitudeDampeningInput" value="0.005" size="6" onchange="qcbAmplitudeDampening = parseFloat(this.value); myGenerateLogLogData();" style="width: calc(100% - 10px); padding: 5px; border: 1px solid #ccc; border-radius: 3px;">
+            </div>
+          </div>
+
+          <div style="border: 1px solid #ddd; padding: 15px; background-color: #f9f9f9; border-radius: 5px; flex: 1 1 450px; max-width: 550px;">
+            <h3 style="font-size: 1.3em; margin-top: 0; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Independent Power Law Parameters <small>(Not Affecting Combined Line)</small></h3>
+            <p style="font-size: 0.9em; color: #777; margin-bottom: 10px;">These lines are for visual comparison and are separate from the combined sinusoidal model.</p>
+
+
+            
+            <h4 style="font-size: 1.1em; margin-top: 15px; margin-bottom: 10px;">Max Independent Power Law</h4>
+            <div style="margin-bottom: 10px;">
+              <label for="independentPowerLawAmplitudeMaxInput" style="display: block; margin-bottom: 2px; font-weight: bold;">Amplitude (Max):</label>
+              <input type="text" id="independentPowerLawAmplitudeMaxInput" value="1.0e-16" size="15" onchange="independentPowerLawAmplitudeMax = parseFloat(this.value); myGenerateLogLogData();" style="width: calc(100% - 10px); padding: 5px; border: 1px solid #ccc; border-radius: 3px;">
+            </div>
+            <div style="margin-bottom: 10px;">
+              <label for="independentPowerLawExponentMaxInput" style="display: block; margin-bottom: 2px; font-weight: bold;">Exponent (Max):</label>
+              <input type="text" id="independentPowerLawExponentMaxInput" value="5.85" size="10" onchange="independentPowerLawExponentMax = parseFloat(this.value); myGenerateLogLogData();" style="width: calc(100% - 10px); padding: 5px; border: 1px solid #ccc; border-radius: 3px;">
+            </div>
+
+            
+            <h4 style="font-size: 1.1em; margin-top: 15px; margin-bottom: 10px;">Expected BTC</h4>
+            <div style="margin-bottom: 10px;">
+              <label for="independentPowerLawAmplitudeInput" style="display: block; margin-bottom: 2px; font-weight: bold;">Amplitude:</label>
+              <input type="text" id="independentPowerLawAmplitudeInput" value="1.0e-17" size="15" onchange="independentPowerLawAmplitude = parseFloat(this.value); myGenerateLogLogData();" style="width: calc(100% - 10px); padding: 5px; border: 1px solid #ccc; border-radius: 3px;">
+            </div>
+            <div style="margin-bottom: 10px;">
+              <label for="independentPowerLawExponentInput" style="display: block; margin-bottom: 2px; font-weight: bold;">Exponent:</label>
+              <input type="text" id="independentPowerLawExponentInput" value="5.8" size="10" onchange="independentPowerLawExponent = parseFloat(this.value); myGenerateLogLogData();" style="width: calc(100% - 10px); padding: 5px; border: 1px solid #ccc; border-radius: 3px;">
+            </div>
+
+
+            <h4 style="font-size: 1.1em; margin-top: 15px; margin-bottom: 10px;">Min Independent Power Law</h4>
+            <div style="margin-bottom: 10px;">
+              <label for="independentPowerLawAmplitudeMinInput" style="display: block; margin-bottom: 2px; font-weight: bold;">Amplitude (Min):</label>
+              <input type="text" id="independentPowerLawAmplitudeMinInput" value="1.0e-18" size="15" onchange="independentPowerLawAmplitudeMin = parseFloat(this.value); myGenerateLogLogData();" style="width: calc(100% - 10px); padding: 5px; border: 1px solid #ccc; border-radius: 3px;">
+            </div>
+            <div style="margin-bottom: 10px;">
+              <label for="independentPowerLawExponentMinInput" style="display: block; margin-bottom: 2px; font-weight: bold;">Exponent (Min):</label>
+              <input type="text" id="independentPowerLawExponentMinInput" value="5.75" size="10" onchange="independentPowerLawExponentMin = parseFloat(this.value); myGenerateLogLogData();" style="width: calc(100% - 10px); padding: 5px; border: 1px solid #ccc; border-radius: 3px;">
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: center; flex-wrap: wrap;">
+          <div style="border: 1px solid #ddd; padding: 15px; margin: 10px; background-color: #f9f9f9; border-radius: 5px;">
+            <h4 style="font-size: 1.1em; margin-top: 0; margin-bottom: 10px;">Wave 1</h4>
+            <div style="margin-bottom: 10px;"><label style="display: inline-block; width: 120px; text-align: right; margin-right: 5px;">Frequency:</label><input type="text" value="7" size="6" id="wave1FreqInput" onchange="wave1Freq = parseFloat(this.value); myGenerateLogLogData();" style="margin-bottom: 5px;"></div>
+            <div style="margin-bottom: 10px;"><label style="display: inline-block; width: 120px; text-align: right; margin-right: 5px;">Amplitude:</label><input type="text" value="10000" size="6" id="wave1AmpInput" onchange="wave1Amp = parseFloat(this.value); myGenerateLogLogData();" style="margin-bottom: 5px;"></div>
+            <div style="margin-bottom: 10px;"><label style="display: inline-block; width: 120px; text-align: right; margin-right: 5px;">Phase (radians):</label><input type="text" value="0.0" size="6" id="wave1PhaseInput" onchange="wave1Phase = parseFloat(this.value); myGenerateLogLogData();" style="margin-bottom: 5px;"></div>
+            <div style="margin-bottom: 10px;"><label style="display: inline-block; width: 120px; text-align: right; margin-right: 5px;">Freq Growth Factor:</label><input type="text" value="0.0" size="6" id="wave1FreqGrowthInput" onchange="wave1FreqGrowth = parseFloat(this.value); myGenerateLogLogData();" style="margin-bottom: 5px;"></div>
+            <div style="margin-bottom: 10px;"><label style="display: inline-block; width: 120px; text-align: right; margin-right: 5px;">Amp Growth Factor:</label><input type="text" value="0.1" size="6" id="wave1AmpGrowthInput" onchange="wave1AmpGrowth = parseFloat(this.value); myGenerateLogLogData();" style="margin-bottom: 5px;"></div>
+            <div style="margin-bottom: 10px;"><label style="display: inline-block; width: 120px; text-align: right; margin-right: 5px;">Amp Growth Strength:</label><input type="text" value="1.0" size="6" id="wave1AmpGrowthStrengthInput" onchange="wave1AmpGrowthStrength = parseFloat(this.value); myGenerateLogLogData();" style="margin-bottom: 5px;"></div>
+            <hr style="margin: 10px 0;">
+            <div style="margin-bottom: 10px;"><label style="display: inline-block; width: 120px; text-align: right; margin-right: 5px;">PL Amplitude:</label><input type="text" value="1.0e-17" size="10" id="wave1PowerLawAmplitudeInput" onchange="wave1PowerLawAmplitude = parseFloat(this.value); myGenerateLogLogData();" style="margin-bottom: 5px;"></div>
+            <div style="margin-bottom: 10px;"><label style="display: inline-block; width: 120px; text-align: right; margin-right: 5px;">PL Exponent:</label><input type="text" value="5.85" size="10" id="wave1PowerLawExponentInput" onchange="wave1PowerLawExponent = parseFloat(this.value); myGenerateLogLogData();" style="margin-bottom: 5px;"></div>
+          </div>
+
+          <div style="border: 1px solid #ddd; padding: 15px; margin: 10px; background-color: #f9f9f9; border-radius: 5px;">
+            <h4 style="font-size: 1.1em; margin-top: 0; margin-bottom: 10px;">Wave 2</h4>
+            <div style="margin-bottom: 10px;"><label style="display: inline-block; width: 120px; text-align: right; margin-right: 5px;">Frequency:</label><input type="text" value="77" size="6" id="wave2FreqInput" onchange="wave2Freq = parseFloat(this.value); myGenerateLogLogData();" style="margin-bottom: 5px;"></div>
+            <div style="margin-bottom: 10px;"><label style="display: inline-block; width: 120px; text-align: right; margin-right: 5px;">Amplitude:</label><input type="text" value="5000" size="6" id="wave2AmpInput" onchange="wave2Amp = parseFloat(this.value); myGenerateLogLogData();" style="margin-bottom: 5px;"></div>
+            <div style="margin-bottom: 10px;"><label style="display: inline-block; width: 120px; text-align: right; margin-right: 5px;">Phase (radians):</label><input type="text" value="0.0" size="6" id="wave2PhaseInput" onchange="wave2Phase = parseFloat(this.value); myGenerateLogLogData();" style="margin-bottom: 5px;"></div>
+            <div style="margin-bottom: 10px;"><label style="display: inline-block; width: 120px; text-align: right; margin-right: 5px;">Freq Growth Factor:</label><input type="text" value="0.0" size="6" id="wave2FreqGrowthInput" onchange="wave2FreqGrowth = parseFloat(this.value); myGenerateLogLogData();" style="margin-bottom: 5px;"></div>
+            <div style="margin-bottom: 10px;"><label style="display: inline-block; width: 120px; text-align: right; margin-right: 5px;">Amp Growth Factor:</label><input type="text" value="0.1" size="6" id="wave2AmpGrowthInput" onchange="wave2AmpGrowth = parseFloat(this.value); myGenerateLogLogData();" style="margin-bottom: 5px;"></div>
+            <div style="margin-bottom: 10px;"><label style="display: inline-block; width: 120px; text-align: right; margin-right: 5px;">Amp Growth Strength:</label><input type="text" value="1.0" size="6" id="wave2AmpGrowthStrengthInput" onchange="wave2AmpGrowthStrength = parseFloat(this.value); myGenerateLogLogData();" style="margin-bottom: 5px;"></div>
+            <hr style="margin: 10px 0;">
+            <div style="margin-bottom: 10px;"><label style="display: inline-block; width: 120px; text-align: right; margin-right: 5px;">PL Amplitude:</label><input type="text" value="1.0e-17" size="10" id="wave2PowerLawAmplitudeInput" onchange="wave2PowerLawAmplitude = parseFloat(this.value); myGenerateLogLogData();" style="margin-bottom: 5px;"></div>
+            <div style="margin-bottom: 10px;"><label style="display: inline-block; width: 120px; text-align: right; margin-right: 5px;">PL Exponent:</label><input type="text" value="5.85" size="10" id="wave2PowerLawExponentInput" onchange="wave2PowerLawExponent = parseFloat(this.value); myGenerateLogLogData();" style="margin-bottom: 5px;"></div>
+          </div>
+
+          <div style="border: 1px solid #ddd; padding: 15px; margin: 10px; background-color: #f9f9f9; border-radius: 5px;">
+            <h4 style="font-size: 1.1em; margin-top: 0; margin-bottom: 10px;">Wave 3</h4>
+            <div style="margin-bottom: 10px;"><label style="display: inline-block; width: 120px; text-align: right; margin-right: 5px;">Frequency:</label><input type="text" value="777" size="6" id="wave3FreqInput" onchange="wave3Freq = parseFloat(this.value); myGenerateLogLogData();" style="margin-bottom: 5px;"></div>
+            <div style="margin-bottom: 10px;"><label style="display: inline-block; width: 120px; text-align: right; margin-right: 5px;">Amplitude:</label><input type="text" value="5000" size="6" id="wave3AmpInput" onchange="wave3Amp = parseFloat(this.value); myGenerateLogLogData();" style="margin-bottom: 5px;"></div>
+            <div style="margin-bottom: 10px;"><label style="display: inline-block; width: 120px; text-align: right; margin-right: 5px;">Phase (radians):</label><input type="text" value="0.0" size="6" id="wave3PhaseInput" onchange="wave3Phase = parseFloat(this.value); myGenerateLogLogData();" style="margin-bottom: 5px;"></div>
+            <div style="margin-bottom: 10px;"><label style="display: inline-block; width: 120px; text-align: right; margin-right: 5px;">Freq Growth Factor:</label><input type="text" value="0.0" size="6" id="wave3FreqGrowthInput" onchange="wave3FreqGrowth = parseFloat(this.value); myGenerateLogLogData();" style="margin-bottom: 5px;"></div>
+            <div style="margin-bottom: 10px;"><label style="display: inline-block; width: 120px; text-align: right; margin-right: 5px;">Amp Growth Factor:</label><input type="text" value="0.1" size="6" id="wave3AmpGrowthInput" onchange="wave3AmpGrowth = parseFloat(this.value); myGenerateLogLogData();" style="margin-bottom: 5px;"></div>
+            <div style="margin-bottom: 10px;"><label style="display: inline-block; width: 120px; text-align: right; margin-right: 5px;">Amp Growth Strength:</label><input type="text" value="1.0" size="6" id="wave3AmpGrowthStrengthInput" onchange="wave3AmpGrowthStrength = parseFloat(this.value); myGenerateLogLogData();" style="margin-bottom: 5px;"></div>
+            <hr style="margin: 10px 0;">
+            <div style="margin-bottom: 10px;"><label style="display: inline-block; width: 120px; text-align: right; margin-right: 5px;">PL Amplitude:</label><input type="text" value="1.0e-17" size="10" id="wave3PowerLawAmplitudeInput" onchange="wave3PowerLawAmplitude = parseFloat(this.value); myGenerateLogLogData();" style="margin-bottom: 5px;"></div>
+            <div style="margin-bottom: 10px;"><label style="display: inline-block; width: 120px; text-align: right; margin-right: 5px;">PL Exponent:</label><input type="text" value="5.85" size="10" id="wave3PowerLawExponentInput" onchange="wave3PowerLawExponent = parseFloat(this.value); myGenerateLogLogData();" style="margin-bottom: 5px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div style="width: 100%; height: 80vh; border: 1px solid #ccc; box-shadow: 2px 2px 5px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center;">
+        <div id="myPlot" style="width:100%; height:100%;"></div>
+      </div>
+    </div>
+
+    <script>
+      // Function to calculate days since January 3, 2009 (Bitcoin Genesis Block)
+      function daysSinceGenesis(date) {
+          const genesisDate = new Date('2009-01-03T00:00:00Z');
+          const diffTime = Math.abs(date.getTime() - genesisDate.getTime());
+          return Math.ceil(diffTime / (1000 * 60 * 60 * 24)); // Convert milliseconds to days
+      }
+
+      // --- NEW CORE FUNCTIONS FOR MULTIPLICATIVE WAVES ---
+
+      /**
+       * Calculates the value for a power law: Y = A * X^k.
+       * This function is designed to represent the straight midline on a log-log plot.
+       * @param {number} X - The independent variable (e.g., days since genesis).
+       * @param {number} A_pl - The coefficient (pre-factor) of the power law.
+       * @param {number} k_pl - The exponent of the power law.
+       * @returns {number} The Y value according to the power law.
+       */
+      function calculatePowerLawValue(X, A_pl, k_pl) {
+          // Ensure X is positive for Math.pow, especially if X can be 0 or negative
+          if (X <= 0) return 0.001; // Return a small positive value to avoid errors in log scale
+          return A_pl * Math.pow(X, k_pl);
+      }
+
+      /**
+       * Calculates a sinusoidal wave value whose midline follows a power law.
+       * The oscillation is applied as a multiplicative factor to the power law baseline.
+       * Incorporates frequency and amplitude factor growth over time (logYear).
+       * @param {number} X_days - The independent variable in days since genesis (for power law).
+       * @param {number} year - The current year (for logYear calculations).
+       * @param {number} startLogYear - The logYear value at the start of the plot (for relativeLogYear).
+       * @param {number} amp_initial_factor - The initial fractional amplitude of oscillation (e.g., 0.1 for 10%).
+       * This is a dimensionless factor.
+       * @param {number} freq_initial - The initial frequency of the oscillation (cycles per logYear unit).
+       * @param {number} phase - The phase offset of the oscillation.
+       * @param {number} freq_growth_factor - Factor for frequency growth.
+       * @param {number} amp_growth_factor - Factor for amplitude factor growth.
+       * @param {number} amp_growth_strength - Strength for amplitude factor growth.
+       * @param {number} powerLawAmp - The 'A' coefficient for the underlying power law midline.
+       * @param {number} powerLawExponent - The 'k' exponent for the underlying power law midline.
+       * @returns {number} The Y value of the wave, oscillating around the power law.
+       */
+      function calculateMultiplicativeWave(X_days, year, startLogYear,
+                                           amp_initial_factor, freq_initial, phase,
+                                           freq_growth_factor, amp_growth_factor, amp_growth_strength,
+                                           powerLawAmp, powerLawExponent) {
+
+          const powerLawMidlineValue = calculatePowerLawValue(X_days, powerLawAmp, powerLawExponent);
+
+          let logYear = Math.log10(year - 1969);
+          let relativeLogYear = logYear - startLogYear;
+
+          // Calculate current frequency with growth
+          let currentFreq = freq_initial * (1 + relativeLogYear * freq_growth_factor);
+          if (currentFreq < 0.0001) currentFreq = 0.0001;
+
+          // Calculate current amplitude factor with growth
+          let currentAmpFactor = amp_initial_factor * Math.exp(relativeLogYear * amp_growth_factor * amp_growth_strength);
+          // Clamp amplitude factor to reasonable values (e.g., 0.000001 to 1.0 for 0.0001% to 100% oscillation)
+          currentAmpFactor = Math.max(0.000001, Math.min(1.0, currentAmpFactor));
+
+          // Calculate the sinusoidal oscillation component
+          let oscillationTerm = currentAmpFactor * Math.sin(2 * Math.PI * currentFreq * logYear + phase);
+
+          // Apply oscillation multiplicatively to the power law midline
+          // Ensure the overall multiplicative factor is positive to avoid log errors
+          return powerLawMidlineValue * Math.max(0.001, (1 + oscillationTerm));
+      }
+
+      // GLOBAL VARIABLES for sinusoidal model parameters - now individual variables for clarity
+      let wave1Freq, wave1Amp, wave1Phase, wave1FreqGrowth, wave1AmpGrowth, wave1AmpGrowthStrength, wave1PowerLawAmplitude, wave1PowerLawExponent;
+      let wave2Freq, wave2Amp, wave2Phase, wave2FreqGrowth, wave2AmpGrowth, wave2AmpGrowthStrength, wave2PowerLawAmplitude, wave2PowerLawExponent;
+      let wave3Freq, wave3Amp, wave3Phase, wave3FreqGrowth, wave3AmpGrowth, wave3AmpGrowthStrength, wave3PowerLawAmplitude, wave3PowerLawExponent;
+
+      // Global variables for QCBD and Social Distrust
+      let qcbDateYear, socialDistrustValue, qcbTransitionDuration, qcbCrashStrength, qcbAmplitudeDampening; 
+
+      // Independent Power Law Parameters (Expected, Max, Min)
+      let independentPowerLawAmplitude, independentPowerLawExponent;
+      let independentPowerLawAmplitudeMax, independentPowerLawExponentMax;
+      let independentPowerLawAmplitudeMin, independentPowerLawExponentMin;
+
+      // Re-added: Global variables to store the BTC trace after it's fetched
+      let btcTraceGlobal = null;
+      let btcLogPricesGlobal = [];
+      let btcDatesGlobal = []; // Stores formatted date strings (YYYY-MM-DD)
+      let btcDaysSinceGenesisGlobal = []; // Stores days since genesis for BTC data
+
+      // Global optimization parameters (can be tuned for better results)
+      let optimizationLearningRate = 0.005; // Initial step size for numerical parameters
+      let optimizationIterations = 100; // Number of optimization cycles
+      let optimizationParamPerturbation = 0.001; // Base perturbation for parameters during optimization
+
+      /**
+       * Initializes the input fields with the current global variable values.
+       * This function is called once on page load to ensure UI consistency.
+       */
+      function initializeInputFields() {
+          // QCBD Parameters
+          qcbDateYear = 2034.2;
+          socialDistrustValue = 100; 
+          qcbTransitionDuration = 0.8;
+          qcbCrashStrength = 1.2; 
+          qcbAmplitudeDampening = 0.005; 
+          document.getElementById('qcbDateInput').value = qcbDateYear.toFixed(3);
+          document.getElementById('socialDistrustValueInput').value = socialDistrustValue.toFixed(3);
+          document.getElementById('qcbTransitionInput').value = qcbTransitionDuration.toFixed(3);
+          document.getElementById('qcbCrashStrengthInput').value = qcbCrashStrength.toFixed(3); 
+          document.getElementById('qcbAmplitudeDampeningInput').value = qcbAmplitudeDampening.toFixed(3); 
+
+          // Independent Power Law Parameters (Max) - Adjusted values
+          independentPowerLawAmplitudeMax = 1.0e-13; 
+          independentPowerLawExponentMax = 4.95; 
+          document.getElementById('independentPowerLawAmplitudeMaxInput').value = independentPowerLawAmplitudeMax.toExponential(3); 
+          document.getElementById('independentPowerLawExponentMaxInput').value = independentPowerLawExponentMax.toFixed(3);
+
+          // Independent Power Law Parameters (Expected) - Adjusted values
+          independentPowerLawAmplitude = 1.0e-17; 
+          independentPowerLawExponent = 5.85; 
+          document.getElementById('independentPowerLawAmplitudeInput').value = independentPowerLawAmplitude.toExponential(3); 
+          document.getElementById('independentPowerLawExponentInput').value = independentPowerLawExponent.toFixed(3);
+
+          // Independent Power Law Parameters (Min) - Adjusted values
+          independentPowerLawAmplitudeMin = 1.0e-18; 
+          independentPowerLawExponentMin = 6.00; 
+          document.getElementById('independentPowerLawAmplitudeMinInput').value = independentPowerLawAmplitudeMin.toExponential(3); 
+          document.getElementById('independentPowerLawExponentMinInput').value = independentPowerLawExponentMin.toFixed(3);
+
+
+          // Wave 1 Parameters
+          wave1Freq = 8.5; 
+          wave1Amp = 0.5; // <--- CHANGED TO FRACTIONAL AMPLITUDE
+          wave1Phase = 0.0;
+          wave1FreqGrowth = 2.0; 
+          wave1AmpGrowth = 1.5;    
+          wave1AmpGrowthStrength = 1.5; 
+          wave1PowerLawAmplitude = 3.500e-18;   // independentPowerLawAmplitude; // Default to global PL
+          wave1PowerLawExponent = 5.850;;    // independentPowerLawExponent; // Default to global PL
+          document.getElementById('wave1FreqInput').value = wave1Freq.toFixed(3);
+          document.getElementById('wave1AmpInput').value = wave1Amp.toFixed(3); // <--- Updated to fixed(3) for factor
+          document.getElementById('wave1PhaseInput').value = wave1Phase.toFixed(3);
+          document.getElementById('wave1FreqGrowthInput').value = wave1FreqGrowth.toFixed(3);
+          document.getElementById('wave1AmpGrowthInput').value = wave1AmpGrowth.toFixed(3);
+          document.getElementById('wave1AmpGrowthStrengthInput').value = wave1AmpGrowthStrength.toFixed(3);
+          document.getElementById('wave1PowerLawAmplitudeInput').value = wave1PowerLawAmplitude.toExponential(3);
+          document.getElementById('wave1PowerLawExponentInput').value = wave1PowerLawExponent.toFixed(3);
+
+          // Wave 2 Parameters
+          wave2Freq = 20; 
+          wave2Amp = 0.4; // <--- CHANGED TO FRACTIONAL AMPLITUDE
+          wave2Phase = 0.0;
+          wave2FreqGrowth = 2.0; 
+          wave2AmpGrowth = 1.5;    
+          wave2AmpGrowthStrength = 1.5; 
+          wave2PowerLawAmplitude = 3.500e-18; // Default to global PL
+          wave2PowerLawExponent = 5.850; // Default to global PL
+          document.getElementById('wave2FreqInput').value = wave2Freq.toFixed(3);
+          document.getElementById('wave2AmpInput').value = wave2Amp.toFixed(3);
+          document.getElementById('wave2PhaseInput').value = wave2Phase.toFixed(3);
+          document.getElementById('wave2FreqGrowthInput').value = wave2FreqGrowth.toFixed(3);
+          document.getElementById('wave2AmpGrowthInput').value = wave2AmpGrowth.toFixed(3);
+          document.getElementById('wave2AmpGrowthStrengthInput').value = wave2AmpGrowthStrength.toFixed(3);
+          document.getElementById('wave2PowerLawAmplitudeInput').value = wave2PowerLawAmplitude.toExponential(3);
+          document.getElementById('wave2PowerLawExponentInput').value = wave2PowerLawExponent.toFixed(3);
+
+          // Wave 3 Parameters
+          wave3Freq = 33;  
+          wave3Amp = 0.3; // <--- CHANGED TO FRACTIONAL AMPLITUDE
+          wave3Phase = 0.0;
+          wave3FreqGrowth = 2.0; 
+          wave3AmpGrowth = 1.5;   
+          wave3AmpGrowthStrength = 1.5; 
+          wave3PowerLawAmplitude = 3.500e-18; // Default to global PL
+          wave3PowerLawExponent = 5.850;// Default to global PL
+          document.getElementById('wave3FreqInput').value = wave3Freq.toFixed(3);
+          document.getElementById('wave3AmpInput').value = wave3Amp.toFixed(3);
+          document.getElementById('wave3PhaseInput').value = wave3Phase.toFixed(3);
+          document.getElementById('wave3FreqGrowthInput').value = wave3FreqGrowth.toFixed(3);
+          document.getElementById('wave3AmpGrowthInput').value = wave3AmpGrowth.toFixed(3);
+          document.getElementById('wave3AmpGrowthStrengthInput').value = wave3AmpGrowthStrength.toFixed(3);
+          document.getElementById('wave3PowerLawAmplitudeInput').value = wave3PowerLawAmplitude.toExponential(3);
+          document.getElementById('wave3PowerLawExponentInput').value = wave3PowerLawExponent.toFixed(3);
+      }
+      
+      /**
+       * Calculates the value for the *separate* QCBD Crash line (red dashed).
+       * This line visually represents the 'floor' or 'target' value the combined line
+       * might crash towards after the QCBD year.
+       * It's flat before QCBD year and then transitions to socialDistrustValue.
+       * @param {number} year - The year for which to calculate the value.
+       * @param {number} qcbYear - The QCBD year.
+       * @param {number} socialDistrustVal - The social distrust value (the target floor).
+       * @param {number} transitionDur - The transition duration in years.
+       * @returns {number} The calculated value for the QCBD Crash line.
+       */
+      function getQCBDCrashLineValue(year, qcbYear, socialDistrustVal, transitionDur) {
+          if (year < qcbYear) {
+              return 0.001; // Effectively off the chart or minimal before QCBD
+          } else {
+              const transitionFactor = Math.min(1, (year - qcbYear) / transitionDur);
+              // Smoothly transition from a low value to socialDistrustVal
+              return 0.001 * (1 - transitionFactor) + socialDistrustVal * transitionFactor;
+          }
+      }
+
+      /**
+       * Calculates a transition factor (0 to 1) for the QCBD effect.
+       * This factor determines how much the combined line transitions towards the socialDistrustValue.
+       * @param {number} year - The current year.
+       * @param {number} qcbYear - The QCBD year.
+       * @param {number} transitionDur - The transition duration in years.
+       * @param {number} crashStrength - The strength of the crash effect.
+       * @returns {number} A factor between 0 and 1.
+       */
+      function getQCBDTransitionFactor(year, qcbYear, transitionDur, crashStrength) {
+          const startTransition = qcbYear;
+          const endTransition = qcbYear + transitionDur;
+
+          if (year < startTransition) {
+              return 0; // No effect yet
+          } else if (year >= startTransition && year <= endTransition) {
+              const t = (year - startTransition) / transitionDur;
+              // Apply crash strength to accelerate the transition
+              return Math.min(1, t * crashStrength); // Clamp to 1 to avoid overshooting
+          } else {
+              return 1; // Full effect applied
+          }
+      }
+      
+      /**
+       * Helper function to generate combined data for a given set of parameters.
+       * This is used by the fitting algorithm to test different parameter combinations
+       * without affecting the global state during the optimization process.
+       * This function now generates the full combined data without direct power law impact.
+       * @param {object} params - An object containing all model parameters.
+       * @returns {Array<number>} An array of combined Y-values for the simulated data.
+       */
+      function generateCombinedData(params) {
+          let combinedData = [];
+          const startPlotYear = 2015;
+          const startLogYear = Math.log10(startPlotYear - 1969);
+
+          // Loop through years from 2015 to 2035 with a step of 0.001 for more data points
+          for (let year = 2015; year <= 2035; year = parseFloat((year + 0.001).toFixed(3))) { 
+              let days = daysSinceGenesis(new Date(`${year}-01-01`)); // Use start of year for days for consistency
+              if (days <= 0) days = 1; // Ensure days is positive for power law
+
+              // New calculation for sum of waves following power law midline
+              const startLogYearForGrowth = Math.log10(2015 - 1969);
+              let sumOfWavesFollowingPowerLawMidline = 0;
+              let totalOscillationFactorForQCBD = 0;
+
+              // Parameters for the new wave functions - notice `amp` is now `amp_initial_factor`
+              const waveParametersForNewModel = [
+                  { amp_initial_factor: params.wave1Amp, freq_initial: params.wave1Freq, phase: params.wave1Phase,
+                    freq_growth_factor: params.wave1FreqGrowth, amp_growth_factor: params.wave1AmpGrowth, amp_growth_strength: params.wave1AmpGrowthStrength,
+                    powerLawAmp: params.wave1PowerLawAmplitude, powerLawExponent: params.wave1PowerLawExponent },
+                  { amp_initial_factor: params.wave2Amp, freq_initial: params.wave2Freq, phase: params.wave2Phase,
+                    freq_growth_factor: params.wave2FreqGrowth, amp_growth_factor: params.wave2AmpGrowth, amp_growth_strength: params.wave2AmpGrowthStrength,
+                    powerLawAmp: params.wave2PowerLawAmplitude, powerLawExponent: params.wave2PowerLawExponent },
+                  { amp_initial_factor: params.wave3Amp, freq_initial: params.wave3Freq, phase: params.wave3Phase,
+                    freq_growth_factor: params.wave3FreqGrowth, amp_growth_factor: params.wave3AmpGrowth, amp_growth_strength: params.wave3AmpGrowthStrength,
+                    powerLawAmp: params.wave3PowerLawAmplitude, powerLawExponent: params.wave3PowerLawExponent }
+              ];
+
+              for (let i = 0; i < 3; i++) {
+                  let currentWaveConfig = waveParametersForNewModel[i];
+
+                  // Calculate the individual wave based on its specific power law midline
+                  let currentWaveValue = calculateMultiplicativeWave(
+                      days,
+                      year,
+                      startLogYearForGrowth,
+                      currentWaveConfig.amp_initial_factor,
+                      currentWaveConfig.freq_initial,
+                      currentWaveConfig.phase,
+                      currentWaveConfig.freq_growth_factor,
+                      currentWaveConfig.amp_growth_factor,
+                      currentWaveConfig.amp_growth_strength,
+                      currentWaveConfig.powerLawAmp,   // Use wave-specific power law amplitude
+                      currentWaveConfig.powerLawExponent // Use wave-specific power law exponent
+                  );
+
+                  sumOfWavesFollowingPowerLawMidline += currentWaveValue;
+
+                  // Also calculate the oscillation factor for QCBD dampening
+                  let logYearForOsc = Math.log10(year - 1969);
+                  let relativeLogYearForOsc = logYearForOsc - startLogYearForGrowth;
+                  let currentFreqForOsc = currentWaveConfig.freq_initial * (1 + relativeLogYearForOsc * currentWaveConfig.freq_growth_factor);
+                  let currentAmpFactorForOsc = currentWaveConfig.amp_initial_factor * Math.exp(relativeLogYearForOsc * currentWaveConfig.amp_growth_factor * currentWaveConfig.amp_growth_strength);
+                  currentAmpFactorForOsc = Math.max(0.000001, Math.min(1.0, currentAmpFactorForOsc)); // Clamp
+
+                  totalOscillationFactorForQCBD += currentAmpFactorForOsc * Math.sin(2 * Math.PI * currentFreqForOsc * logYearForOsc + currentWaveConfig.phase);
+              }
+
+
+              let finalCombinedValue;
+
+              if (year < params.qcbDateYear) {
+                  finalCombinedValue = sumOfWavesFollowingPowerLawMidline;
+              } else {
+                  const transitionFactor = getQCBDTransitionFactor(year, params.qcbDateYear, params.qcbTransitionDuration, params.qcbCrashStrength);
+
+                  // Dampen the total multiplicative oscillation factor
+                  let dampenedTotalOscillationFactor = totalOscillationFactorForQCBD * (1 - transitionFactor * (1 - params.qcbAmplitudeDampening));
+
+                  // The target value now incorporates the dampened oscillations multiplicatively
+                  let targetCrashValue = params.socialDistrustValue * (1 + dampenedTotalOscillationFactor);
+
+                  // Blend the normal combined wave with the crashing target
+                  finalCombinedValue = sumOfWavesFollowingPowerLawMidline * (1 - transitionFactor) + targetCrashValue * transitionFactor;
+              }
+              
+              combinedData.push(Math.max(0.001, finalCombinedValue));
+          }
+          return combinedData;
+      }
+
+      /**
+       * Calculates the Mean Squared Error (MSE) between simulated and actual BTC log prices.
+       * This function quantifies how well the simulated curve fits the real data.
+       * It compares the logarithm of the simulated values to the logarithm of the BTC values.
+       * @param {Array<number>} simulatedData - The Y-values of the simulated combined curve.
+       * @param {Array<number>} actualLogPrices - The logarithm of the actual BTC prices.
+       * @returns {number} The Mean Squared Error. Returns Infinity if no valid data points for comparison.
+       */
+      function calculateModelError(simulatedData, actualLogPrices) {
+          let error = 0;
+          let count = 0;
+
+          const minLen = Math.min(simulatedData.length, actualLogPrices.length);
+
+          for (let i = 0; i < minLen; i++) {
+              if (simulatedData[i] > 0) {
+                  const logSimulated = Math.log(simulatedData[i]);
+                  if (isFinite(actualLogPrices[i])) {
+                      error += Math.pow(logSimulated - actualLogPrices[i], 2);
+                      count++;
+                  }
+              }
+          }
+          return count > 0 ? error / count : Infinity;
+      }
+
+
+      /**
+       * Asynchronously fetches Bitcoin (BTCUSDT) weekly closing prices from Binance API.
+       * It then creates a Plotly trace for this data, stores it globally, and
+       * triggers a full redraw of the graph including the BTC data.
+       */
+      async function myAddBitcoinToPlot() {
+          const url = 'https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1w&limit=3000';
+        //  const url = 'https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1M';
+          try {
+              document.getElementById('statusMessage').innerText = 'Fetching BTC data...';
+              const response = await fetch(url);
+              const data = await response.json();
+
+              // Clear previous BTC data arraysFvisible
+              btcDatesGlobal = [];
+              btcDaysSinceGenesisGlobal = [];
+              btcLogPricesGlobal = [];
+
+            //// Create a reversed copy
+             //const reversedArray = originalArray.slice().reverse();
+              const dataReverse = data.slice().reverse();
+
+              dataReverse.forEach(candle => {
+            //  data.forEach(candle => {
+                  const date = new Date(candle[0]); // Unix timestamp to Date object
+                  const days = daysSinceGenesis(date); // Calculate days since genesis
+                  const price = parseFloat(candle[4]); // Closing price
+
+                  btcDatesGlobal.push(date.toISOString().split('T')[0]); // Store formatted date string
+                  btcDaysSinceGenesisGlobal.push(days); // Store days since genesis
+                  btcLogPricesGlobal.push(Math.log(price)); // Store log price
+              });
+            // add the historical bitcoin 2011 to 2018
+         //   console.log('earlyDates.length')
+          //  console.log(earlyDates.length)
+
+
+
+
+            
+        //    for (let myI=0; myI < earlyDates.length; myI++){
+            for (let myI=earlyDates.length; myI > 0 ; myI--){
+                btcDatesGlobal.push(earlyDates[myI])
+                btcDaysSinceGenesisGlobal.push(earlyDaysSinceGenesis[myI]); // Store days since genesis
+                btcLogPricesGlobal.push(earlyLogPrices[myI]); // Store log price          
+            }
+
+              btcTraceGlobal = {
+                  x: btcDaysSinceGenesisGlobal, // Use days since genesis for x-axis
+                  y: btcDatesGlobal.map((_, i) => btcLogPricesGlobal[i]), // Use log prices for y-axis
+                  mode: 'lines',
+                  line: { color: 'orange', width: 3 },
+                  name: 'BTC Price (USD)'
+              };
+
+              myGenerateLogLogData();
+              document.getElementById('statusMessage').innerText = '✅ Bitcoin data added to plot.';
+              console.log('✅ Bitcoin data added to plot.');
+          } catch (err) {
+              btcTraceGlobal = null; 
+              document.getElementById('statusMessage').innerText = '❌ Failed to load BTC data.';
+              console.error('❌ Failed to load BTC data:', err);
+          }
+      }
+
+    
+
+      /**
+       * Generates and plots sinusoidal growth data on a log-log scale.
+       * The function calculates three individual waves and a combined sum,
+       * applying exponential growth to both amplitude and frequency,
+       * and an.
+       * This function now also includes the global BTC trace if it exists.
+       */
+      function myGenerateLogLogData() {
+        let xData = []; // Will store days since genesis for the log x-axis
+        let displayDates = []; // Will store formatted dates for hover info
+        let myCombined = []; 
+        let myWaves = [[], [], []];
+        let qcbCrashLineData = []; 
+        let independentPowerLawData = []; 
+        let independentPowerLawDataMax = []; 
+        let independentPowerLawDataMin = []; 
+
+        // Define the start and end dates for data generation
+        const dataGenStartDate = new Date('2011-01-01T00:00:00Z'); // Data generation starts from 2011
+        const dataGenEndDate = new Date('2040-12-31T00:00:00Z'); // Extend data generation to 2040
+
+        // Define the start date for displaying the graph
+        const graphDisplayStartDate = new Date('2011-01-01T00:00:00Z');
+
+        let currentDate = new Date(dataGenStartDate);
+        while (currentDate <= dataGenEndDate) {
+            const days = daysSinceGenesis(currentDate);
+            
+            // Only push data to arrays if it's within the display range
+            if (currentDate >= graphDisplayStartDate) {
+                xData.push(days); // Use days for the log x-axis
+                displayDates.push(currentDate.toISOString().split('T')[0]); // Store formatted date as McClellan-MM-DD for display
+            }
+
+            const year = currentDate.getFullYear() + (currentDate.getMonth() / 12); // Approximate year for calculations
+            const logYear = Math.log10(year - 1969); // Log of years since 1969 for power law
+
+            // --- REPLACED CODE BLOCK START ---
+            const startLogYearForGrowth = Math.log10(2015 - 1969); // Consistent with original growth calculation
+            let sumOfWavesFollowingPowerLawMidline = 0; // New sum for our corrected waves (equivalent to old sumOfFullIndividualWaveComponents)
+            let totalOscillationFactorForQCBD = 0; // To collect the (amplitude_factor * sin) terms for QCBD dampening
+
+            // Parameters for the new wave functions - notice `amp` is now `amp_initial_factor`
+            const waveParametersForNewModel = [
+                { amp_initial_factor: wave1Amp, freq_initial: wave1Freq, phase: wave1Phase,
+                  freq_growth_factor: wave1FreqGrowth, amp_growth_factor: wave1AmpGrowth, amp_growth_strength: wave1AmpGrowthStrength,
+                  powerLawAmp: wave1PowerLawAmplitude, powerLawExponent: wave1PowerLawExponent },
+                { amp_initial_factor: wave2Amp, freq_initial: wave2Freq, phase: wave2Phase,
+                  freq_growth_factor: wave2FreqGrowth, amp_growth_factor: wave2AmpGrowth, amp_growth_strength: wave2AmpGrowthStrength,
+                  powerLawAmp: wave2PowerLawAmplitude, powerLawExponent: wave2PowerLawExponent },
+                { amp_initial_factor: wave3Amp, freq_initial: wave3Freq, phase: wave3Phase,
+                  freq_growth_factor: wave3FreqGrowth, amp_growth_factor: wave3AmpGrowth, amp_growth_strength: wave3AmpGrowthStrength,
+                  powerLawAmp: wave3PowerLawAmplitude, powerLawExponent: wave3PowerLawExponent }
+            ];
+
+            for (let i = 0; i < 3; i++) {
+                let currentWaveConfig = waveParametersForNewModel[i];
+
+                // Calculate the individual wave based on its specific power law midline
+                let currentWaveValue = calculateMultiplicativeWave(
+                    days,
+                    year,
+                    startLogYearForGrowth,
+                    currentWaveConfig.amp_initial_factor,
+                    currentWaveConfig.freq_initial,
+                    currentWaveConfig.phase,
+                    currentWaveConfig.freq_growth_factor,
+                    currentWaveConfig.amp_growth_factor,
+                    currentWaveConfig.amp_growth_strength,
+                    currentWaveConfig.powerLawAmp,   // Use wave-specific power law amplitude
+                    currentWaveConfig.powerLawExponent // Use wave-specific power law exponent
+                );
+
+                sumOfWavesFollowingPowerLawMidline += currentWaveValue;
+
+                // Also calculate the oscillation factor for QCBD dampening
+                let logYearForOsc = Math.log10(year - 1969);
+                let relativeLogYearForOsc = logYearForOsc - startLogYearForGrowth;
+                let currentFreqForOsc = currentWaveConfig.freq_initial * (1 + relativeLogYearForOsc * currentWaveConfig.freq_growth_factor);
+                let currentAmpFactorForOsc = currentWaveConfig.amp_initial_factor * Math.exp(relativeLogYearForOsc * currentWaveConfig.amp_growth_factor * currentWaveConfig.amp_growth_strength);
+                currentAmpFactorForOsc = Math.max(0.000001, Math.min(1.0, currentAmpFactorForOsc)); // Clamp
+
+                totalOscillationFactorForQCBD += currentAmpFactorForOsc * Math.sin(2 * Math.PI * currentFreqForOsc * logYearForOsc + currentWaveConfig.phase);
+
+                // Only push data to arrays if it's within the display range
+                if (currentDate >= graphDisplayStartDate) {
+                    myWaves[i].push(Math.max(0.001, currentWaveValue)); // Ensure values are positive for log plot
+                }
+            }
+            // --- REPLACED CODE BLOCK END ---
+
+
+            // Independent Power Law calculations using 'days' for x-axis
+            let currentPowerLawValue = independentPowerLawAmplitude * Math.pow(days, independentPowerLawExponent);
+            if (currentPowerLawValue <= 0) currentPowerLawValue = 0.001;
+            if (currentPowerLawValue > 1e10) currentPowerLawValue = 1e10; 
+            // Only push data to arrays if it's within the display range
+            if (currentDate >= graphDisplayStartDate) {
+                independentPowerLawData.push(currentPowerLawValue);
+            }
+
+            let currentPowerLawValueMax = independentPowerLawAmplitudeMax * Math.pow(days, independentPowerLawExponentMax);
+            if (currentPowerLawValueMax <= 0) currentPowerLawValueMax = 0.001;
+            if (currentPowerLawValueMax > 1e10) currentPowerLawValueMax = 1e10;
+            // Only push data to arrays if it's within the display range
+            if (currentDate >= graphDisplayStartDate) {
+                independentPowerLawDataMax.push(currentPowerLawValueMax);
+            }
+
+            let currentPowerLawValueMin = independentPowerLawAmplitudeMin * Math.pow(days, independentPowerLawExponentMin);
+            if (currentPowerLawValueMin <= 0) currentPowerLawValueMin = 0.001;
+            if (currentPowerLawValueMin > 1e10) currentPowerLawValueMin = 1e10;
+            // Only push data to arrays if it's within the display range
+            if (currentDate >= graphDisplayStartDate) {
+                independentPowerLawDataMin.push(currentPowerLawValueMin);
+            }
+
+
+            const qcbLineValueForPlot = getQCBDCrashLineValue(year, qcbDateYear, socialDistrustValue, qcbTransitionDuration);
+            // Only push data to arrays if it's within the display range
+            if (currentDate >= graphDisplayStartDate) {
+                qcbCrashLineData.push(qcbLineValueForPlot); 
+            }
+
+            let finalCombinedValue;
+
+            // --- REPLACED QCBD FINAL COMBINED VALUE LOGIC START ---
+            if (year < qcbDateYear) {
+                finalCombinedValue = sumOfWavesFollowingPowerLawMidline;
+            } else {
+                const transitionFactor = getQCBDTransitionFactor(year, qcbDateYear, qcbTransitionDuration, qcbCrashStrength);
+
+                // Dampen the total multiplicative oscillation factor
+                let dampenedTotalOscillationFactor = totalOscillationFactorForQCBD * (1 - transitionFactor * (1 - qcbAmplitudeDampening));
+
+                // The target value now incorporates the dampened oscillations multiplicatively
+                let targetCrashValue = socialDistrustValue * (1 + dampenedTotalOscillationFactor);
+
+                // Blend the normal combined wave with the crashing target
+                finalCombinedValue = sumOfWavesFollowingPowerLawMidline * (1 - transitionFactor) + targetCrashValue * transitionFactor;
+            }
+            // --- REPLACED QCBD FINAL COMBINED VALUE LOGIC END ---
+            
+            // Only push data to arrays if it's within the display range
+            if (currentDate >= graphDisplayStartDate) {
+                myCombined.push(Math.max(0.001, finalCombinedValue));
+            }
+
+            currentDate.setDate(currentDate.getDate() + 30); // Increment by 30 days
+        }
+
+        let myTraces = myWaves.map((wave, i) => ({
+          x: xData,
+          y: wave,
+          mode: 'lines',
+          line: { color: 'green', width: 1 }, 
+          name: 'Wave ' + (i + 1),
+        //  visible: 'legendonly',
+          hovertemplate: '<b>Date:</b> %{customdata}<br><b>Days:</b> %{x}<br><b>Price:</b> %{y:$,.2f}<extra></extra>',
+          customdata: displayDates
+        }));
+
+        myTraces.push({
+          x: xData,
+          y: myCombined,
+          mode: 'lines',
+          line: { color: 'blue', width: 3 },
+          name: 'Combined',
+          hovertemplate: '<b>Date:</b> %{customdata}<br><b>Days:</b> %{x}<br><b>Price:</b> %{y:$,.2f}<extra></extra>',
+          customdata: displayDates
+        });
+
+        myTraces.push({
+            x: xData,
+            y: independentPowerLawData,
+            mode: 'lines',
+            line: { color: 'yellow', width: 3, dash: 'solid' }, 
+            name: 'Expected Independent Power Law',
+            hovertemplate: '<b>Date:</b> %{customdata}<br><b>Days:</b> %{x}<br><b>Price:</b> %{y:$,.2f}<extra></extra>',
+            customdata: displayDates
+        });
+        myTraces.push({
+            x: xData,
+            y: independentPowerLawDataMax,
+            mode: 'lines',
+            line: { color: 'gold', width: 1, dash: 'dash' }, 
+            name: 'Max Independent Power Law',
+            hovertemplate: '<b>Date:</b> %{customdata}<br><b>Days:</b> %{x}<br><b>Price:</b> %{y:$,.2f}<extra></extra>',
+            customdata: displayDates
+        });
+        myTraces.push({
+            x: xData,
+            y: independentPowerLawDataMin,
+            mode: 'lines',
+            line: { color: 'goldenrod', width: 1, dash: 'dash' }, 
+            name: 'Min Independent Power Law',
+            hovertemplate: '<b>Date:</b> %{customdata}<br><b>Days:</b> %{x}<br><b>Price:</b> %{y:$,.2f}<extra></extra>',
+            customdata: displayDates
+        });
+
+
+        myTraces.push({
+            x: xData, 
+            y: qcbCrashLineData,
+            mode: 'lines',
+            line: { color: 'red', width: 3, dash: 'dashdot' }, 
+            name: 'QCBD Crash Line',
+            hovertemplate: '<b>Date:</b> %{customdata}<br><b>Days:</b> %{x}<br><b>Price:</b> %{y:$,.2f}<extra></extra>',
+            customdata: displayDates
+        });
+
+        // Re-added: BTC trace addition
+        if (btcTraceGlobal) {
+            const filteredBtcX = [];
+            const filteredBtcY = [];
+            const filteredBtcDisplayDates = [];
+            
+            // Filter BTC data based on the new x-axis display range (days since genesis)
+            const startDaysDisplay = daysSinceGenesis(graphDisplayStartDate);
+            const endDaysDisplay = daysSinceGenesis(dataGenEndDate); // Use dataGenEndDate for BTC filtering as well
+
+            for (let i = 0; i < btcDaysSinceGenesisGlobal.length; i++) {
+                const btcDays = btcDaysSinceGenesisGlobal[i];
+
+                if (btcDays >= startDaysDisplay && btcDays <= endDaysDisplay) {
+                    filteredBtcX.push(btcDays);
+                    filteredBtcY.push(Math.exp(btcLogPricesGlobal[i])); // Convert log price back to actual price for plotting
+                    filteredBtcDisplayDates.push(btcDatesGlobal[i]);
+                }
+            }
+            myTraces.push({
+                x: filteredBtcX,
+                y: filteredBtcY,
+                mode: 'lines',
+                line: { color: 'orange', width: 3 },
+                name: 'BTC Price (USD)',
+                hovertemplate: '<b>Date:</b> %{customdata}<br><b>Days:</b> %{x}<br><b>Price:</b> %{y:$,.2f}<extra></extra>',
+                customdata: filteredBtcDisplayDates
+            });
+        }
+
+        // Generate tick values and text for years dynamically based on the display range
+        const tickYears = [];
+        const tickDays = [];
+        for (let year = graphDisplayStartDate.getFullYear(); year <= dataGenEndDate.getFullYear(); year++) {
+            tickYears.push(year.toString());
+            tickDays.push(daysSinceGenesis(new Date(`${year}-01-01`)));
+        }
+
+
+        let myLayout = {
+          title: 'Vibe Coding BTC Sinusoids',
+          xaxis: {
+            title: 'Days Since Genesis (Log Scale)', // Reverted x-axis title
+            type: 'log',
+            // Define custom tick values and text for years starting from 2017 and extending
+            tickvals: tickDays,
+            ticktext: tickYears,
+            tickangle: 45, // Angle the x-axis ticks at 45 degrees
+            range: [Math.log10(daysSinceGenesis(graphDisplayStartDate)), Math.log10(daysSinceGenesis(dataGenEndDate))], // Set display range
+            gridcolor: '#e0e0e0', // Light grey grid lines
+            linecolor: '#cccccc', // Axis line color
+            linewidth: 1,
+            mirror: true,
+            rangeslider: { visible: true },
+            rangeselector: {
+                buttons: [
+                    { count: 1, label: '1y', step: 'year', stepmode: 'backward' },
+                    { count: 5, label: '5y', step: 'year', stepmode: 'backward' },
+                    { step: 'all' }
+                ]
+            }
+          },
+          yaxis: {
+            title: 'Simulated Dollars (Log Scale)',
+            type: 'log',
+            range: [0, 7] 
+          },
+          margin: { t: 40 }
+        };
+
+        Plotly.newPlot('myPlot', myTraces, myLayout);
+      }
+
+
+      /**
+       * Performs a simple linear regression to find slope and intercept.
+       * @param {Array<number>} xData - Array of x values.
+       * @param {Array<number>} yData - Array of y values.
+       * @returns {{slope: number, intercept: number}} The calculated slope and intercept.
+       */
+      function linearRegression(xData, yData) {
+          let N = xData.length;
+          let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+
+          for (let i = 0; i < N; i++) {
+              sumX += xData[i];
+              sumY += yData[i];
+              sumXY += xData[i] * xData[i];
+              sumXX += xData[i] * xData[i];
+          }
+
+          let slope = (N * sumXY - sumX * sumY) / (N * sumXX - sumX * sumX);
+          let intercept = (sumY - slope * sumX) / N;
+
+          return { slope, intercept };
+      }
+      
+      /**
+       * Optimizes the model parameters to minimize the error between the combined curve
+       * and the actual BTC price data. This uses a simple iterative gradient descent-like approach.
+       */
+      async function optimizeModel() {
+          if (!btcTraceGlobal || btcLogPricesGlobal.length === 0) {
+              document.getElementById('statusMessage').innerText = 'Please load BTC data first by refreshing the page.';
+              return;
+          }
+
+          document.getElementById('statusMessage').innerText = 'Optimizing model... this may take a moment.';
+
+          let currentParams = {
+              qcbDateYear: qcbDateYear,
+              socialDistrustValue: socialDistrustValue,
+              qcbTransitionDuration: qcbTransitionDuration,
+              qcbCrashStrength: qcbCrashStrength,
+              qcbAmplitudeDampening: qcbAmplitudeDampening,
+              wave1Freq: wave1Freq, wave1Amp: wave1Amp, wave1Phase: wave1Phase,
+              wave1FreqGrowth: wave1FreqGrowth, wave1AmpGrowth: wave1AmpGrowth, wave1AmpGrowthStrength: wave1AmpGrowthStrength,
+              wave1PowerLawAmplitude: wave1PowerLawAmplitude, wave1PowerLawExponent: wave1PowerLawExponent,
+              wave2Freq: wave2Freq, wave2Amp: wave2Amp, wave2Phase: wave2Phase,
+              wave2FreqGrowth: wave2FreqGrowth, wave2AmpGrowth: wave2AmpGrowth, wave2AmpGrowthStrength: wave2AmpGrowthStrength,
+              wave2PowerLawAmplitude: wave2PowerLawAmplitude, wave2PowerLawExponent: wave2PowerLawExponent,
+              wave3Freq: wave3Freq, wave3Amp: wave3Amp, wave3Phase: wave3Phase,
+              wave3FreqGrowth: wave3FreqGrowth, wave3AmpGrowth: wave3AmpGrowth, wave3AmpGrowthStrength: wave3AmpGrowthStrength,
+              wave3PowerLawAmplitude: wave3PowerLawAmplitude, wave3PowerLawExponent: wave3PowerLawExponent
+          };
+
+          let bestError = Infinity;
+          let bestParams = { ...currentParams };
+
+          // Get the actual BTC log prices for comparison, filtering for the relevant date range
+          // This assumes `btcDatesGlobal` and `btcLogPricesGlobal` are aligned
+          const dataGenStartDate = new Date('2015-01-01T00:00:00Z'); // Optimization starts from 2015 data
+          const startIndex = btcDatesGlobal.findIndex(dateStr => new Date(dateStr) >= dataGenStartDate);
+          const actualLogPrices = btcLogPricesGlobal.slice(startIndex);
+
+
+          const paramNames = Object.keys(currentParams);
+          const initialLearningRate = optimizationLearningRate;
+
+          for (let iteration = 0; iteration < optimizationIterations; iteration++) {
+              let currentLearningRate = initialLearningRate * (1 - iteration / optimizationIterations); // Decrease learning rate
+              if (currentLearningRate < 0.000001) currentLearningRate = 0.000001; // Minimum learning rate
+
+              let iterationImproved = false;
+
+              // Shuffle parameter order to avoid bias
+              paramNames.sort(() => Math.random() - 0.5);
+
+              for (const paramName of paramNames) {
+                  const originalValue = currentParams[paramName];
+                  let currentBestForParam = originalValue;
+
+                  // Calculate current error before any perturbation for this parameter
+                  let simulatedData = generateCombinedData(currentParams);
+                  let currentError = calculateModelError(simulatedData, actualLogPrices);
+
+                  // Update overall best if current state is better
+                  if (currentError < bestError) {
+                      bestError = currentError;
+                      bestParams = { ...currentParams };
+                      iterationImproved = true;
+                  }
+
+                  // Test positive perturbation
+                  let valPlus = originalValue + (originalValue * currentLearningRate * optimizationParamPerturbation);
+                  // Add boundary checks for reasonable values
+                  if (paramName.includes('Amp')) valPlus = Math.max(0.000001, Math.min(1.0, valPlus)); // Clamp amplitude factors
+                  if (paramName.includes('PowerLawAmplitude')) valPlus = Math.max(1e-25, valPlus); // Prevent extreme small/negative
+                  if (paramName.includes('socialDistrustValue')) valPlus = Math.max(1, valPlus); // Social distrust must be positive
+                  if (paramName.includes('Year')) valPlus = Math.max(2020, Math.min(2040, valPlus)); // Keep year reasonable
+                  if (paramName.includes('Duration')) valPlus = Math.max(0.1, valPlus); // Duration must be positive
+
+                  currentParams[paramName] = valPlus;
+                  simulatedData = generateCombinedData(currentParams);
+                  let errorPlus = calculateModelError(simulatedData, actualLogPrices);
+
+                  // Test negative perturbation
+                  let valMinus = originalValue - (originalValue * currentLearningRate * optimizationParamPerturbation);
+                  // Add boundary checks
+                  if (paramName.includes('Amp')) valMinus = Math.max(0.000001, Math.min(1.0, valMinus)); // Clamp amplitude factors
+                  if (paramName.includes('PowerLawAmplitude')) valMinus = Math.max(1e-25, valMinus);
+                  if (paramName.includes('socialDistrustValue')) valMinus = Math.max(1, valMinus);
+                  if (paramName.includes('Year')) valMinus = Math.max(2020, Math.min(2040, valMinus));
+                  if (paramName.includes('Duration')) valMinus = Math.max(0.1, valMinus);
+
+                  currentParams[paramName] = valMinus;
+                  simulatedData = generateCombinedData(currentParams);
+                  let errorMinus = calculateModelError(simulatedData, actualLogPrices);
+
+                  // Decide which direction is better
+                  if (errorPlus < currentError && errorPlus < errorMinus) {
+                      currentBestForParam = valPlus;
+                      iterationImproved = true;
+                  } else if (errorMinus < currentError && errorMinus < errorPlus) {
+                      currentBestForParam = valMinus;
+                      iterationImproved = true;
+                  } else {
+                      currentBestForParam = originalValue; // Stick with original if no improvement
+                  }
+                  currentParams[paramName] = currentBestForParam; // Apply the best value for this param
+              }
+
+              // Update the best parameters for the next iteration
+              Object.assign(currentParams, bestParams); // Revert to the overall best parameters found so far for the next iteration's starting point
+
+              if (!iterationImproved && currentLearningRate < 0.000001) { // Stop if no improvement and learning rate is very small
+                  break;
+              }
+
+              // Optional: Update UI periodically to show progress
+              if (iteration % 10 === 0 || iteration === optimizationIterations - 1) {
+                  document.getElementById('statusMessage').innerText = `Optimizing... Iteration ${iteration + 1}/${optimizationIterations}, Current Best Error: ${bestError.toExponential(3)}`;
+                  // Re-plot to show intermediate results (can be slow, comment out if needed for speed)
+                  // updateInputFieldsWithOptimizedParams(bestParams);
+                  // myGenerateLogLogData();
+                  // await new Promise(r => setTimeout(r, 50)); // Small delay to allow UI refresh
+              }
+              await new Promise(r => setTimeout(r, 0)); // Yield to UI
+          }
+
+          // Apply the very best parameters found at the end
+          updateInputFieldsWithOptimizedParams(bestParams);
+          myGenerateLogLogData(); // Final plot update
+
+          document.getElementById('statusMessage').innerText = `Optimization complete! Final Error: ${bestError.toExponential(3)}`;
+          console.log("Optimization finished. Best parameters:", bestParams);
+          console.log("Final Error:", bestError);
+      }
+
+      /**
+       * Updates the input fields with the optimized parameters.
+       * @param {object} params - The object containing the optimized parameter values.
+       */
+      function updateInputFieldsWithOptimizedParams(params) {
+          // QCBD Parameters
+          qcbDateYear = params.qcbDateYear;
+          socialDistrustValue = params.socialDistrustValue;
+          qcbTransitionDuration = params.qcbTransitionDuration;
+          qcbCrashStrength = params.qcbCrashStrength;
+          qcbAmplitudeDampening = params.qcbAmplitudeDampening;
+          document.getElementById('qcbDateInput').value = qcbDateYear.toFixed(3);
+          document.getElementById('socialDistrustValueInput').value = socialDistrustValue.toFixed(3);
+          document.getElementById('qcbTransitionInput').value = qcbTransitionDuration.toFixed(3);
+          document.getElementById('qcbCrashStrengthInput').value = qcbCrashStrength.toFixed(3);
+          document.getElementById('qcbAmplitudeDampeningInput').value = qcbAmplitudeDampening.toFixed(3);
+
+          // Wave 1 Parameters
+          wave1Freq = params.wave1Freq; wave1Amp = params.wave1Amp; wave1Phase = params.wave1Phase;
+          wave1FreqGrowth = params.wave1FreqGrowth; wave1AmpGrowth = params.wave1AmpGrowth; wave1AmpGrowthStrength = params.wave1AmpGrowthStrength;
+          wave1PowerLawAmplitude = params.wave1PowerLawAmplitude; wave1PowerLawExponent = params.wave1PowerLawExponent;
+          document.getElementById('wave1FreqInput').value = wave1Freq.toFixed(3);
+          document.getElementById('wave1AmpInput').value = wave1Amp.toFixed(3);
+          document.getElementById('wave1PhaseInput').value = wave1Phase.toFixed(3);
+          document.getElementById('wave1FreqGrowthInput').value = wave1FreqGrowth.toFixed(3);
+          document.getElementById('wave1AmpGrowthInput').value = wave1AmpGrowth.toFixed(3);
+          document.getElementById('wave1AmpGrowthStrengthInput').value = wave1AmpGrowthStrength.toFixed(3);
+          document.getElementById('wave1PowerLawAmplitudeInput').value = wave1PowerLawAmplitude.toExponential(3);
+          document.getElementById('wave1PowerLawExponentInput').value = wave1PowerLawExponent.toFixed(3);
+
+          // Wave 2 Parameters
+          wave2Freq = params.wave2Freq; wave2Amp = params.wave2Amp; wave2Phase = params.wave2Phase;
+          wave2FreqGrowth = params.wave2FreqGrowth; wave2AmpGrowth = params.wave2AmpGrowth; wave2AmpGrowthStrength = params.wave2AmpGrowthStrength;
+          wave2PowerLawAmplitude = params.wave2PowerLawAmplitude; wave2PowerLawExponent = params.wave2PowerLawExponent;
+          document.getElementById('wave2FreqInput').value = wave2Freq.toFixed(3);
+          document.getElementById('wave2AmpInput').value = wave2Amp.toFixed(3);
+          document.getElementById('wave2PhaseInput').value = wave2Phase.toFixed(3);
+          document.getElementById('wave2FreqGrowthInput').value = wave2FreqGrowth.toFixed(3);
+          document.getElementById('wave2AmpGrowthInput').value = wave2AmpGrowth.toFixed(3);
+          document.getElementById('wave2AmpGrowthStrengthInput').value = wave2AmpGrowthStrength.toFixed(3);
+          document.getElementById('wave2PowerLawAmplitudeInput').value = wave2PowerLawAmplitude.toExponential(3);
+          document.getElementById('wave2PowerLawExponentInput').value = wave2PowerLawExponent.toFixed(3);
+
+          // Wave 3 Parameters
+          wave3Freq = params.wave3Freq; wave3Amp = params.wave3Amp; wave3Phase = params.wave3Phase;
+          wave3FreqGrowth = params.wave3FreqGrowth; wave3AmpGrowth = params.wave3AmpGrowth; wave3AmpGrowthStrength = params.wave3AmpGrowthStrength;
+          wave3PowerLawAmplitude = params.wave3PowerLawAmplitude; wave3PowerLawExponent = params.wave3PowerLawExponent;
+          document.getElementById('wave3FreqInput').value = wave3Freq.toFixed(3);
+          document.getElementById('wave3AmpInput').value = wave3Amp.toFixed(3);
+          document.getElementById('wave3PhaseInput').value = wave3Phase.toFixed(3);
+          document.getElementById('wave3FreqGrowthInput').value = wave3FreqGrowth.toFixed(3);
+          document.getElementById('wave3AmpGrowthInput').value = wave3AmpGrowth.toFixed(3);
+          document.getElementById('wave3AmpGrowthStrengthInput').value = wave3AmpGrowthStrength.toFixed(3);
+          document.getElementById('wave3PowerLawAmplitudeInput').value = wave3PowerLawAmplitude.toExponential(3);
+          document.getElementById('wave3PowerLawExponentInput').value = wave3PowerLawExponent.toFixed(3);
+      }
+   
+
+      // Initialize on page load
+      document.addEventListener('DOMContentLoaded', () => {
+          initializeInputFields();
+          myAddBitcoinToPlot(); // Fetch BTC data on load
+      });
+
+
+
+     const earlyDates = ["2010-12-31","2011-01-01","2011-01-02","2011-01-03","2011-01-04","2011-01-05","2011-01-06","2011-01-07","2011-01-08","2011-01-09","2011-01-10","2011-01-11","2011-01-12","2011-01-13","2011-01-14","2011-01-15","2011-01-16","2011-01-17","2011-01-18","2011-01-19","2011-01-20","2011-01-21","2011-01-22","2011-01-23","2011-01-24","2011-01-25","2011-01-26","2011-01-27","2011-01-28","2011-01-29","2011-01-30","2011-01-31","2011-02-01","2011-02-02","2011-02-03","2011-02-04","2011-02-05","2011-02-06","2011-02-07","2011-02-08","2011-02-09","2011-02-10","2011-02-11","2011-02-12","2011-02-13","2011-02-14","2011-02-15","2011-02-16","2011-02-17","2011-02-18","2011-02-19","2011-02-20","2011-02-21","2011-02-22","2011-02-23","2011-02-24","2011-02-25","2011-02-26","2011-02-27","2011-02-28","2011-03-01","2011-03-02","2011-03-03","2011-03-04","2011-03-05","2011-03-06","2011-03-07","2011-03-08","2011-03-09","2011-03-10","2011-03-11","2011-03-12","2011-03-13","2011-03-14","2011-03-15","2011-03-16","2011-03-17","2011-03-18","2011-03-19","2011-03-20","2011-03-21","2011-03-22","2011-03-23","2011-03-24","2011-03-25","2011-03-26","2011-03-27","2011-03-28","2011-03-29","2011-03-30","2011-03-31","2011-04-01","2011-04-02","2011-04-03","2011-04-04","2011-04-05","2011-04-06","2011-04-07","2011-04-08","2011-04-09","2011-04-10","2011-04-11","2011-04-12","2011-04-13","2011-04-14","2011-04-15","2011-04-16","2011-04-17","2011-04-18","2011-04-19","2011-04-20","2011-04-21","2011-04-22","2011-04-23","2011-04-24","2011-04-25","2011-04-26","2011-04-27","2011-04-28","2011-04-29","2011-04-30","2011-05-01","2011-05-02","2011-05-03","2011-05-04","2011-05-05","2011-05-06","2011-05-07","2011-05-08","2011-05-09","2011-05-10","2011-05-11","2011-05-12","2011-05-13","2011-05-14","2011-05-15","2011-05-16","2011-05-17","2011-05-18","2011-05-19","2011-05-20","2011-05-21","2011-05-22","2011-05-23","2011-05-24","2011-05-25","2011-05-26","2011-05-27","2011-05-28","2011-05-29","2011-05-30","2011-05-31","2011-06-01","2011-06-02","2011-06-03","2011-06-04","2011-06-05","2011-06-06","2011-06-07","2011-06-08","2011-06-09","2011-06-10","2011-06-11","2011-06-12","2011-06-13","2011-06-14","2011-06-15","2011-06-16","2011-06-17","2011-06-18","2011-06-19","2011-06-20","2011-06-21","2011-06-22","2011-06-23","2011-06-24","2011-06-25","2011-06-26","2011-06-27","2011-06-28","2011-06-29","2011-06-30","2011-07-01","2011-07-02","2011-07-03","2011-07-04","2011-07-05","2011-07-06","2011-07-07","2011-07-08","2011-07-09","2011-07-10","2011-07-11","2011-07-12","2011-07-13","2011-07-14","2011-07-15","2011-07-16","2011-07-17","2011-07-18","2011-07-19","2011-07-20","2011-07-21","2011-07-22","2011-07-23","2011-07-24","2011-07-25","2011-07-26","2011-07-27","2011-07-28","2011-07-29","2011-07-30","2011-07-31","2011-08-01","2011-08-02","2011-08-03","2011-08-04","2011-08-05","2011-08-06","2011-08-07","2011-08-08","2011-08-09","2011-08-10","2011-08-11","2011-08-12","2011-08-13","2011-08-14","2011-08-15","2011-08-16","2011-08-17","2011-08-18","2011-08-19","2011-08-20","2011-08-21","2011-08-22","2011-08-23","2011-08-24","2011-08-25","2011-08-26","2011-08-27","2011-08-28","2011-08-29","2011-08-30","2011-08-31","2011-09-01","2011-09-02","2011-09-03","2011-09-04","2011-09-05","2011-09-06","2011-09-07","2011-09-08","2011-09-09","2011-09-10","2011-09-11","2011-09-12","2011-09-13","2011-09-14","2011-09-15","2011-09-16","2011-09-17","2011-09-18","2011-09-19","2011-09-20","2011-09-21","2011-09-22","2011-09-23","2011-09-24","2011-09-25","2011-09-26","2011-09-27","2011-09-28","2011-09-29","2011-09-30","2011-10-01","2011-10-02","2011-10-03","2011-10-04","2011-10-05","2011-10-06","2011-10-07","2011-10-08","2011-10-09","2011-10-10","2011-10-11","2011-10-12","2011-10-13","2011-10-14","2011-10-15","2011-10-16","2011-10-17","2011-10-18","2011-10-19","2011-10-20","2011-10-21","2011-10-22","2011-10-23","2011-10-24","2011-10-25","2011-10-26","2011-10-27","2011-10-28","2011-10-29","2011-10-30","2011-10-31","2011-11-01","2011-11-02","2011-11-03","2011-11-04","2011-11-05","2011-11-06","2011-11-07","2011-11-08","2011-11-09","2011-11-10","2011-11-11","2011-11-12","2011-11-13","2011-11-14","2011-11-15","2011-11-16","2011-11-17","2011-11-18","2011-11-19","2011-11-20","2011-11-21","2011-11-22","2011-11-23","2011-11-24","2011-11-25","2011-11-26","2011-11-27","2011-11-28","2011-11-29","2011-11-30","2011-12-01","2011-12-02","2011-12-03","2011-12-04","2011-12-05","2011-12-06","2011-12-07","2011-12-08","2011-12-09","2011-12-10","2011-12-11","2011-12-12","2011-12-13","2011-12-14","2011-12-15","2011-12-16","2011-12-17","2011-12-18","2011-12-19","2011-12-20","2011-12-21","2011-12-22","2011-12-23","2011-12-24","2011-12-25","2011-12-26","2011-12-27","2011-12-28","2011-12-29","2011-12-30","2011-12-31","2012-01-01","2012-01-02","2012-01-03","2012-01-04","2012-01-05","2012-01-06","2012-01-07","2012-01-08","2012-01-09","2012-01-10","2012-01-11","2012-01-12","2012-01-13","2012-01-14","2012-01-15","2012-01-16","2012-01-17","2012-01-18","2012-01-19","2012-01-20","2012-01-21","2012-01-22","2012-01-23","2012-01-24","2012-01-25","2012-01-26","2012-01-27","2012-01-28","2012-01-29","2012-01-30","2012-01-31","2012-02-01","2012-02-02","2012-02-03","2012-02-04","2012-02-05","2012-02-06","2012-02-07","2012-02-08","2012-02-09","2012-02-10","2012-02-11","2012-02-12","2012-02-13","2012-02-14","2012-02-15","2012-02-16","2012-02-17","2012-02-18","2012-02-19","2012-02-20","2012-02-21","2012-02-22","2012-02-23","2012-02-24","2012-02-25","2012-02-26","2012-02-27","2012-02-28","2012-02-29","2012-03-01","2012-03-02","2012-03-03","2012-03-04","2012-03-05","2012-03-06","2012-03-07","2012-03-08","2012-03-09","2012-03-10","2012-03-11","2012-03-12","2012-03-13","2012-03-14","2012-03-15","2012-03-16","2012-03-17","2012-03-18","2012-03-19","2012-03-20","2012-03-21","2012-03-22","2012-03-23","2012-03-24","2012-03-25","2012-03-26","2012-03-27","2012-03-28","2012-03-29","2012-03-30","2012-03-31","2012-04-01","2012-04-02","2012-04-03","2012-04-04","2012-04-05","2012-04-06","2012-04-07","2012-04-08","2012-04-09","2012-04-10","2012-04-11","2012-04-12","2012-04-13","2012-04-14","2012-04-15","2012-04-16","2012-04-17","2012-04-18","2012-04-19","2012-04-20","2012-04-21","2012-04-22","2012-04-23","2012-04-24","2012-04-25","2012-04-26","2012-04-27","2012-04-28","2012-04-29","2012-04-30","2012-05-01","2012-05-02","2012-05-03","2012-05-04","2012-05-05","2012-05-06","2012-05-07","2012-05-08","2012-05-09","2012-05-10","2012-05-11","2012-05-12","2012-05-13","2012-05-14","2012-05-15","2012-05-16","2012-05-17","2012-05-18","2012-05-19","2012-05-20","2012-05-21","2012-05-22","2012-05-23","2012-05-24","2012-05-25","2012-05-26","2012-05-27","2012-05-28","2012-05-29","2012-05-30","2012-05-31","2012-06-01","2012-06-02","2012-06-03","2012-06-04","2012-06-05","2012-06-06","2012-06-07","2012-06-08","2012-06-09","2012-06-10","2012-06-11","2012-06-12","2012-06-13","2012-06-14","2012-06-15","2012-06-16","2012-06-17","2012-06-18","2012-06-19","2012-06-20","2012-06-21","2012-06-22","2012-06-23","2012-06-24","2012-06-25","2012-06-26","2012-06-27","2012-06-28","2012-06-29","2012-06-30","2012-07-01","2012-07-02","2012-07-03","2012-07-04","2012-07-05","2012-07-06","2012-07-07","2012-07-08","2012-07-09","2012-07-10","2012-07-11","2012-07-12","2012-07-13","2012-07-14","2012-07-15","2012-07-16","2012-07-17","2012-07-18","2012-07-19","2012-07-20","2012-07-21","2012-07-22","2012-07-23","2012-07-24","2012-07-25","2012-07-26","2012-07-27","2012-07-28","2012-07-29","2012-07-30","2012-07-31","2012-08-01","2012-08-02","2012-08-03","2012-08-04","2012-08-05","2012-08-06","2012-08-07","2012-08-08","2012-08-09","2012-08-10","2012-08-11","2012-08-12","2012-08-13","2012-08-14","2012-08-15","2012-08-16","2012-08-17","2012-08-18","2012-08-19","2012-08-20","2012-08-21","2012-08-22","2012-08-23","2012-08-24","2012-08-25","2012-08-26","2012-08-27","2012-08-28","2012-08-29","2012-08-30","2012-08-31","2012-09-01","2012-09-02","2012-09-03","2012-09-04","2012-09-05","2012-09-06","2012-09-07","2012-09-08","2012-09-09","2012-09-10","2012-09-11","2012-09-12","2012-09-13","2012-09-14","2012-09-15","2012-09-16","2012-09-17","2012-09-18","2012-09-19","2012-09-20","2012-09-21","2012-09-22","2012-09-23","2012-09-24","2012-09-25","2012-09-26","2012-09-27","2012-09-28","2012-09-29","2012-09-30","2012-10-01","2012-10-02","2012-10-03","2012-10-04","2012-10-05","2012-10-06","2012-10-07","2012-10-08","2012-10-09","2012-10-10","2012-10-11","2012-10-12","2012-10-13","2012-10-14","2012-10-15","2012-10-16","2012-10-17","2012-10-18","2012-10-19","2012-10-20","2012-10-21","2012-10-22","2012-10-23","2012-10-24","2012-10-25","2012-10-26","2012-10-27","2012-10-28","2012-10-29","2012-10-30","2012-10-31","2012-11-01","2012-11-02","2012-11-03","2012-11-04","2012-11-05","2012-11-06","2012-11-07","2012-11-08","2012-11-09","2012-11-10","2012-11-11","2012-11-12","2012-11-13","2012-11-14","2012-11-15","2012-11-16","2012-11-17","2012-11-18","2012-11-19","2012-11-20","2012-11-21","2012-11-22","2012-11-23","2012-11-24","2012-11-25","2012-11-26","2012-11-27","2012-11-28","2012-11-29","2012-11-30","2012-12-01","2012-12-02","2012-12-03","2012-12-04","2012-12-05","2012-12-06","2012-12-07","2012-12-08","2012-12-09","2012-12-10","2012-12-11","2012-12-12","2012-12-13","2012-12-14","2012-12-15","2012-12-16","2012-12-17","2012-12-18","2012-12-19","2012-12-20","2012-12-21","2012-12-22","2012-12-23","2012-12-24","2012-12-25","2012-12-26","2012-12-27","2012-12-28","2012-12-29","2012-12-30","2012-12-31","2013-01-01","2013-01-02","2013-01-03","2013-01-04","2013-01-05","2013-01-06","2013-01-07","2013-01-08","2013-01-09","2013-01-10","2013-01-11","2013-01-12","2013-01-13","2013-01-14","2013-01-15","2013-01-16","2013-01-17","2013-01-18","2013-01-19","2013-01-20","2013-01-21","2013-01-22","2013-01-23","2013-01-24","2013-01-25","2013-01-26","2013-01-27","2013-01-28","2013-01-29","2013-01-30","2013-01-31","2013-02-01","2013-02-02","2013-02-03","2013-02-04","2013-02-05","2013-02-06","2013-02-07","2013-02-08","2013-02-09","2013-02-10","2013-02-11","2013-02-12","2013-02-13","2013-02-14","2013-02-15","2013-02-16","2013-02-17","2013-02-18","2013-02-19","2013-02-20","2013-02-21","2013-02-22","2013-02-23","2013-02-24","2013-02-25","2013-02-26","2013-02-27","2013-02-28","2013-03-01","2013-03-02","2013-03-03","2013-03-04","2013-03-05","2013-03-06","2013-03-07","2013-03-08","2013-03-09","2013-03-10","2013-03-11","2013-03-12","2013-03-13","2013-03-14","2013-03-15","2013-03-16","2013-03-17","2013-03-18","2013-03-19","2013-03-20","2013-03-21","2013-03-22","2013-03-23","2013-03-24","2013-03-25","2013-03-26","2013-03-27","2013-03-28","2013-03-29","2013-03-30","2013-03-31","2013-04-01","2013-04-02","2013-04-03","2013-04-04","2013-04-05","2013-04-06","2013-04-07","2013-04-08","2013-04-09","2013-04-10","2013-04-11","2013-04-12","2013-04-13","2013-04-14","2013-04-15","2013-04-16","2013-04-17","2013-04-18","2013-04-19","2013-04-20","2013-04-21","2013-04-22","2013-04-23","2013-04-24","2013-04-25","2013-04-26","2013-04-27","2013-04-28","2013-04-29","2013-04-30","2013-05-01","2013-05-02","2013-05-03","2013-05-04","2013-05-05","2013-05-06","2013-05-07","2013-05-08","2013-05-09","2013-05-10","2013-05-11","2013-05-12","2013-05-13","2013-05-14","2013-05-15","2013-05-16","2013-05-17","2013-05-18","2013-05-19","2013-05-20","2013-05-21","2013-05-22","2013-05-23","2013-05-24","2013-05-25","2013-05-26","2013-05-27","2013-05-28","2013-05-29","2013-05-30","2013-05-31","2013-06-01","2013-06-02","2013-06-03","2013-06-04","2013-06-05","2013-06-06","2013-06-07","2013-06-08","2013-06-09","2013-06-10","2013-06-11","2013-06-12","2013-06-13","2013-06-14","2013-06-15","2013-06-16","2013-06-17","2013-06-18","2013-06-19","2013-06-20","2013-06-21","2013-06-22","2013-06-23","2013-06-24","2013-06-25","2013-06-26","2013-06-27","2013-06-28","2013-06-29","2013-06-30","2013-07-01","2013-07-02","2013-07-03","2013-07-04","2013-07-05","2013-07-06","2013-07-07","2013-07-08","2013-07-09","2013-07-10","2013-07-11","2013-07-12","2013-07-13","2013-07-14","2013-07-15","2013-07-16","2013-07-17","2013-07-18","2013-07-19","2013-07-20","2013-07-21","2013-07-22","2013-07-23","2013-07-24","2013-07-25","2013-07-26","2013-07-27","2013-07-28","2013-07-29","2013-07-30","2013-07-31","2013-08-01","2013-08-02","2013-08-03","2013-08-04","2013-08-05","2013-08-06","2013-08-07","2013-08-08","2013-08-09","2013-08-10","2013-08-11","2013-08-12","2013-08-13","2013-08-14","2013-08-15","2013-08-16","2013-08-17","2013-08-18","2013-08-19","2013-08-20","2013-08-21","2013-08-22","2013-08-23","2013-08-24","2013-08-25","2013-08-26","2013-08-27","2013-08-28","2013-08-29","2013-08-30","2013-08-31","2013-09-01","2013-09-02","2013-09-03","2013-09-04","2013-09-05","2013-09-06","2013-09-07","2013-09-08","2013-09-09","2013-09-10","2013-09-11","2013-09-12","2013-09-13","2013-09-14","2013-09-15","2013-09-16","2013-09-17","2013-09-18","2013-09-19","2013-09-20","2013-09-21","2013-09-22","2013-09-23","2013-09-24","2013-09-25","2013-09-26","2013-09-27","2013-09-28","2013-09-29","2013-09-30","2013-10-01","2013-10-02","2013-10-03","2013-10-04","2013-10-05","2013-10-06","2013-10-07","2013-10-08","2013-10-09","2013-10-10","2013-10-11","2013-10-12","2013-10-13","2013-10-14","2013-10-15","2013-10-16","2013-10-17","2013-10-18","2013-10-19","2013-10-20","2013-10-21","2013-10-22","2013-10-23","2013-10-24","2013-10-25","2013-10-26","2013-10-27","2013-10-28","2013-10-29","2013-10-30","2013-10-31","2013-11-01","2013-11-02","2013-11-03","2013-11-04","2013-11-05","2013-11-06","2013-11-07","2013-11-08","2013-11-09","2013-11-10","2013-11-11","2013-11-12","2013-11-13","2013-11-14","2013-11-15","2013-11-16","2013-11-17","2013-11-18","2013-11-19","2013-11-20","2013-11-21","2013-11-22","2013-11-23","2013-11-24","2013-11-25","2013-11-26","2013-11-27","2013-11-28","2013-11-29","2013-11-30","2013-12-01","2013-12-02","2013-12-03","2013-12-04","2013-12-05","2013-12-06","2013-12-07","2013-12-08","2013-12-09","2013-12-10","2013-12-11","2013-12-12","2013-12-13","2013-12-14","2013-12-15","2013-12-16","2013-12-17","2013-12-18","2013-12-19","2013-12-20","2013-12-21","2013-12-22","2013-12-23","2013-12-24","2013-12-25","2013-12-26","2013-12-27","2013-12-28","2013-12-29","2013-12-30","2013-12-31","2014-01-01","2014-01-02","2014-01-03","2014-01-04","2014-01-05","2014-01-06","2014-01-07","2014-01-08","2014-01-09","2014-01-10","2014-01-11","2014-01-12","2014-01-13","2014-01-14","2014-01-15","2014-01-16","2014-01-17","2014-01-18","2014-01-19","2014-01-20","2014-01-21","2014-01-22","2014-01-23","2014-01-24","2014-01-25","2014-01-26","2014-01-27","2014-01-28","2014-01-29","2014-01-30","2014-01-31","2014-02-01","2014-02-02","2014-02-03","2014-02-04","2014-02-05","2014-02-06","2014-02-07","2014-02-08","2014-02-09","2014-02-10","2014-02-11","2014-02-12","2014-02-13","2014-02-14","2014-02-15","2014-02-16","2014-02-17","2014-02-18","2014-02-19","2014-02-20","2014-02-21","2014-02-22","2014-02-23","2014-02-24","2014-02-25","2014-02-26","2014-02-27","2014-02-28","2014-03-01","2014-03-02","2014-03-03","2014-03-04","2014-03-05","2014-03-06","2014-03-07","2014-03-08","2014-03-09","2014-03-10","2014-03-11","2014-03-12","2014-03-13","2014-03-14","2014-03-15","2014-03-16","2014-03-17","2014-03-18","2014-03-19","2014-03-20","2014-03-21","2014-03-22","2014-03-23","2014-03-24","2014-03-25","2014-03-26","2014-03-27","2014-03-28","2014-03-29","2014-03-30","2014-03-31","2014-04-01","2014-04-02","2014-04-03","2014-04-04","2014-04-05","2014-04-06","2014-04-07","2014-04-08","2014-04-09","2014-04-10","2014-04-11","2014-04-12","2014-04-13","2014-04-14","2014-04-15","2014-04-16","2014-04-17","2014-04-18","2014-04-19","2014-04-20","2014-04-21","2014-04-22","2014-04-23","2014-04-24","2014-04-25","2014-04-26","2014-04-27","2014-04-28","2014-04-29","2014-04-30","2014-05-01","2014-05-02","2014-05-03","2014-05-04","2014-05-05","2014-05-06","2014-05-07","2014-05-08","2014-05-09","2014-05-10","2014-05-11","2014-05-12","2014-05-13","2014-05-14","2014-05-15","2014-05-16","2014-05-17","2014-05-18","2014-05-19","2014-05-20","2014-05-21","2014-05-22","2014-05-23","2014-05-24","2014-05-25","2014-05-26","2014-05-27","2014-05-28","2014-05-29","2014-05-30","2014-05-31","2014-06-01","2014-06-02","2014-06-03","2014-06-04","2014-06-05","2014-06-06","2014-06-07","2014-06-08","2014-06-09","2014-06-10","2014-06-11","2014-06-12","2014-06-13","2014-06-14","2014-06-15","2014-06-16","2014-06-17","2014-06-18","2014-06-19","2014-06-20","2014-06-21","2014-06-22","2014-06-23","2014-06-24","2014-06-25","2014-06-26","2014-06-27","2014-06-28","2014-06-29","2014-06-30","2014-07-01","2014-07-02","2014-07-03","2014-07-04","2014-07-05","2014-07-06","2014-07-07","2014-07-08","2014-07-09","2014-07-10","2014-07-11","2014-07-12","2014-07-13","2014-07-14","2014-07-15","2014-07-16","2014-07-17","2014-07-18","2014-07-19","2014-07-20","2014-07-21","2014-07-22","2014-07-23","2014-07-24","2014-07-25","2014-07-26","2014-07-27","2014-07-28","2014-07-29","2014-07-30","2014-07-31","2014-08-01","2014-08-02","2014-08-03","2014-08-04","2014-08-05","2014-08-06","2014-08-07","2014-08-08","2014-08-09","2014-08-10","2014-08-11","2014-08-12","2014-08-13","2014-08-14","2014-08-15","2014-08-16","2014-08-17","2014-08-18","2014-08-19","2014-08-20","2014-08-21","2014-08-22","2014-08-23","2014-08-24","2014-08-25","2014-08-26","2014-08-27","2014-08-28","2014-08-29","2014-08-30","2014-08-31","2014-09-01","2014-09-02","2014-09-03","2014-09-04","2014-09-05","2014-09-06","2014-09-07","2014-09-08","2014-09-09","2014-09-10","2014-09-11","2014-09-12","2014-09-13","2014-09-14","2014-09-15","2014-09-16","2014-09-17","2014-09-18","2014-09-19","2014-09-20","2014-09-21","2014-09-22","2014-09-23","2014-09-24","2014-09-25","2014-09-26","2014-09-27","2014-09-28","2014-09-29","2014-09-30","2014-10-01","2014-10-02","2014-10-03","2014-10-04","2014-10-05","2014-10-06","2014-10-07","2014-10-08","2014-10-09","2014-10-10","2014-10-11","2014-10-12","2014-10-13","2014-10-14","2014-10-15","2014-10-16","2014-10-17","2014-10-18","2014-10-19","2014-10-20","2014-10-21","2014-10-22","2014-10-23","2014-10-24","2014-10-25","2014-10-26","2014-10-27","2014-10-28","2014-10-29","2014-10-30","2014-10-31","2014-11-01","2014-11-02","2014-11-03","2014-11-04","2014-11-05","2014-11-06","2014-11-07","2014-11-08","2014-11-09","2014-11-10","2014-11-11","2014-11-12","2014-11-13","2014-11-14","2014-11-15","2014-11-16","2014-11-17","2014-11-18","2014-11-19","2014-11-20","2014-11-21","2014-11-22","2014-11-23","2014-11-24","2014-11-25","2014-11-26","2014-11-27","2014-11-28","2014-11-29","2014-11-30","2014-12-01","2014-12-02","2014-12-03","2014-12-04","2014-12-05","2014-12-06","2014-12-07","2014-12-08","2014-12-09","2014-12-10","2014-12-11","2014-12-12","2014-12-13","2014-12-14","2014-12-15","2014-12-16","2014-12-17","2014-12-18","2014-12-19","2014-12-20","2014-12-21","2014-12-22","2014-12-23","2014-12-24","2014-12-25","2014-12-26","2014-12-27","2014-12-28","2014-12-29","2014-12-30","2014-12-31","2015-01-01","2015-01-02","2015-01-03","2015-01-04","2015-01-05","2015-01-06","2015-01-07","2015-01-08","2015-01-09","2015-01-10","2015-01-11","2015-01-12","2015-01-13","2015-01-14","2015-01-15","2015-01-16","2015-01-17","2015-01-18","2015-01-19","2015-01-20","2015-01-21","2015-01-22","2015-01-23","2015-01-24","2015-01-25","2015-01-26","2015-01-27","2015-01-28","2015-01-29","2015-01-30","2015-01-31","2015-02-01","2015-02-02","2015-02-03","2015-02-04","2015-02-05","2015-02-06","2015-02-07","2015-02-08","2015-02-09","2015-02-10","2015-02-11","2015-02-12","2015-02-13","2015-02-14","2015-02-15","2015-02-16","2015-02-17","2015-02-18","2015-02-19","2015-02-20","2015-02-21","2015-02-22","2015-02-23","2015-02-24","2015-02-25","2015-02-26","2015-02-27","2015-02-28","2015-03-01","2015-03-02","2015-03-03","2015-03-04","2015-03-05","2015-03-06","2015-03-07","2015-03-08","2015-03-09","2015-03-10","2015-03-11","2015-03-12","2015-03-13","2015-03-14","2015-03-15","2015-03-16","2015-03-17","2015-03-18","2015-03-19","2015-03-20","2015-03-21","2015-03-22","2015-03-23","2015-03-24","2015-03-25","2015-03-26","2015-03-27","2015-03-28","2015-03-29","2015-03-30","2015-03-31","2015-04-01","2015-04-02","2015-04-03","2015-04-04","2015-04-05","2015-04-06","2015-04-07","2015-04-08","2015-04-09","2015-04-10","2015-04-11","2015-04-12","2015-04-13","2015-04-14","2015-04-15","2015-04-16","2015-04-17","2015-04-18","2015-04-19","2015-04-20","2015-04-21","2015-04-22","2015-04-23","2015-04-24","2015-04-25","2015-04-26","2015-04-27","2015-04-28","2015-04-29","2015-04-30","2015-05-01","2015-05-02","2015-05-03","2015-05-04","2015-05-05","2015-05-06","2015-05-07","2015-05-08","2015-05-09","2015-05-10","2015-05-11","2015-05-12","2015-05-13","2015-05-14","2015-05-15","2015-05-16","2015-05-17","2015-05-18","2015-05-19","2015-05-20","2015-05-21","2015-05-22","2015-05-23","2015-05-24","2015-05-25","2015-05-26","2015-05-27","2015-05-28","2015-05-29","2015-05-30","2015-05-31","2015-06-01","2015-06-02","2015-06-03","2015-06-04","2015-06-05","2015-06-06","2015-06-07","2015-06-08","2015-06-09","2015-06-10","2015-06-11","2015-06-12","2015-06-13","2015-06-14","2015-06-15","2015-06-16","2015-06-17","2015-06-18","2015-06-19","2015-06-20","2015-06-21","2015-06-22","2015-06-23","2015-06-24","2015-06-25","2015-06-26","2015-06-27","2015-06-28","2015-06-29","2015-06-30","2015-07-01","2015-07-02","2015-07-03","2015-07-04","2015-07-05","2015-07-06","2015-07-07","2015-07-08","2015-07-09","2015-07-10","2015-07-11","2015-07-12","2015-07-13","2015-07-14","2015-07-15","2015-07-16","2015-07-17","2015-07-18","2015-07-19","2015-07-20","2015-07-21","2015-07-22","2015-07-23","2015-07-24","2015-07-25","2015-07-26","2015-07-27","2015-07-28","2015-07-29","2015-07-30","2015-07-31","2015-08-01","2015-08-02","2015-08-03","2015-08-04","2015-08-05","2015-08-06","2015-08-07","2015-08-08","2015-08-09","2015-08-10","2015-08-11","2015-08-12","2015-08-13","2015-08-14","2015-08-15","2015-08-16","2015-08-17","2015-08-18","2015-08-19","2015-08-20","2015-08-21","2015-08-22","2015-08-23","2015-08-24","2015-08-25","2015-08-26","2015-08-27","2015-08-28","2015-08-29","2015-08-30","2015-08-31","2015-09-01","2015-09-02","2015-09-03","2015-09-04","2015-09-05","2015-09-06","2015-09-07","2015-09-08","2015-09-09","2015-09-10","2015-09-11","2015-09-12","2015-09-13","2015-09-14","2015-09-15","2015-09-16","2015-09-17","2015-09-18","2015-09-19","2015-09-20","2015-09-21","2015-09-22","2015-09-23","2015-09-24","2015-09-25","2015-09-26","2015-09-27","2015-09-28","2015-09-29","2015-09-30","2015-10-01","2015-10-02","2015-10-03","2015-10-04","2015-10-05","2015-10-06","2015-10-07","2015-10-08","2015-10-09","2015-10-10","2015-10-11","2015-10-12","2015-10-13","2015-10-14","2015-10-15","2015-10-16","2015-10-17","2015-10-18","2015-10-19","2015-10-20","2015-10-21","2015-10-22","2015-10-23","2015-10-24","2015-10-25","2015-10-26","2015-10-27","2015-10-28","2015-10-29","2015-10-30","2015-10-31","2015-11-01","2015-11-02","2015-11-03","2015-11-04","2015-11-05","2015-11-06","2015-11-07","2015-11-08","2015-11-09","2015-11-10","2015-11-11","2015-11-12","2015-11-13","2015-11-14","2015-11-15","2015-11-16","2015-11-17","2015-11-18","2015-11-19","2015-11-20","2015-11-21","2015-11-22","2015-11-23","2015-11-24","2015-11-25","2015-11-26","2015-11-27","2015-11-28","2015-11-29","2015-11-30","2015-12-01","2015-12-02","2015-12-03","2015-12-04","2015-12-05","2015-12-06","2015-12-07","2015-12-08","2015-12-09","2015-12-10","2015-12-11","2015-12-12","2015-12-13","2015-12-14","2015-12-15","2015-12-16","2015-12-17","2015-12-18","2015-12-19","2015-12-20","2015-12-21","2015-12-22","2015-12-23","2015-12-24","2015-12-25","2015-12-26","2015-12-27","2015-12-28","2015-12-29","2015-12-30","2015-12-31","2016-01-01","2016-01-02","2016-01-03","2016-01-04","2016-01-05","2016-01-06","2016-01-07","2016-01-08","2016-01-09","2016-01-10","2016-01-11","2016-01-12","2016-01-13","2016-01-14","2016-01-15","2016-01-16","2016-01-17","2016-01-18","2016-01-19","2016-01-20","2016-01-21","2016-01-22","2016-01-23","2016-01-24","2016-01-25","2016-01-26","2016-01-27","2016-01-28","2016-01-29","2016-01-30","2016-01-31","2016-02-01","2016-02-02","2016-02-03","2016-02-04","2016-02-05","2016-02-06","2016-02-07","2016-02-08","2016-02-09","2016-02-10","2016-02-11","2016-02-12","2016-02-13","2016-02-14","2016-02-15","2016-02-16","2016-02-17","2016-02-18","2016-02-19","2016-02-20","2016-02-21","2016-02-22","2016-02-23","2016-02-24","2016-02-25","2016-02-26","2016-02-27","2016-02-28","2016-02-29","2016-03-01","2016-03-02","2016-03-03","2016-03-04","2016-03-05","2016-03-06","2016-03-07","2016-03-08","2016-03-09","2016-03-10","2016-03-11","2016-03-12","2016-03-13","2016-03-14","2016-03-15","2016-03-16","2016-03-17","2016-03-18","2016-03-19","2016-03-20","2016-03-21","2016-03-22","2016-03-23","2016-03-24","2016-03-25","2016-03-26","2016-03-27","2016-03-28","2016-03-29","2016-03-30","2016-03-31","2016-04-01","2016-04-02","2016-04-03","2016-04-04","2016-04-05","2016-04-06","2016-04-07","2016-04-08","2016-04-09","2016-04-10","2016-04-11","2016-04-12","2016-04-13","2016-04-14","2016-04-15","2016-04-16","2016-04-17","2016-04-18","2016-04-19","2016-04-20","2016-04-21","2016-04-22","2016-04-23","2016-04-24","2016-04-25","2016-04-26","2016-04-27","2016-04-28","2016-04-29","2016-04-30","2016-05-01","2016-05-02","2016-05-03","2016-05-04","2016-05-05","2016-05-06","2016-05-07","2016-05-08","2016-05-09","2016-05-10","2016-05-11","2016-05-12","2016-05-13","2016-05-14","2016-05-15","2016-05-16","2016-05-17","2016-05-18","2016-05-19","2016-05-20","2016-05-21","2016-05-22","2016-05-23","2016-05-24","2016-05-25","2016-05-26","2016-05-27","2016-05-28","2016-05-29","2016-05-30","2016-05-31","2016-06-01","2016-06-02","2016-06-03","2016-06-04","2016-06-05","2016-06-06","2016-06-07","2016-06-08","2016-06-09","2016-06-10","2016-06-11","2016-06-12","2016-06-13","2016-06-14","2016-06-15","2016-06-16","2016-06-17","2016-06-18","2016-06-19","2016-06-20","2016-06-21","2016-06-22","2016-06-23","2016-06-24","2016-06-25","2016-06-26","2016-06-27","2016-06-28","2016-06-29","2016-06-30","2016-07-01","2016-07-02","2016-07-03","2016-07-04","2016-07-05","2016-07-06","2016-07-07","2016-07-08","2016-07-09","2016-07-10","2016-07-11","2016-07-12","2016-07-13","2016-07-14","2016-07-15","2016-07-16","2016-07-17","2016-07-18","2016-07-19","2016-07-20","2016-07-21","2016-07-22","2016-07-23","2016-07-24","2016-07-25","2016-07-26","2016-07-27","2016-07-28","2016-07-29","2016-07-30","2016-07-31","2016-08-01","2016-08-02","2016-08-03","2016-08-04","2016-08-05","2016-08-06","2016-08-07","2016-08-08","2016-08-09","2016-08-10","2016-08-11","2016-08-12","2016-08-13","2016-08-14","2016-08-15","2016-08-16","2016-08-17","2016-08-18","2016-08-19","2016-08-20","2016-08-21","2016-08-22","2016-08-23","2016-08-24","2016-08-25","2016-08-26","2016-08-27","2016-08-28","2016-08-29","2016-08-30","2016-08-31","2016-09-01","2016-09-02","2016-09-03","2016-09-04","2016-09-05","2016-09-06","2016-09-07","2016-09-08","2016-09-09","2016-09-10","2016-09-11","2016-09-12","2016-09-13","2016-09-14","2016-09-15","2016-09-16","2016-09-17","2016-09-18","2016-09-19","2016-09-20","2016-09-21","2016-09-22","2016-09-23","2016-09-24","2016-09-25","2016-09-26","2016-09-27","2016-09-28","2016-09-29","2016-09-30","2016-10-01","2016-10-02","2016-10-03","2016-10-04","2016-10-05","2016-10-06","2016-10-07","2016-10-08","2016-10-09","2016-10-10","2016-10-11","2016-10-12","2016-10-13","2016-10-14","2016-10-15","2016-10-16","2016-10-17","2016-10-18","2016-10-19","2016-10-20","2016-10-21","2016-10-22","2016-10-23","2016-10-24","2016-10-25","2016-10-26","2016-10-27","2016-10-28","2016-10-29","2016-10-30","2016-10-31","2016-11-01","2016-11-02","2016-11-03","2016-11-04","2016-11-05","2016-11-06","2016-11-07","2016-11-08","2016-11-09","2016-11-10","2016-11-11","2016-11-12","2016-11-13","2016-11-14","2016-11-15","2016-11-16","2016-11-17","2016-11-18","2016-11-19","2016-11-20","2016-11-21","2016-11-22","2016-11-23","2016-11-24","2016-11-25","2016-11-26","2016-11-27","2016-11-28","2016-11-29","2016-11-30","2016-12-01","2016-12-02","2016-12-03","2016-12-04","2016-12-05","2016-12-06","2016-12-07","2016-12-08","2016-12-09","2016-12-10","2016-12-11","2016-12-12","2016-12-13","2016-12-14","2016-12-15","2016-12-16","2016-12-17","2016-12-18","2016-12-19","2016-12-20","2016-12-21","2016-12-22","2016-12-23","2016-12-24","2016-12-25","2016-12-26","2016-12-27","2016-12-28","2016-12-29","2016-12-30","2016-12-31","2017-01-01","2017-01-02","2017-01-03","2017-01-04","2017-01-05","2017-01-06","2017-01-07","2017-01-08","2017-01-09","2017-01-10","2017-01-11","2017-01-12","2017-01-13","2017-01-14","2017-01-15","2017-01-16","2017-01-17","2017-01-18","2017-01-19","2017-01-20","2017-01-21","2017-01-22","2017-01-23","2017-01-24","2017-01-25","2017-01-26","2017-01-27","2017-01-28","2017-01-29","2017-01-30","2017-01-31","2017-02-01","2017-02-02","2017-02-03","2017-02-04","2017-02-05","2017-02-06","2017-02-07","2017-02-08","2017-02-09","2017-02-10","2017-02-11","2017-02-12","2017-02-13","2017-02-14","2017-02-15","2017-02-16","2017-02-17","2017-02-18","2017-02-19","2017-02-20","2017-02-21","2017-02-22","2017-02-23","2017-02-24","2017-02-25","2017-02-26","2017-02-27","2017-02-28","2017-03-01","2017-03-02","2017-03-03","2017-03-04","2017-03-05","2017-03-06","2017-03-07","2017-03-08","2017-03-09","2017-03-10","2017-03-11","2017-03-12","2017-03-13","2017-03-14","2017-03-15","2017-03-16","2017-03-17","2017-03-18","2017-03-19","2017-03-20","2017-03-21","2017-03-22","2017-03-23","2017-03-24","2017-03-25","2017-03-26","2017-03-27","2017-03-28","2017-03-29","2017-03-30","2017-03-31","2017-04-01","2017-04-02","2017-04-03","2017-04-04","2017-04-05","2017-04-06","2017-04-07","2017-04-08","2017-04-09","2017-04-10","2017-04-11","2017-04-12","2017-04-13","2017-04-14","2017-04-15","2017-04-16","2017-04-17","2017-04-18","2017-04-19","2017-04-20","2017-04-21","2017-04-22","2017-04-23","2017-04-24","2017-04-25","2017-04-26","2017-04-27","2017-04-28","2017-04-29","2017-04-30","2017-05-01","2017-05-02","2017-05-03","2017-05-04","2017-05-05","2017-05-06","2017-05-07","2017-05-08","2017-05-09","2017-05-10","2017-05-11","2017-05-12","2017-05-13","2017-05-14","2017-05-15","2017-05-16","2017-05-17","2017-05-18","2017-05-19","2017-05-20","2017-05-21","2017-05-22","2017-05-23","2017-05-24","2017-05-25","2017-05-26","2017-05-27","2017-05-28","2017-05-29","2017-05-30","2017-05-31","2017-06-01","2017-06-02","2017-06-03","2017-06-04","2017-06-05","2017-06-06","2017-06-07","2017-06-08","2017-06-09","2017-06-10","2017-06-11","2017-06-12","2017-06-13","2017-06-14","2017-06-15","2017-06-16","2017-06-17","2017-06-18","2017-06-19","2017-06-20","2017-06-21","2017-06-22","2017-06-23","2017-06-24","2017-06-25","2017-06-26","2017-06-27","2017-06-28","2017-06-29","2017-06-30","2017-07-01","2017-07-02","2017-07-03","2017-07-04","2017-07-05","2017-07-06","2017-07-07","2017-07-08","2017-07-09","2017-07-10","2017-07-11","2017-07-12","2017-07-13","2017-07-14","2017-07-15","2017-07-16","2017-07-17","2017-07-18","2017-07-19","2017-07-20","2017-07-21","2017-07-22","2017-07-23","2017-07-24","2017-07-25","2017-07-26","2017-07-27","2017-07-28","2017-07-29","2017-07-30","2017-07-31","2017-08-01","2017-08-02","2017-08-03","2017-08-04","2017-08-05","2017-08-06","2017-08-07","2017-08-08","2017-08-09","2017-08-10","2017-08-11","2017-08-12","2017-08-13","2017-08-14","2017-08-15","2017-08-16","2017-08-17","2017-08-18","2017-08-19","2017-08-20","2017-08-21","2017-08-22","2017-08-23","2017-08-24","2017-08-25","2017-08-26","2017-08-27","2017-08-28","2017-08-29","2017-08-30","2017-08-31","2017-09-01","2017-09-02","2017-09-03","2017-09-04","2017-09-05","2017-09-06","2017-09-07","2017-09-08","2017-09-09","2017-09-10","2017-09-11","2017-09-12","2017-09-13","2017-09-14","2017-09-15","2017-09-16","2017-09-17","2017-09-18","2017-09-19","2017-09-20","2017-09-21","2017-09-22","2017-09-23","2017-09-24","2017-09-25","2017-09-26","2017-09-27","2017-09-28","2017-09-29","2017-09-30","2017-10-01","2017-10-02","2017-10-03","2017-10-04","2017-10-05","2017-10-06","2017-10-07","2017-10-08","2017-10-09","2017-10-10","2017-10-11","2017-10-12","2017-10-13","2017-10-14","2017-10-15","2017-10-16","2017-10-17","2017-10-18","2017-10-19","2017-10-20","2017-10-21","2017-10-22","2017-10-23","2017-10-24","2017-10-25","2017-10-26","2017-10-27","2017-10-28","2017-10-29","2017-10-30","2017-10-31","2017-11-01","2017-11-02","2017-11-03","2017-11-04","2017-11-05","2017-11-06","2017-11-07","2017-11-08","2017-11-09","2017-11-10","2017-11-11","2017-11-12","2017-11-13","2017-11-14","2017-11-15","2017-11-16","2017-11-17","2017-11-18","2017-11-19","2017-11-20","2017-11-21","2017-11-22","2017-11-23","2017-11-24","2017-11-25","2017-11-26","2017-11-27","2017-11-28","2017-11-29","2017-11-30","2017-12-01","2017-12-02","2017-12-03","2017-12-04","2017-12-05","2017-12-06","2017-12-07","2017-12-08","2017-12-09","2017-12-10","2017-12-11","2017-12-12","2017-12-13","2017-12-14","2017-12-15","2017-12-16","2017-12-17","2017-12-18","2017-12-19","2017-12-20","2017-12-21","2017-12-22","2017-12-23","2017-12-24","2017-12-25","2017-12-26","2017-12-27","2017-12-28","2017-12-29","2017-12-30","2017-12-31","2018-01-01"];
+     const earlyDaysSinceGenesis = [727,728,729,730,731,732,733,734,735,736,737,738,739,740,741,742,743,744,745,746,747,748,749,750,751,752,753,754,755,756,757,758,759,760,761,762,763,764,765,766,767,768,769,770,771,772,773,774,775,776,777,778,779,780,781,782,783,784,785,786,787,788,789,790,791,792,793,794,795,796,797,798,799,800,801,802,803,804,805,806,807,808,809,810,811,812,813,814,815,816,817,818,819,820,821,822,823,824,825,826,827,828,829,830,831,832,833,834,835,836,837,838,839,840,841,842,843,844,845,846,847,848,849,850,851,852,853,854,855,856,857,858,859,860,861,862,863,864,865,866,867,868,869,870,871,872,873,874,875,876,877,878,879,880,881,882,883,884,885,886,887,888,889,890,891,892,893,894,895,896,897,898,899,900,901,902,903,904,905,906,907,908,909,910,911,912,913,914,915,916,917,918,919,920,921,922,923,924,925,926,927,928,929,930,931,932,933,934,935,936,937,938,939,940,941,942,943,944,945,946,947,948,949,950,951,952,953,954,955,956,957,958,959,960,961,962,963,964,965,966,967,968,969,970,971,972,973,974,975,976,977,978,979,980,981,982,983,984,985,986,987,988,989,990,991,992,993,994,995,996,997,998,999,1000,1001,1002,1003,1004,1005,1006,1007,1008,1009,1010,1011,1012,1013,1014,1015,1016,1017,1018,1019,1020,1021,1022,1023,1024,1025,1026,1027,1028,1029,1030,1031,1032,1033,1034,1035,1036,1037,1038,1039,1040,1041,1042,1043,1044,1045,1046,1047,1048,1049,1050,1051,1052,1053,1054,1055,1056,1057,1058,1059,1060,1061,1062,1063,1064,1065,1066,1067,1068,1069,1070,1071,1072,1073,1074,1075,1076,1077,1078,1079,1080,1081,1082,1083,1084,1085,1086,1087,1088,1089,1090,1091,1092,1093,1094,1095,1096,1097,1098,1099,1100,1101,1102,1103,1104,1105,1106,1107,1108,1109,1110,1111,1112,1113,1114,1115,1116,1117,1118,1119,1120,1121,1122,1123,1124,1125,1126,1127,1128,1129,1130,1131,1132,1133,1134,1135,1136,1137,1138,1139,1140,1141,1142,1143,1144,1145,1146,1147,1148,1149,1150,1151,1152,1153,1154,1155,1156,1157,1158,1159,1160,1161,1162,1163,1164,1165,1166,1167,1168,1169,1170,1171,1172,1173,1174,1175,1176,1177,1178,1179,1180,1181,1182,1183,1184,1185,1186,1187,1188,1189,1190,1191,1192,1193,1194,1195,1196,1197,1198,1199,1200,1201,1202,1203,1204,1205,1206,1207,1208,1209,1210,1211,1212,1213,1214,1215,1216,1217,1218,1219,1220,1221,1222,1223,1224,1225,1226,1227,1228,1229,1230,1231,1232,1233,1234,1235,1236,1237,1238,1239,1240,1241,1242,1243,1244,1245,1246,1247,1248,1249,1250,1251,1252,1253,1254,1255,1256,1257,1258,1259,1260,1261,1262,1263,1264,1265,1266,1267,1268,1269,1270,1271,1272,1273,1274,1275,1276,1277,1278,1279,1280,1281,1282,1283,1284,1285,1286,1287,1288,1289,1290,1291,1292,1293,1294,1295,1296,1297,1298,1299,1300,1301,1302,1303,1304,1305,1306,1307,1308,1309,1310,1311,1312,1313,1314,1315,1316,1317,1318,1319,1320,1321,1322,1323,1324,1325,1326,1327,1328,1329,1330,1331,1332,1333,1334,1335,1336,1337,1338,1339,1340,1341,1342,1343,1344,1345,1346,1347,1348,1349,1350,1351,1352,1353,1354,1355,1356,1357,1358,1359,1360,1361,1362,1363,1364,1365,1366,1367,1368,1369,1370,1371,1372,1373,1374,1375,1376,1377,1378,1379,1380,1381,1382,1383,1384,1385,1386,1387,1388,1389,1390,1391,1392,1393,1394,1395,1396,1397,1398,1399,1400,1401,1402,1403,1404,1405,1406,1407,1408,1409,1410,1411,1412,1413,1414,1415,1416,1417,1418,1419,1420,1421,1422,1423,1424,1425,1426,1427,1428,1429,1430,1431,1432,1433,1434,1435,1436,1437,1438,1439,1440,1441,1442,1443,1444,1445,1446,1447,1448,1449,1450,1451,1452,1453,1454,1455,1456,1457,1458,1459,1460,1461,1462,1463,1464,1465,1466,1467,1468,1469,1470,1471,1472,1473,1474,1475,1476,1477,1478,1479,1480,1481,1482,1483,1484,1485,1486,1487,1488,1489,1490,1491,1492,1493,1494,1495,1496,1497,1498,1499,1500,1501,1502,1503,1504,1505,1506,1507,1508,1509,1510,1511,1512,1513,1514,1515,1516,1517,1518,1519,1520,1521,1522,1523,1524,1525,1526,1527,1528,1529,1530,1531,1532,1533,1534,1535,1536,1537,1538,1539,1540,1541,1542,1543,1544,1545,1546,1547,1548,1549,1550,1551,1552,1553,1554,1555,1556,1557,1558,1559,1560,1561,1562,1563,1564,1565,1566,1567,1568,1569,1570,1571,1572,1573,1574,1575,1576,1577,1578,1579,1580,1581,1582,1583,1584,1585,1586,1587,1588,1589,1590,1591,1592,1593,1594,1595,1596,1597,1598,1599,1600,1601,1602,1603,1604,1605,1606,1607,1608,1609,1610,1611,1612,1613,1614,1615,1616,1617,1618,1619,1620,1621,1622,1623,1624,1625,1626,1627,1628,1629,1630,1631,1632,1633,1634,1635,1636,1637,1638,1639,1640,1641,1642,1643,1644,1645,1646,1647,1648,1649,1650,1651,1652,1653,1654,1655,1656,1657,1658,1659,1660,1661,1662,1663,1664,1665,1666,1667,1668,1669,1670,1671,1672,1673,1674,1675,1676,1677,1678,1679,1680,1681,1682,1683,1684,1685,1686,1687,1688,1689,1690,1691,1692,1693,1694,1695,1696,1697,1698,1699,1700,1701,1702,1703,1704,1705,1706,1707,1708,1709,1710,1711,1712,1713,1714,1715,1716,1717,1718,1719,1720,1721,1722,1723,1724,1725,1726,1727,1728,1729,1730,1731,1732,1733,1734,1735,1736,1737,1738,1739,1740,1741,1742,1743,1744,1745,1746,1747,1748,1749,1750,1751,1752,1753,1754,1755,1756,1757,1758,1759,1760,1761,1762,1763,1764,1765,1766,1767,1768,1769,1770,1771,1772,1773,1774,1775,1776,1777,1778,1779,1780,1781,1782,1783,1784,1785,1786,1787,1788,1789,1790,1791,1792,1793,1794,1795,1796,1797,1798,1799,1800,1801,1802,1803,1804,1805,1806,1807,1808,1809,1810,1811,1812,1813,1814,1815,1816,1817,1818,1819,1820,1821,1822,1823,1824,1825,1826,1827,1828,1829,1830,1831,1832,1833,1834,1835,1836,1837,1838,1839,1840,1841,1842,1843,1844,1845,1846,1847,1848,1849,1850,1851,1852,1853,1854,1855,1856,1857,1858,1859,1860,1861,1862,1863,1864,1865,1866,1867,1868,1869,1870,1871,1872,1873,1874,1875,1876,1877,1878,1879,1880,1881,1882,1883,1884,1885,1886,1887,1888,1889,1890,1891,1892,1893,1894,1895,1896,1897,1898,1899,1900,1901,1902,1903,1904,1905,1906,1907,1908,1909,1910,1911,1912,1913,1914,1915,1916,1917,1918,1919,1920,1921,1922,1923,1924,1925,1926,1927,1928,1929,1930,1931,1932,1933,1934,1935,1936,1937,1938,1939,1940,1941,1942,1943,1944,1945,1946,1947,1948,1949,1950,1951,1952,1953,1954,1955,1956,1957,1958,1959,1960,1961,1962,1963,1964,1965,1966,1967,1968,1969,1970,1971,1972,1973,1974,1975,1976,1977,1978,1979,1980,1981,1982,1983,1984,1985,1986,1987,1988,1989,1990,1991,1992,1993,1994,1995,1996,1997,1998,1999,2000,2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022,2023,2024,2025,2026,2027,2028,2029,2030,2031,2032,2033,2034,2035,2036,2037,2038,2039,2040,2041,2042,2043,2044,2045,2046,2047,2048,2049,2050,2051,2052,2053,2054,2055,2056,2057,2058,2059,2060,2061,2062,2063,2064,2065,2066,2067,2068,2069,2070,2071,2072,2073,2074,2075,2076,2077,2078,2079,2080,2081,2082,2083,2084,2085,2086,2087,2088,2089,2090,2091,2092,2093,2094,2095,2096,2097,2098,2099,2100,2101,2102,2103,2104,2105,2106,2107,2108,2109,2110,2111,2112,2113,2114,2115,2116,2117,2118,2119,2120,2121,2122,2123,2124,2125,2126,2127,2128,2129,2130,2131,2132,2133,2134,2135,2136,2137,2138,2139,2140,2141,2142,2143,2144,2145,2146,2147,2148,2149,2150,2151,2152,2153,2154,2155,2156,2157,2158,2159,2160,2161,2162,2163,2164,2165,2166,2167,2168,2169,2170,2171,2172,2173,2174,2175,2176,2177,2178,2179,2180,2181,2182,2183,2184,2185,2186,2187,2188,2189,2190,2191,2192,2193,2194,2195,2196,2197,2198,2199,2200,2201,2202,2203,2204,2205,2206,2207,2208,2209,2210,2211,2212,2213,2214,2215,2216,2217,2218,2219,2220,2221,2222,2223,2224,2225,2226,2227,2228,2229,2230,2231,2232,2233,2234,2235,2236,2237,2238,2239,2240,2241,2242,2243,2244,2245,2246,2247,2248,2249,2250,2251,2252,2253,2254,2255,2256,2257,2258,2259,2260,2261,2262,2263,2264,2265,2266,2267,2268,2269,2270,2271,2272,2273,2274,2275,2276,2277,2278,2279,2280,2281,2282,2283,2284,2285,2286,2287,2288,2289,2290,2291,2292,2293,2294,2295,2296,2297,2298,2299,2300,2301,2302,2303,2304,2305,2306,2307,2308,2309,2310,2311,2312,2313,2314,2315,2316,2317,2318,2319,2320,2321,2322,2323,2324,2325,2326,2327,2328,2329,2330,2331,2332,2333,2334,2335,2336,2337,2338,2339,2340,2341,2342,2343,2344,2345,2346,2347,2348,2349,2350,2351,2352,2353,2354,2355,2356,2357,2358,2359,2360,2361,2362,2363,2364,2365,2366,2367,2368,2369,2370,2371,2372,2373,2374,2375,2376,2377,2378,2379,2380,2381,2382,2383,2384,2385,2386,2387,2388,2389,2390,2391,2392,2393,2394,2395,2396,2397,2398,2399,2400,2401,2402,2403,2404,2405,2406,2407,2408,2409,2410,2411,2412,2413,2414,2415,2416,2417,2418,2419,2420,2421,2422,2423,2424,2425,2426,2427,2428,2429,2430,2431,2432,2433,2434,2435,2436,2437,2438,2439,2440,2441,2442,2443,2444,2445,2446,2447,2448,2449,2450,2451,2452,2453,2454,2455,2456,2457,2458,2459,2460,2461,2462,2463,2464,2465,2466,2467,2468,2469,2470,2471,2472,2473,2474,2475,2476,2477,2478,2479,2480,2481,2482,2483,2484,2485,2486,2487,2488,2489,2490,2491,2492,2493,2494,2495,2496,2497,2498,2499,2500,2501,2502,2503,2504,2505,2506,2507,2508,2509,2510,2511,2512,2513,2514,2515,2516,2517,2518,2519,2520,2521,2522,2523,2524,2525,2526,2527,2528,2529,2530,2531,2532,2533,2534,2535,2536,2537,2538,2539,2540,2541,2542,2543,2544,2545,2546,2547,2548,2549,2550,2551,2552,2553,2554,2555,2556,2557,2558,2559,2560,2561,2562,2563,2564,2565,2566,2567,2568,2569,2570,2571,2572,2573,2574,2575,2576,2577,2578,2579,2580,2581,2582,2583,2584,2585,2586,2587,2588,2589,2590,2591,2592,2593,2594,2595,2596,2597,2598,2599,2600,2601,2602,2603,2604,2605,2606,2607,2608,2609,2610,2611,2612,2613,2614,2615,2616,2617,2618,2619,2620,2621,2622,2623,2624,2625,2626,2627,2628,2629,2630,2631,2632,2633,2634,2635,2636,2637,2638,2639,2640,2641,2642,2643,2644,2645,2646,2647,2648,2649,2650,2651,2652,2653,2654,2655,2656,2657,2658,2659,2660,2661,2662,2663,2664,2665,2666,2667,2668,2669,2670,2671,2672,2673,2674,2675,2676,2677,2678,2679,2680,2681,2682,2683,2684,2685,2686,2687,2688,2689,2690,2691,2692,2693,2694,2695,2696,2697,2698,2699,2700,2701,2702,2703,2704,2705,2706,2707,2708,2709,2710,2711,2712,2713,2714,2715,2716,2717,2718,2719,2720,2721,2722,2723,2724,2725,2726,2727,2728,2729,2730,2731,2732,2733,2734,2735,2736,2737,2738,2739,2740,2741,2742,2743,2744,2745,2746,2747,2748,2749,2750,2751,2752,2753,2754,2755,2756,2757,2758,2759,2760,2761,2762,2763,2764,2765,2766,2767,2768,2769,2770,2771,2772,2773,2774,2775,2776,2777,2778,2779,2780,2781,2782,2783,2784,2785,2786,2787,2788,2789,2790,2791,2792,2793,2794,2795,2796,2797,2798,2799,2800,2801,2802,2803,2804,2805,2806,2807,2808,2809,2810,2811,2812,2813,2814,2815,2816,2817,2818,2819,2820,2821,2822,2823,2824,2825,2826,2827,2828,2829,2830,2831,2832,2833,2834,2835,2836,2837,2838,2839,2840,2841,2842,2843,2844,2845,2846,2847,2848,2849,2850,2851,2852,2853,2854,2855,2856,2857,2858,2859,2860,2861,2862,2863,2864,2865,2866,2867,2868,2869,2870,2871,2872,2873,2874,2875,2876,2877,2878,2879,2880,2881,2882,2883,2884,2885,2886,2887,2888,2889,2890,2891,2892,2893,2894,2895,2896,2897,2898,2899,2900,2901,2902,2903,2904,2905,2906,2907,2908,2909,2910,2911,2912,2913,2914,2915,2916,2917,2918,2919,2920,2921,2922,2923,2924,2925,2926,2927,2928,2929,2930,2931,2932,2933,2934,2935,2936,2937,2938,2939,2940,2941,2942,2943,2944,2945,2946,2947,2948,2949,2950,2951,2952,2953,2954,2955,2956,2957,2958,2959,2960,2961,2962,2963,2964,2965,2966,2967,2968,2969,2970,2971,2972,2973,2974,2975,2976,2977,2978,2979,2980,2981,2982,2983,2984,2985,2986,2987,2988,2989,2990,2991,2992,2993,2994,2995,2996,2997,2998,2999,3000,3001,3002,3003,3004,3005,3006,3007,3008,3009,3010,3011,3012,3013,3014,3015,3016,3017,3018,3019,3020,3021,3022,3023,3024,3025,3026,3027,3028,3029,3030,3031,3032,3033,3034,3035,3036,3037,3038,3039,3040,3041,3042,3043,3044,3045,3046,3047,3048,3049,3050,3051,3052,3053,3054,3055,3056,3057,3058,3059,3060,3061,3062,3063,3064,3065,3066,3067,3068,3069,3070,3071,3072,3073,3074,3075,3076,3077,3078,3079,3080,3081,3082,3083,3084,3085,3086,3087,3088,3089,3090,3091,3092,3093,3094,3095,3096,3097,3098,3099,3100,3101,3102,3103,3104,3105,3106,3107,3108,3109,3110,3111,3112,3113,3114,3115,3116,3117,3118,3119,3120,3121,3122,3123,3124,3125,3126,3127,3128,3129,3130,3131,3132,3133,3134,3135,3136,3137,3138,3139,3140,3141,3142,3143,3144,3145,3146,3147,3148,3149,3150,3151,3152,3153,3154,3155,3156,3157,3158,3159,3160,3161,3162,3163,3164,3165,3166,3167,3168,3169,3170,3171,3172,3173,3174,3175,3176,3177,3178,3179,3180,3181,3182,3183,3184,3185,3186,3187,3188,3189,3190,3191,3192,3193,3194,3195,3196,3197,3198,3199,3200,3201,3202,3203,3204,3205,3206,3207,3208,3209,3210,3211,3212,3213,3214,3215,3216,3217,3218,3219,3220,3221,3222,3223,3224,3225,3226,3227,3228,3229,3230,3231,3232,3233,3234,3235,3236,3237,3238,3239,3240,3241,3242,3243,3244,3245,3246,3247,3248,3249,3250,3251,3252,3253,3254,3255,3256,3257,3258,3259,3260,3261,3262,3263,3264,3265,3266,3267,3268,3269,3270,3271,3272,3273,3274,3275,3276,3277,3278,3279,3280,3281,3282,3283,3284,3285];
+     const earlyLogPrices = [-1.2039728043259361,-1.2039728043259361,-1.2039728043259361,-1.2039728043259361,-1.2039728043259361,-1.2039728043259361,-1.2039728043259361,-1.2039728043259361,-1.2039728043259361,-1.2039728043259361,-1.2039728043259361,-1.2039728043259361,-1.2039728043259361,-0.916290731874155,-0.916290731874155,-0.916290731874155,-1.2039728043259361,-1.2039728043259361,-1.2039728043259361,-0.916290731874155,-0.916290731874155,-0.916290731874155,-0.916290731874155,-0.916290731874155,-0.916290731874155,-0.916290731874155,-0.916290731874155,-0.916290731874155,-0.916290731874155,-0.6931471805599453,-0.6931471805599453,-0.35667494393873245,-0.35667494393873245,-0.35667494393873245,-0.2231435513142097,-0.10536051565782628,-0.10536051565782628,-0.10536051565782628,-0.10536051565782628,0.09531017980432493,0,0.09531017980432493,0.09531017980432493,0,0.09531017980432493,0,0,0,-0.10536051565782628,-0.10536051565782628,-0.10536051565782628,-0.2231435513142097,-0.10536051565782628,-0.10536051565782628,0,-0.10536051565782628,0,-0.10536051565782628,-0.10536051565782628,-0.10536051565782628,-0.10536051565782628,-0.10536051565782628,-0.10536051565782628,-0.10536051565782628,-0.10536051565782628,-0.10536051565782628,-0.10536051565782628,-0.10536051565782628,-0.10536051565782628,-0.10536051565782628,-0.10536051565782628,-0.10536051565782628,-0.10536051565782628,-0.10536051565782628,-0.10536051565782628,-0.2231435513142097,-0.2231435513142097,-0.2231435513142097,-0.35667494393873245,-0.2231435513142097,-0.2231435513142097,-0.2231435513142097,-0.10536051565782628,-0.10536051565782628,-0.10536051565782628,-0.2231435513142097,-0.2231435513142097,-0.2231435513142097,-0.2231435513142097,-0.2231435513142097,-0.2231435513142097,-0.2231435513142097,-0.2231435513142097,-0.35667494393873245,-0.35667494393873245,-0.35667494393873245,-0.2231435513142097,-0.2231435513142097,-0.35667494393873245,-0.35667494393873245,-0.2231435513142097,-0.10536051565782628,-0.10536051565782628,0,0,0,0.09531017980432493,0.1823215567939546,0.1823215567939546,0.09531017980432493,0.1823215567939546,0.33647223662121284,0.5306282510621704,0.4700036292457356,0.4700036292457356,0.5877866649021191,0.6418538861723947,0.7884573603642703,1.0647107369924282,1.252762968495368,1.0986122886681096,1.1631508098056809,1.2237754316221157,1.2237754316221157,1.1939224684724346,1.252762968495368,1.2809338454620645,1.3609765531356006,1.33500106673234,1.7578579175523736,1.7047480922384253,1.840549633397487,2.1041341542702074,1.9740810260220096,1.9459101490553132,2.0794415416798357,1.9740810260220096,1.9315214116032138,1.916922612182061,1.7227665977411035,1.8082887711792655,1.9021075263969205,1.9740810260220096,2.0014800002101243,2.128231705849268,2.174751721484161,2.1400661634962708,2.1162555148025524,2.128231705849268,2.174751721484161,2.163323025660538,2.2617630984737906,2.3608540011180215,2.6602595372658615,2.9391619220655967,2.8154087194227095,2.917770732084279,3.173878458937465,3.3877743613300146,3.3638415951183864,3.1780538303479458,2.681021528714291,2.917770732084279,2.9856819377004897,2.9601050959108397,2.970414465569701,2.833213344056216,2.7536607123542622,2.8273136219290276,2.8622008809294686,2.8622008809294686,2.8622008809294686,2.8622008809294686,2.8622008809294686,2.8622008809294686,2.8622008809294686,2.803360380906535,2.8213788864092133,2.833213344056216,2.8273136219290276,2.7788192719904172,2.7343675094195836,2.7343675094195836,2.7343675094195836,2.631888840136646,2.5572273113676265,2.6946271807700692,2.6946271807700692,2.6602595372658615,2.667228206581955,2.7013612129514133,2.653241964607215,2.6390573296152584,2.631888840136646,2.6390573296152584,2.624668592163159,2.617395832834079,2.580216829592325,2.6026896854443837,2.631888840136646,2.617395832834079,2.6100697927420065,2.617395832834079,2.617395832834079,2.6390573296152584,2.6461747973841225,2.631888840136646,2.631888840136646,2.6026896854443837,2.6026896854443837,2.6026896854443837,2.5952547069568657,2.5726122302071057,2.4932054526026954,2.2300144001592104,2.379546134130174,2.2823823856765264,1.8870696490323797,2.066862759472976,2.0541237336955462,2.302585092994046,2.302585092994046,2.2512917986064953,2.2512917986064953,2.312535423847214,2.379546134130174,2.4069451083182885,2.3978952727983707,2.388762789235098,2.379546134130174,2.451005098112319,2.4336133554004498,2.424802725718295,2.388762789235098,2.388762789235098,2.388762789235098,2.272125885509337,2.1041341542702074,2.151762203259462,2.2082744135228043,2.1972245773362196,2.174751721484161,2.1041341542702074,2.1041341542702074,2.151762203259462,2.1400661634962708,2.1041341542702074,2.028148247292285,1.9315214116032138,1.9740810260220096,1.8718021769015913,1.6094379124341003,1.5686159179138452,1.7749523509116738,1.8082887711792655,1.7578579175523736,1.7227665977411035,1.5686159179138452,1.5686159179138452,1.5686159179138452,1.6486586255873816,1.7047480922384253,1.8082887711792655,1.7227665977411035,1.6863989535702288,1.7227665977411035,1.7047480922384253,1.667706820558076,1.589235205116581,1.589235205116581,1.5686159179138452,1.5686159179138452,1.62924053973028,1.6094379124341003,1.6094379124341003,1.6094379124341003,1.6094379124341003,1.589235205116581,1.547562508716013,1.4586150226995167,1.3862943611198906,1.410986973710262,1.410986973710262,1.3609765531356006,1.4350845252893227,1.410986973710262,1.3862943611198906,1.33500106673234,1.2809338454620645,0.9555114450274365,0.8754687373538999,0.832909122935104,0.832909122935104,0.9555114450274365,1.1631508098056809,1.1631508098056809,0.9162907318741551,1.0296194171811581,1.0296194171811581,1.0986122886681096,1.1631508098056809,1.2809338454620645,1.1939224684724346,1.1939224684724346,1.1631508098056809,1.1939224684724346,1.1631508098056809,1.1314021114911006,1.0986122886681096,1.0986122886681096,1.0986122886681096,1.0986122886681096,1.0986122886681096,1.0296194171811581,1.1314021114911006,1.0986122886681096,1.0986122886681096,0.7884573603642703,0.832909122935104,0.9555114450274365,0.832909122935104,0.6931471805599453,0.7884573603642703,0.7884573603642703,0.832909122935104,0.832909122935104,0.832909122935104,0.8754687373538999,0.9162907318741551,0.9162907318741551,0.9162907318741551,0.9162907318741551,1.0296194171811581,1.0986122886681096,1.1314021114911006,1.1314021114911006,1.0296194171811581,1.0296194171811581,1.0647107369924282,1.0986122886681096,1.0986122886681096,1.0986122886681096,1.0986122886681096,1.0986122886681096,1.1939224684724346,1.1314021114911006,1.1939224684724346,1.1631508098056809,1.1631508098056809,1.1631508098056809,1.1631508098056809,1.1631508098056809,1.252762968495368,1.3862943611198906,1.3609765531356006,1.3609765531356006,1.3862943611198906,1.3609765531356006,1.4350845252893227,1.3862943611198906,1.410986973710262,1.4350845252893227,1.4350845252893227,1.4586150226995167,1.547562508716013,1.667706820558076,1.6486586255873816,1.589235205116581,1.7227665977411035,1.9315214116032138,1.9021075263969205,1.916922612182061,1.9600947840472698,1.840549633397487,1.8562979903656263,1.9315214116032138,1.916922612182061,1.8562979903656263,1.916922612182061,1.9459101490553132,1.9021075263969205,1.7227665977411035,1.7749523509116738,1.8562979903656263,1.8718021769015913,1.8245492920510458,1.840549633397487,1.8562979903656263,1.840549633397487,1.7578579175523736,1.667706820558076,1.667706820558076,1.7227665977411035,1.6863989535702288,1.7047480922384253,1.7047480922384253,1.8082887711792655,1.8082887711792655,1.791759469228055,1.7749523509116738,1.7404661748405044,1.6863989535702288,1.7404661748405044,1.7227665977411035,1.7578579175523736,1.7749523509116738,1.7227665977411035,1.7047480922384253,1.667706820558076,1.5040773967762742,1.4586150226995167,1.4586150226995167,1.4816045409242156,1.4350845252893227,1.4816045409242156,1.4816045409242156,1.4586150226995167,1.4816045409242156,1.6094379124341003,1.6094379124341003,1.5686159179138452,1.589235205116581,1.6094379124341003,1.589235205116581,1.589235205116581,1.589235205116581,1.547562508716013,1.5260563034950492,1.5686159179138452,1.6094379124341003,1.6094379124341003,1.589235205116581,1.589235205116581,1.589235205116581,1.5686159179138452,1.589235205116581,1.589235205116581,1.667706820558076,1.6863989535702288,1.667706820558076,1.667706820558076,1.6486586255873816,1.667706820558076,1.547562508716013,1.5686159179138452,1.5686159179138452,1.547562508716013,1.547562508716013,1.547562508716013,1.5260563034950492,1.5260563034950492,1.5686159179138452,1.5686159179138452,1.5686159179138452,1.589235205116581,1.589235205116581,1.5686159179138452,1.6094379124341003,1.589235205116581,1.589235205116581,1.589235205116581,1.589235205116581,1.547562508716013,1.5686159179138452,1.589235205116581,1.5686159179138452,1.589235205116581,1.589235205116581,1.589235205116581,1.6094379124341003,1.6094379124341003,1.589235205116581,1.6094379124341003,1.62924053973028,1.62924053973028,1.667706820558076,1.667706820558076,1.6486586255873816,1.6094379124341003,1.62924053973028,1.62924053973028,1.62924053973028,1.62924053973028,1.6094379124341003,1.589235205116581,1.589235205116581,1.6094379124341003,1.62924053973028,1.62924053973028,1.62924053973028,1.62924053973028,1.62924053973028,1.62924053973028,1.62924053973028,1.6094379124341003,1.5686159179138452,1.6094379124341003,1.589235205116581,1.589235205116581,1.6094379124341003,1.6094379124341003,1.62924053973028,1.62924053973028,1.62924053973028,1.62924053973028,1.62924053973028,1.62924053973028,1.62924053973028,1.62924053973028,1.62924053973028,1.6486586255873816,1.62924053973028,1.62924053973028,1.62924053973028,1.6486586255873816,1.62924053973028,1.6486586255873816,1.667706820558076,1.667706820558076,1.6486586255873816,1.667706820558076,1.6863989535702288,1.7047480922384253,1.7227665977411035,1.7227665977411035,1.7227665977411035,1.7047480922384253,1.7227665977411035,1.7404661748405044,1.7749523509116738,1.7749523509116738,1.8718021769015913,1.8562979903656263,1.8245492920510458,1.840549633397487,1.8718021769015913,1.9021075263969205,1.9021075263969205,1.8870696490323797,1.8562979903656263,1.840549633397487,1.840549633397487,1.8562979903656263,1.9021075263969205,1.8870696490323797,1.9021075263969205,1.9021075263969205,1.8870696490323797,1.916922612182061,1.8562979903656263,1.8718021769015913,1.9021075263969205,1.9021075263969205,1.916922612182061,1.916922612182061,1.9459101490553132,1.9740810260220096,1.9740810260220096,2.0541237336955462,2.0412203288596382,2.0149030205422647,2.028148247292285,2.1400661634962708,2.174751721484161,2.2082744135228043,2.186051276738094,2.1400661634962708,2.186051276738094,2.128231705849268,2.128231705849268,2.151762203259462,2.174751721484161,2.186051276738094,2.186051276738094,2.186051276738094,2.163323025660538,2.2082744135228043,2.2407096892759584,2.2617630984737906,2.3513752571634776,2.3978952727983707,2.3978952727983707,2.388762789235098,2.388762789235098,2.4069451083182885,2.4069451083182885,2.4069451083182885,2.4336133554004498,2.4423470353692043,2.451005098112319,2.4849066497880004,2.501435951739211,2.5877640352277083,2.6026896854443837,2.451005098112319,2.451005098112319,2.0794415416798357,2.312535423847214,2.2925347571405443,2.2823823856765264,2.312535423847214,2.3608540011180215,2.3513752571634776,2.3608540011180215,2.388762789235098,2.388762789235098,2.388762789235098,2.379546134130174,2.322387720290225,2.302585092994046,2.322387720290225,2.3513752571634776,2.341805806147327,2.3978952727983707,2.4159137783010487,2.3978952727983707,2.3978952727983707,2.3978952727983707,2.4159137783010487,2.424802725718295,2.4336133554004498,2.4336133554004498,2.4595888418037104,2.468099531471619,2.4765384001174837,2.4765384001174837,2.509599262378372,2.533696813957432,2.509599262378372,2.517696472610991,2.501435951739211,2.501435951739211,2.4932054526026954,2.501435951739211,2.509599262378372,2.509599262378372,2.517696472610991,2.517696472610991,2.517696472610991,2.517696472610991,2.5494451709255714,2.5572273113676265,2.5572273113676265,2.5416019934645457,2.5257286443082556,2.468099531471619,2.468099531471619,2.4765384001174837,2.4932054526026954,2.4849066497880004,2.4849066497880004,2.4765384001174837,2.4595888418037104,2.468099531471619,2.4765384001174837,2.468099531471619,2.4765384001174837,2.4595888418037104,2.4595888418037104,2.451005098112319,2.4595888418037104,2.451005098112319,2.451005098112319,2.388762789235098,2.322387720290225,2.33214389523559,2.3702437414678603,2.3608540011180215,2.388762789235098,2.4159137783010487,2.3608540011180215,2.3513752571634776,2.3608540011180215,2.379546134130174,2.379546134130174,2.388762789235098,2.388762789235098,2.388762789235098,2.379546134130174,2.388762789235098,2.388762789235098,2.3978952727983707,2.388762789235098,2.388762789235098,2.4159137783010487,2.468099531471619,2.468099531471619,2.451005098112319,2.468099531471619,2.4595888418037104,2.468099531471619,2.517696472610991,2.517696472610991,2.517696472610991,2.5257286443082556,2.509599262378372,2.501435951739211,2.517696472610991,2.517696472610991,2.533696813957432,2.533696813957432,2.5257286443082556,2.5416019934645457,2.5952547069568657,2.5952547069568657,2.5877640352277083,2.6026896854443837,2.5952547069568657,2.5952547069568657,2.5952547069568657,2.6100697927420065,2.617395832834079,2.617395832834079,2.6100697927420065,2.6026896854443837,2.5877640352277083,2.5877640352277083,2.5877640352277083,2.6100697927420065,2.6026896854443837,2.6026896854443837,2.5952547069568657,2.5877640352277083,2.5952547069568657,2.5952547069568657,2.6026896854443837,2.5952547069568657,2.5952547069568657,2.5952547069568657,2.5952547069568657,2.6026896854443837,2.5877640352277083,2.5877640352277083,2.5952547069568657,2.6026896854443837,2.5952547069568657,2.5952547069568657,2.6100697927420065,2.617395832834079,2.624668592163159,2.6461747973841225,2.6461747973841225,2.653241964607215,2.6461747973841225,2.6602595372658615,2.6602595372658615,2.6878474937846906,2.740840023925201,2.7536607123542622,2.747270914255491,2.7536607123542622,2.8213788864092133,2.8507065015037334,2.8622008809294686,2.8273136219290276,2.856470206220483,2.884800712846709,2.8791984572980396,2.928523523860541,2.970414465569701,2.9806186357439426,3.0155349008501706,3.0204248861443626,2.975529566236472,3.0252910757955354,3.0155349008501706,3.0252910757955354,3.054001181677967,3.0955776085237074,3.122364924487357,3.1612467120315646,3.1780538303479458,3.202746442938317,3.2268439945173775,3.186352633162641,3.3032169733019514,3.299533727885655,3.3032169733019514,3.288401887516811,3.295836866004329,3.380994674344636,3.3877743613300146,3.3945083935113587,3.4111477125153233,3.3945083935113587,3.3978584803966405,3.414442608412176,3.4372078191851885,3.4307561839036995,3.5085558999826545,3.5409593240373143,3.535145354171894,3.5409593240373143,3.5890591188317256,3.696351468952637,3.713572066704308,3.7376696182833684,3.7887247890836524,3.845883202923601,3.828641396489095,3.8794998137225862,3.7909846770510898,3.8480176754522337,3.85439389259151,3.8501476017100584,3.8501476017100584,3.858622228701031,3.9435216724875173,4.079230924412053,4.1666652238017265,4.259859000699674,4.247065649239764,4.163559631243574,4.269697449699962,4.298645025734831,4.363098624788362,4.487512142519859,4.456670177669648,4.505349850705881,4.523960130562548,4.532599493153256,4.6443908991413725,4.770684624465665,4.90527477843843,4.883559211528279,4.957937505095806,4.960043507980195,5.089446474520545,5.233778845410465,5.438079308923196,5.10594547390058,4.827513417131532,4.762173934797756,4.532599493153256,4.499809670330265,4.411585436915426,4.225372824628505,4.533674184283021,4.6913478822291435,4.774912960575186,4.841032509710076,4.7808027546312495,4.847331743138063,4.966335035199676,5.038250461129229,4.953712146696635,4.919250732294403,4.852030263919617,4.900820428089049,4.969813299576001,4.935911747900319,4.757032535297338,4.666265285347902,4.585987366571318,4.726502471155617,4.7535901911063645,4.721173861744397,4.696837374513915,4.729156165769083,4.725616339063959,4.768139014266231,4.750135956238277,4.743191483885466,4.770684624465665,4.713127327493184,4.73795129722191,4.772378104971998,4.816241156068032,4.81380905109942,4.808111029984782,4.804021044733257,4.811371016571989,4.818667360250496,4.838660029356445,4.891100725401066,4.882801922586371,4.894101477840304,4.86599480426999,4.859812404361672,4.88507207112091,4.858260813670253,4.858260813670253,4.8621352857778115,4.808111029984782,4.793308128103486,4.799090878625398,4.803201036487226,4.77912349311153,4.709530201312334,4.681204872264089,4.609162207257629,4.666265285347902,4.6913478822291435,4.689511334421843,4.6434288981051814,4.605170185988092,4.603168183317418,4.604169685654508,4.623991940228679,4.675628649636653,4.684905154006945,4.712229258281499,4.695924549256556,4.6839813664123815,4.681204872264089,4.625952725170619,4.637637376125593,4.6443908991413725,4.622027303054514,4.550714000192032,4.553876891600541,4.579852378003801,4.478472532942134,4.504244267398131,4.368181227851829,4.382026634673881,4.22683374526818,4.244200317766478,4.33729074083249,4.330733340286331,4.33990170837321,4.477336814478207,4.48863636973214,4.543294782270004,4.5880240271531205,4.547541073151455,4.594109238628667,4.575741375297279,4.590056548178043,4.500920164614292,4.5217885770490405,4.497584975308154,4.5217885770490405,4.517431271680085,4.560172820057356,4.554928969551344,4.5736795188967205,4.564348191467836,4.547541073151455,4.593097604753822,4.620058798481842,4.68213122712422,4.665324108807838,4.6443908991413725,4.6491870714048655,4.653007515402251,4.6549122778829055,4.670021158307708,4.669083511731744,4.663439094112067,4.635699391022914,4.632785353021065,4.634728988229636,4.653960350157523,4.6709579265260945,4.696837374513915,4.72384171570559,4.700480365792417,4.6913478822291435,4.725616339063959,4.730921391293652,4.774912960575186,4.797442073635214,4.814620410170298,4.804021044733257,4.774912960575186,4.784152841516532,4.804840381116659,4.788324729085938,4.877484781308751,4.858260813670253,4.8621352857778115,4.927253685157205,4.948759890378168,4.983606621708336,4.969813299576001,4.969813299576001,4.886582645426277,4.869071729774468,4.803201036487226,4.859812404361672,4.838660029356445,4.891100725401066,4.887337077751762,4.956531035103055,4.937347498326424,4.946629964120343,4.917788743729904,4.929425238670713,4.937347498326424,4.935193098929397,4.944495491591711,4.906015244966153,4.896346147694128,4.900820428089049,4.897839799950911,4.893352133481524,4.9037921984782065,4.90527477843843,4.920710586568268,4.933754249760298,4.959341999708705,4.969118613893322,4.955122584165997,4.943782987108415,4.812184355372417,4.875197323201151,4.918520005188451,4.917788743729904,4.925803358579558,4.911183215124596,4.916324614625014,4.93806460126142,4.944495491591711,4.942356453342962,4.9621450849358215,4.993828175779875,5.019925341003349,5.0632277442154265,5.02912987673242,5.060060177423779,5.12574810119676,5.2100324516804655,5.226284163648205,5.261653382176445,5.313205979041787,5.429345628954441,5.332718793265369,5.28776185260852,5.239628370199357,5.332235584751498,5.332235584751498,5.375278407684165,5.337538079701318,5.352805551832106,5.363168338867653,5.35517017814082,5.4116460518550396,5.473110656921199,5.526647444549546,5.576327819303087,5.735281141715572,5.872117789475416,5.907539312170221,5.818003618746224,5.8944028342648505,5.940171252720432,6.075116119603592,6.071661089102259,6.072814092804305,6.135564891081739,6.26966430417027,6.666193142143909,6.4703349996324215,6.45833828334479,6.639745106327821,6.687108607866515,6.724433221854599,6.678342114654332,6.721425700790643,6.877296071497429,6.984623723238714,7.004337376828381,7.095810367623852,7.0948155901232655,6.91214562728343,6.999969762969948,7.051769039121042,7.120929299258856,7.008776393040865,6.739336627357174,6.546785410760524,6.6895992691789665,6.823286122355687,6.940899877574439,6.824264968483112,6.802394763324311,6.8424698122835075,6.812235077124725,6.824264968483112,6.6331868456757395,6.5722825426940075,6.293419278846481,6.595780513961311,6.476972362889683,6.4622491213367885,6.460686621018898,6.569761885988985,6.555072356312942,6.561454904041944,6.687108607866515,6.688354713946762,6.635946555686647,6.665683717782408,6.690593799345475,6.691959665330465,6.704291798434754,6.753321225675073,6.784796371581689,6.829469360583593,6.922348281285037,6.9203753103382395,6.779808264651515,6.844602463976869,6.842683282238422,6.864638987908509,6.913041283411374,6.8456670866687155,6.827520886271531,6.823612510869709,6.847155656853207,6.817283375818062,6.79592946379988,6.808708125380903,6.861501894464675,6.862757913051401,6.869222329265353,6.85751406254539,6.850338008112186,6.820562067279759,6.8679744089702925,6.914730892718563,6.849596364808605,6.838083605732818,6.8305502080731655,6.847368128967042,6.844602463976869,6.846305316665914,6.8599296494995325,6.83701087445638,6.831521972982548,6.8073823048353495,6.720099520597481,6.544918532929596,6.475124502801203,6.491633590685444,6.367500844525335,6.361302477572996,6.274950327428353,6.112353864383436,6.058422015232863,5.916471568066552,5.703115585668497,5.606904399679714,5.683579767338681,5.566434283504978,4.717605615317879,4.71492104994721,5.5436137225033795,5.737217250742439,5.159055299214529,4.911183215124596,6.385363018844681,6.3910792415379705,6.352455165114317,6.323283115047848,6.300051580239659,6.495567625113146,6.4949633954875114,6.489660754473831,6.47435355218095,6.424382681997447,6.412146621021007,6.440946540632921,6.418364935936212,6.411325535499879,6.428751267539102,6.437751649736401,6.419994928147142,6.436150368369428,6.428266810525186,6.407539834328162,6.395094639270416,6.38856140554563,6.338594078203183,6.309190740908139,6.335586024975094,6.312097719699449,6.3414169452858875,6.333101992469981,6.332391134078575,6.132312855695361,6.179188153190932,6.167726112522061,6.1023348559394055,6.097399897516651,6.13880638500591,6.050676406739828,6.078330080129564,6.096725057765475,6.123807734095696,6.121834698269836,6.136430317358168,6.1454723595873295,6.125339630664009,5.952203833154679,6.075575889726634,6.081305251107771,6.05818817915089,6.170447202636422,6.266061380011108,6.285998094508865,6.218600119691729,6.18517928773138,6.226536669287466,6.211603589401893,6.2049617213703865,6.190110466821792,6.18887994984946,6.215207918494159,6.140961558253893,6.12665081966305,6.094021135433074,6.0910836121366945,6.100543142134219,6.0994216886130745,6.131443857161423,6.117436186669918,6.083587835983788,6.077642243349034,6.065876044621792,6.068888444072786,6.101439400316554,6.089271607110894,6.099197246910864,6.1134609164172335,6.071199515126835,6.082675427161366,6.072814092804305,6.092666427616949,6.105016421792097,6.117215752413542,6.115450526888973,6.109469780298887,6.095599311839989,6.183323808382426,6.191953407857386,6.244943298218264,6.2501682738207425,6.254789888055024,6.346337869100086,6.366470447731438,6.3458117840375365,6.347038885602681,6.335763219978659,6.417222358483909,6.4423809181200635,6.476664623235,6.4853983032037545,6.506381788777226,6.459747947608298,6.492542819419093,6.4775875582336,6.479584333338335,6.478509642208569,6.468164456144597,6.485550846869675,6.466144724237619,6.392084603552947,6.413950639550449,6.368873057433621,6.366985778843074,6.395428529089879,6.405393733628276,6.407209964623703,6.3972629330062665,6.381477550657225,6.391917113392602,6.402911726893694,6.382154369633992,6.378086567414666,6.343001313190591,6.367672474149028,6.400589616047633,6.392921633818608,6.398761310045116,6.45378246680893,6.466455717864757,6.4703349996324215,6.45833828334479,6.436150368369428,6.434546518787453,6.44046795723063,6.419343250053046,6.422109953746444,6.434546518787453,6.427135497273212,6.45031243178126,6.455041318273362,6.4425401664681985,6.426973776564523,6.429074108542713,6.421297011664441,6.4403083785180915,6.441743671005939,6.440946540632921,6.431331081933479,6.437911636937766,6.4337436283388625,6.432457661275292,6.400091318553725,6.397762641520038,6.39024066706535,6.38856140554563,6.376556865408209,6.372978434393633,6.336117515819389,6.379274719977426,6.394927652545473,6.382999749682648,6.378256389950525,6.384857073981877,6.378086567414666,6.379783496381176,6.384857073981877,6.3899050402791815,6.379274719977426,6.38367553953773,6.355934034512627,6.341593110176681,6.295450486266293,6.224162311227003,6.2075834834852275,6.257667587882639,6.18517928773138,6.13599769784028,6.184355055251171,6.247655952468392,6.249782173429845,6.246300545154681,6.209997485864508,6.233822317345996,6.220391343177919,6.239495813929971,6.244555174790144,6.235978124158384,6.239495813929971,6.226536669287466,6.177529090180771,6.167935690223761,6.171491807348564,6.173786103901937,6.19644412779452,6.1812581187406375,6.183117431330821,6.185797016568072,6.164787403438236,6.163104255555076,6.173160908508018,6.170656210893009,6.168982920395917,6.170029055024225,6.168982920395917,6.168982920395917,6.145900900412401,6.13361493921266,6.050440752208279,5.985697952213645,6.019809020117124,5.995456568377519,6.001662372084428,6.07970433595739,6.049261645834199,6.021751239712854,6.002651736498547,5.988961416889864,5.937800022522289,5.931714542702208,5.9615206707349095,5.947512659578799,5.927192657087842,5.895779296973574,5.815025653472183,5.77734267776423,5.803627809625917,5.80392942326114,5.860501282589169,5.8886009116487426,5.890815138958052,5.88943182154283,5.922114468973189,5.959199586520707,5.984188138137206,5.974318388273011,5.939644798378185,5.941486177301741,5.968451772798909,5.959199586520707,5.941223330671235,5.946467181177246,5.937272318024555,5.874368775231734,5.872399439949042,5.8484598526909775,5.854211953681605,5.85821882796062,5.861071083174386,5.814428994743265,5.843254519942795,5.822749993720244,5.785055194784937,5.776103136235827,5.781360609301576,5.793013608384144,5.823045895483019,5.851340039013816,5.834518296645255,5.839187111662404,5.891644211825771,5.905634290502789,5.900992643943907,6.068425588244111,6.0607573736039315,5.982676041074903,5.926659323741866,5.9548005627363905,5.95246380975825,5.938063770380866,5.943848693166319,5.878575765029364,5.8630628323034575,5.863631175598097,5.902360072025161,5.937272318024555,5.930652407711224,5.900992643943907,5.910254491682439,5.933835434271345,5.930386697599392,5.926659323741866,5.936480238775222,5.9417489548620495,5.932245187448011,5.912962318953024,5.933835434271345,5.930386697599392,5.930918047239948,5.8998973535824915,5.864199196062105,5.8519150821578965,5.851340039013816,5.867600559885596,5.8527770273340884,5.8562173976999565,5.844703165712578,5.799698531486028,5.768320995793772,5.7375395714543345,5.761422254102616,5.800304041646823,5.776413165691109,5.801513963149536,5.815025653472183,5.775793010632473,5.765191102784844,5.799092654460526,5.7535245665510155,5.757323241584231,5.749711406544601,5.7407570774475625,5.762680115903686,5.752255128106979,5.753207357983724,5.6598305871270185,5.578597109233056,5.616043560348194,5.642970335259443,5.674353663965389,5.644386264699545,5.662960480135946,5.6109359242898496,5.578974824062853,5.595825999817554,5.399519247057004,5.105339229565553,5.346154695962197,5.332235584751498,5.296315363877364,5.349960599699875,5.3748153375207615,5.349960599699875,5.430222437427975,5.449750070308246,5.4475990692637914,5.514234872770507,5.529825834193874,5.595454597770573,5.573294066502264,5.464678903763262,5.455321115357702,5.445874930905651,5.3867860145356445,5.4174328474381985,5.476045054331764,5.426710581316436,5.423186348593906,5.377590547442544,5.407171771460119,5.428028973069694,5.410305868496084,5.394990253808298,5.392262979390565,5.388158070547826,5.401776074916267,5.464678903763262,5.555282466337757,5.452325179027384,5.462983988103271,5.493884150092012,5.460436216024472,5.488524417615982,5.499215308914927,5.4988062272974405,5.462559809942086,5.475626381518447,5.476045054331764,5.469325163441718,5.465948207931987,5.535363823031238,5.537727890326118,5.552571912887299,5.612397912854348,5.6369301676683605,5.605434351638425,5.617498106059188,5.6080055192624325,5.6164073951712,5.614951260949585,5.66988092298052,5.674696893761104,5.689007189074047,5.6832395734248715,5.660178837174069,5.640487624283887,5.652138241503862,5.671259282950641,5.653891705042736,5.544786743165743,5.564137192142683,5.5675808534758,5.5595271186687025,5.593223284089137,5.581614840681993,5.508173023535311,5.506956231659364,5.5134287461649825,5.510197725583535,5.529429087511423,5.489350863944013,5.508578292031233,5.497577977398914,5.506144213750353,5.531807209916391,5.539300835990577,5.5329941536759195,5.559141984829935,5.541263545158426,5.53338948872752,5.499624223253072,5.494295249789477,5.458308102856978,5.465948207931987,5.463407986413629,5.409858741280944,5.384495062789089,5.407171771460119,5.429345628954441,5.4053764388414445,5.4089638866351,5.407171771460119,5.4125385106380595,5.454038241544812,5.454466049037968,5.461286194826176,5.442850517280335,5.420977379283924,5.387700927682722,5.43372200355424,5.419649651715562,5.417876601605676,5.462983988103271,5.451896454476337,5.4608612957333165,5.480638923341991,5.476463551931511,5.462983988103271,5.438079308923196,5.471009374366148,5.495937960631161,5.486455308663431,5.480638923341991,5.488110938180692,5.48728346606066,5.465525285531943,5.46763811116474,5.468903667123571,5.464678903763262,5.465102184192862,5.449320240084564,5.44673737166631,5.455321115357702,5.461286194826176,5.4823042026610525,5.476045054331764,5.484796933490655,5.469746482175568,5.471429984256681,5.469325163441718,5.469325163441718,5.4680601411351315,5.451896454476337,5.437209365414655,5.407620101438487,5.41920668382349,5.418763519623904,5.4125385106380595,5.4174328474381985,5.414766179191283,5.409411414053624,5.43197375136071,5.436338664445412,5.432848259505643,5.437644431769136,5.440250862436703,5.448890225027411,5.454466049037968,5.4680601411351315,5.520660597691477,5.511006459958388,5.515040350059324,5.497577977398914,5.501258210544727,5.497577977398914,5.511410582008745,5.496348217047172,5.483135803540579,5.49141399650995,5.492649836008127,5.524257005164247,5.517051209373546,5.54907608489522,5.576327819303087,5.551407994230199,5.54087131138207,5.542830943598439,5.5626028611934215,5.59879226079857,5.59508305773286,5.5842479059610115,5.593223284089137,5.59508305773286,5.647564794657972,5.676753802268282,5.737861788309064,5.671259282950641,5.659482215759621,5.64685932725658,5.622572419230658,5.633360010359655,5.6131281063880705,5.610204127696635,5.626541394312754,5.617134667930529,5.6222108209623896,5.6185876285929695,5.664348405410794,5.665388086668889,5.676068636088686,5.680172609017068,5.682558838204574,5.664348405410794,5.659482215759621,5.647917341814805,5.636573724962751,5.639777144680289,5.640487624283887,5.650030018656954,5.640842674882327,5.627621113690637,5.627261336748458,5.555282466337757,5.575570243509278,5.573294066502264,5.594711379601839,5.589866950526307,5.573673789309181,5.579729825986222,5.5626028611934215,5.549465114271844,5.549465114271844,5.508173023535311,5.420534999272286,5.458308102856978,5.448460024977757,5.4359030295006,5.4240685718535975,5.353752073436137,5.395897694886901,5.41610040220442,5.405825574263321,5.4450117456988405,5.43153621033426,5.431098477781855,5.4359030295006,5.4258306868469965,5.43197375136071,5.42141956368202,5.439382806826639,5.454038241544812,5.480222169845649,5.478970866241294,5.493884150092012,5.469746482175568,5.472690753492817,5.480222169845649,5.462135451777431,5.438948496287782,5.437644431769136,5.4359030295006,5.43197375136071,5.449750070308246,5.4475990692637914,5.442850517280335,5.442850517280335,5.421861552639491,5.438079308923196,5.437644431769136,5.454466049037968,5.459585514144159,5.45660234551375,5.448890225027411,5.476045054331764,5.466793516519938,5.463407986413629,5.46848199307136,5.466793516519938,5.474788509663815,5.473530384104697,5.481055503227208,5.50573795739701,5.493061443340548,5.49141399650995,5.497168225293202,5.502889532276811,5.511814540810441,5.502889532276811,5.516649360865024,5.530618855647012,5.538907831465967,5.571773731735836,5.596939379038152,5.5671988095361,5.575191240283214,5.597680943773655,5.587623120115915,5.61458689585173,5.623656430176916,5.644032470250427,5.66261319761813,5.652839995918626,5.685957889743649,5.715381610499553,5.7481182884762525,5.790265934544339,5.740435792304236,5.777652323222656,5.884157694119473,5.982676041074903,5.993712019648461,5.947251392431657,5.912962318953024,5.953503040820864,5.917818006939683,5.940697430054329,5.819192326167029,5.719327685991663,5.810841546949609,5.810542011227735,5.8045323777563445,5.760477818332746,5.799698531486028,5.810841546949609,5.816813496618247,5.783825182329737,5.771752601095469,5.7829016791088,5.777032936395794,5.774862056337153,5.763308453970228,5.791488055075306,5.868449096211435,5.884714177161102,5.874368775231734,5.9156628336917,5.934894195619588,5.891091572961194,5.886104031450156,5.886937017754048,5.890815138958052,5.957649198613251,5.974826905954958,5.977112040883582,6.017863020962513,6.030685260261263,6.029482614295503,6.108803039525215,6.069119791673586,6.074656137994746,6.091309882077698,6.136862749797339,6.118097198041348,6.121395716700013,6.138158926258786,6.133831788394904,6.090857290986017,6.081305251107771,6.07993319509559,6.092214450208125,6.115892125483034,6.118097198041348,6.0292419114420115,6.045952732392052,6.0445312680446746,6.068194079966656,6.057018177847421,6.063785208687608,6.073044534100405,6.07235305084132,6.065411792060065,6.071430328745864,6.066572019594787,6.0656439452822335,6.124683390894205,6.1156713505621685,6.105462651161393,6.100767281998432,6.10412336524692,6.09807428216624,6.068888444072786,6.061689991997479,5.919699980878671,5.953243334287785,5.94672865326659,5.951683677096137,5.938854596835685,6.02731420000168,6.016644845638281,5.946990057006152,5.96255053694334,5.996700813903228,5.973300576480311,5.96563378707346,5.978885764901122,5.939381467237757,5.940960414934214,5.93436495506741,5.912962318953024,5.91943134420815,5.923988381983068,5.908082938168931,5.967684018442578,5.957131868027477,5.931449114697996,5.934629610355444,5.920505458167488,5.927725706140976,5.94515879423147,5.938854596835685,5.950642552587727,5.966403116512611,6.005120873555468,5.9942107727760074,6.007337896264272,6.0333260012029,6.043582501370088,6.040254711277414,6.0870019738170456,6.081990573807353,6.081762185088762,6.040016587690148,6.046662707572744,6.048553514092109,6.057486342649979,6.066803903653797,6.069582326371934,6.078100853767529,6.073044534100405,6.053029902766137,6.039301876522142,6.014936903293124,5.988961416889864,6.0063531596017325,6.028037527338822,6.020780601442035,6.022963214167353,6.030204375423913,6.038109554931026,6.01713229385656,6.021993752142805,6.026590349083357,6.028519455058993,6.030444846748866,6.035959786994534,6.011757250375744,6.012981390570231,6.019809020117124,6.018836493903833,6.031165913959534,6.0330862217988015,6.027555367252336,6.029963846258592,6.031886461606898,6.051147549269156,6.0454791354142206,6.028278520230698,6.021993752142805,6.029963846258592,6.029723259225072,6.03667688992953,6.038109554931026,6.038586654176717,6.045242252788453,6.04334516898497,6.040492778175336,6.03476347150313,6.035481432524756,6.040968742011071,6.043582501370088,6.0513830373192254,6.048553514092109,6.049733455231958,6.0607573736039315,6.063785208687608,6.055143323771165,6.058422015232863,6.075116119603592,6.089498287379348,6.107690816076114,6.098748212327656,6.109469780298887,6.125995440065588,6.1349153295129435,6.144185634125646,6.102558594613569,6.105908681498851,6.12029741895095,6.105908681498851,6.114124559843869,6.096274911460327,6.109914027307526,6.099870420951769,6.105016421792097,6.130356545974601,6.127960291696519,6.12665081966305,6.132095676847728,6.107913359751229,6.114787763139981,6.118977867406942,6.121176153629639,6.123369617987921,6.127087500892697,6.120077614575958,6.116554157946804,6.118537629671458,6.092892339738095,6.091536100832197,6.094923255476212,6.085865222529466,6.095148658384864,6.100543142134219,6.108803039525215,6.116554157946804,6.161207321695077,6.261873290889306,6.246106765481563,6.277207240178711,6.270799378071934,6.286742696181391,6.286184296911414,6.340359303727752,6.349138991379798,6.354196112629245,6.369215816648631,6.355412975013213,6.3638898011379466,6.353848165513696,6.359400843323733,6.382830730836645,6.502040139618764,6.551223181983152,6.529564813008854,6.537850346272523,6.634896135421995,6.611906617197295,6.625127080833035,6.634633357861686,6.598509028614515,6.503389566317273,6.381138969309823,6.431008968869009,6.487531799898427,6.497528853772263,6.438391445023741,6.468785092316574,6.469095266016332,6.4559844179974615,6.507277712385012,6.51411992262755,6.548362358976355,6.494661143709481,6.515008943281748,6.497830240151879,6.51129946503156,6.454097328272487,6.496473285552407,6.479737766403461,6.47250084206322,6.4718825084525475,6.508172834032128,6.494056365946869,6.4881405352695305,6.498583308942647,6.49329987903584,6.516636764580894,6.507874549167873,6.508918157164194,6.49888437773914,6.499185355920494,6.478663240242817,6.48494053253886,6.491178666119254,6.483107351457199,6.483718785288537,6.483871585349955,6.483260244967167,6.485245736264714,6.484177115447046,6.432779308109843,6.408528791059498,6.24105526843704,6.33930054237951,6.356454822650428,6.353848165513696,6.3741726680935304,6.381477550657225,6.378765684588475,6.372124536297175,6.381646798351629,6.376386753984817,6.37519516307014,6.370927852677146,6.344056165609079,6.340359303727752,6.363372871687304,6.349663329415057,6.351583553449269,6.353674146545189,6.367500844525335,6.364234272378004,6.375876246018314,6.369215816648631,6.362510728345687,6.359573868672378,6.36199308533525,6.346162538162493,6.354370040797351,6.352977767686964,6.358362062066888,6.352455165114317,6.349138991379798,6.354891643869248,6.394927652545473,6.412638948921326,6.406549898593137,6.414114479970247,6.418691146997659,6.4387111892311015,6.4348674945565385,6.436951329565632,6.406219702123239,6.410174881966167,6.411161237462871,6.412638948921326,6.410339342126064,6.409845880482693,6.408693522136389,6.414605840229089,6.413131034554154,6.412146621021007,6.392252065665035,6.389569300809854,6.401751345495359,6.401253626696201,6.399426535414734,6.407704728384105,6.406054562993147,6.4047324672791675,6.4047324672791675,6.410339342126064,6.419017251680151,6.414605840229089,6.416078474054907,6.411818267709897,6.416405431716803,6.415096959171596,6.423246963533519,6.426002902701853,6.4229222354904,6.4253551293998505,6.4622491213367885,6.455198563340122,6.454569434662561,6.458181531247909,6.456769655572163,6.461624414147957,6.457397401983236,6.454097328272487,6.444290226575984,6.443017759408901,6.446513155404975,6.4853983032037545,6.481577129276431,6.47774129795256,6.478509642208569,6.51426814763338,6.525469443821378,6.53116913042435,6.5722825426940075,6.547215734226965,6.549221465558405,6.588651336522016,6.597827597583036,6.529272842203859,6.554075844023203,6.554075844023203,6.56512411504534,6.558765017801951,6.566531772935438,6.581193768469438,6.571722945589309,6.5722825426940075,6.557204401751364,6.553933404025811,6.557630265907138,6.566813066889472,6.607055509449053,6.603266088213974,6.616065185132817,6.617269279197622,6.590987625635259,6.601501820944921,6.619139437370265,6.608135568957313,6.600278579202176,6.607190580699342,6.5986452591167355,6.59222227837458,6.597554895099754,6.596599850344714,6.610022870676855,6.623533878159337,6.647558663465216,6.6388295350128,6.641704226656651,6.625790166859585,6.6309472030822345,6.640659840138745,6.644440562978651,6.647039654760171,6.651571873589727,6.6436595163364975,6.657368991274053,6.6576258625829405,6.6547966425887415,6.653121060576557,6.661854740545311,6.6684823457380435,6.670766320845874,6.671779748852549,6.6834860943804175,6.720461380561624,6.757164920349636,6.821325550983749,6.792456654618674,6.792456654618674,6.800615403424233,6.83065822859717,6.879561544611355,6.878429449600309,6.8658910748834385,6.870468694196121,6.903144666424454,6.92461239604856,6.94051284322031,7.034740290736626,6.8969976223291765,6.786942658765389,6.789984743247629,6.8033942636573945,6.802172516407072,6.807271740403815,6.666193142143909,6.697157696836445,6.7151409327027505,6.708816416364745,6.710766685144779,6.7181673861961375,6.802061374423073,6.77078942390898,6.797047156997715,6.794474592523171,6.824156255105823,6.823068470814943,6.826002777109878,6.795482036499351,6.796153102400835,6.819579588078412,6.822197390620491,6.822741904655181,6.818377467830921,6.8251342502938,6.872646101868569,6.889998557392878,6.911747300251674,6.920671504248683,6.939060128810549,6.923727048491836,6.932155165805672,6.956164418189824,6.961769867288376,6.88653164253051,6.905352394365827,6.9160210233991695,6.904249139652849,6.903144666424454,6.9160210233991695,6.91592184164853,6.939157042121669,6.955973851252612,6.9587335237467665,6.955497274967558,6.982491625096154,7.020190708311925,7.021530293240982,7.066381642264557,7.070299208167417,7.046734306263588,7.066125614953578,7.080699673963495,7.0811201777332,7.108816807150144,7.13528917859764,7.157190164250415,7.142273888317852,7.147716615222507,7.152268856032539,7.116962164557473,7.044905117129371,7.082800426805315,7.01427512235981,7.072591521435072,7.110777752300125,7.121413991085132,7.12536353879767,7.133615137790575,7.067234593527459,6.977001451718952,6.878738329911644,6.930103682645899,6.9541616517962925,7.022244005466835,6.951485041843462,6.942156705699469,6.845560675389019,6.873474345005262,6.8766773234112755,6.951867853600458,6.951197836824974,6.948801248418138,6.944954719971244,6.983882639369688,6.990348577285991,7.0006990246248755,7.045428084107209,7.040361243530159,7.029884412215201,7.080615551986579,7.082128665926917,7.073947453846208,7.093653764266434,7.095644640079555,7.107179743675754,7.100439622811638,7.070044182025856,7.070978960084151,7.0707241072602764,7.070554169287227,7.085064293952548,7.095147292589197,7.1026639512815635,7.121333225426646,7.130578779085422,7.123592201780574,7.1301785709718635,7.1294577924999425,7.142273888317852,7.1597583589769,7.195112298609972,7.192633424101183,7.1976598797870155,7.20926628937036,7.2554500213400885,7.27648724403408,7.303574010038496,7.324358131500757,7.3184069137776016,7.342973345239649,7.348844898063231,7.41728005701508,7.436911859432851,7.468684489714374,7.506207090702758,7.4303513583470435,7.475169154076319,7.480202674304298,7.443605167652863,7.455471981331876,7.496263905429513,7.53955882930103,7.581719640125308,7.620803121248419,7.622761793894976,7.661244688548244,7.728679829483909,7.801923093768521,7.7437899470906295,7.716416255754423,7.62676511906781,7.691200097522863,7.7311409364658115,7.69284333324044,7.7420981562088595,7.7884602831312835,7.821081621392277,7.842043087557947,7.833639842527613,7.902857191280582,7.962241509607692,7.8978539380010115,7.936946032871742,7.9414378588976655,7.972569458900024,7.99746135817925,7.8848776700625365,7.905810312658931,7.810879714324534,7.800777383916937,7.827480107590574,7.884237597750166,7.8397618672962945,7.869707476224174,7.920954912024314,7.892676149897117,7.909416041573796,7.904851504457735,7.859451763986845,7.840549082955306,7.802250198485835,7.857016462526201,7.854652807449193,7.84713734207969,7.816255745381229,7.793421841312483,7.8385404570067445,7.852633467708205,7.869898531038381,7.873940327130135,7.868713402351451,7.829590611111643,7.849674770490107,7.828595645554864,7.759614150696903,7.751174197420382,7.78451484951896,7.7674333304297125,7.711638501136748,7.588374308964812,7.557002817252064,7.711280367011692,7.7494086678413066,7.7330704231195,7.960672608388117,7.891742041808944,7.950326176766622,7.9217533152603385,7.924217084622569,7.856551922412551,7.847449988635308,7.8980025429721215,7.939800323378134,7.913338118335054,7.9253382623381645,7.9666907504973485,7.918264686095274,7.90857096592598,7.940939762327791,7.9650246041158645,8.090341001426426,8.080856419640986,8.132089378049942,8.14014059774475,8.116357351691736,8.139061109375712,8.203687200021637,8.261423137274933,8.309578441719655,8.37283771489894,8.333678923625222,8.386492075491587,8.361451246197486,8.320058459283079,8.330984087895091,8.310562548476241,8.295323827979757,8.31622689671338,8.32871673201033,8.37064024226374,8.381236001780943,8.378459719983482,8.376965140429336,8.387152840864182,8.433224453629032,8.430109084509125,8.46275812472135,8.501449913800277,8.428099648222283,8.436612005455954,8.358783454668595,8.391425865980748,8.437868559198133,8.441520919460237,8.372514180046794,8.374499956999328,8.353709090407904,8.347092652839239,8.33300589521244,8.2610873023992,8.084284941477916,8.219810890166496,8.215790757133416,8.21327333007474,8.31881542074726,8.270781013162674,8.26415728223699,8.193483170176991,8.188911321978724,8.239593454305968,8.207265510017137,8.277106919371716,8.266858283248832,8.345740355507383,8.341791636087448,8.33634255229228,8.380364941553948,8.390064117285263,8.389655230813709,8.369667186560616,8.347282302698755,8.37133470281157,8.382952976207761,8.39746326179111,8.436351831571608,8.471672676114428,8.468716977959122,8.481400196917424,8.600173119692412,8.637160506463216,8.669862774961697,8.646131552200547,8.65857121852706,8.630271845468032,8.62619108379135,8.647975809619487,8.698364086452797,8.700614143653493,8.696660679227286,8.68331761330762,8.614882357369488,8.654168646443315,8.680603723318432,8.659491046080872,8.652877265358836,8.723800774090348,8.720019743167532,8.77202143899694,8.815488741127629,8.857202024045785,8.87516129885851,8.904331382831518,8.907815352654627,8.847819804193332,8.86824435148468,8.915217350869808,8.872010410852855,8.789629637652453,8.754618274436217,8.678988859423466,8.783013017010884,8.79438543751332,8.893325605051903,8.968740037311406,8.948975607841776,8.959427291715812,8.99250769298055,9.017325848643429,8.99961934066053,9.016087924314263,8.988870419413981,9.011986989469191,9.077345977999217,9.139746219122257,9.1832980008643,9.200895913148184,9.19399755263601,9.20500617038548,9.292979705496986,9.297682527585867,9.327785572795026,9.360818602322542,9.364528193970806,9.528765011762477,9.732123739776318,9.683314584666752,9.605310600991695,9.619770940576183,9.725108214974798,9.745891778514116,9.698110242765862,9.709168310488556,9.775926871115649,9.870215113272556,9.855646188113827,9.850735299649175,9.771309529408114,9.70880997353259,9.657081771396186,9.522593098362169,9.574740400465748,9.531698970787348,9.534848465670873,9.665014604096895,9.643200129938787,9.57489320371103,9.574469464589054,9.436000753414667,9.536069392064867,9.506355130966119,9.59927628924424];
+
+      
+      
+    </script>
+  </body>
+</html>
