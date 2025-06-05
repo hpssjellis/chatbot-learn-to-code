@@ -147,6 +147,67 @@
           return Math.ceil(diffTime / (1000 * 60 * 60 * 24)); // Convert milliseconds to days
       }
 
+      // --- NEW CORE FUNCTIONS FOR MULTIPLICATIVE WAVES ---
+
+      /**
+       * Calculates the value for a power law: Y = A * X^k.
+       * This function is designed to represent the straight midline on a log-log plot.
+       * @param {number} X - The independent variable (e.g., days since genesis).
+       * @param {number} A_pl - The coefficient (pre-factor) of the power law.
+       * @param {number} k_pl - The exponent of the power law.
+       * @returns {number} The Y value according to the power law.
+       */
+      function calculatePowerLawValue(X, A_pl, k_pl) {
+          // Ensure X is positive for Math.pow, especially if X can be 0 or negative
+          if (X <= 0) return 0.001; // Return a small positive value to avoid errors in log scale
+          return A_pl * Math.pow(X, k_pl);
+      }
+
+      /**
+       * Calculates a sinusoidal wave value whose midline follows a power law.
+       * The oscillation is applied as a multiplicative factor to the power law baseline.
+       * Incorporates frequency and amplitude factor growth over time (logYear).
+       * @param {number} X_days - The independent variable in days since genesis (for power law).
+       * @param {number} year - The current year (for logYear calculations).
+       * @param {number} startLogYear - The logYear value at the start of the plot (for relativeLogYear).
+       * @param {number} amp_initial_factor - The initial fractional amplitude of oscillation (e.g., 0.1 for 10%).
+       * This is a dimensionless factor.
+       * @param {number} freq_initial - The initial frequency of the oscillation (cycles per logYear unit).
+       * @param {number} phase - The phase offset of the oscillation.
+       * @param {number} freq_growth_factor - Factor for frequency growth.
+       * @param {number} amp_growth_factor - Factor for amplitude factor growth.
+       * @param {number} amp_growth_strength - Strength for amplitude factor growth.
+       * @param {number} powerLawAmp - The 'A' coefficient for the underlying power law midline.
+       * @param {number} powerLawExponent - The 'k' exponent for the underlying power law midline.
+       * @returns {number} The Y value of the wave, oscillating around the power law.
+       */
+      function calculateMultiplicativeWave(X_days, year, startLogYear,
+                                           amp_initial_factor, freq_initial, phase,
+                                           freq_growth_factor, amp_growth_factor, amp_growth_strength,
+                                           powerLawAmp, powerLawExponent) {
+
+          const powerLawMidlineValue = calculatePowerLawValue(X_days, powerLawAmp, powerLawExponent);
+
+          let logYear = Math.log10(year - 1969);
+          let relativeLogYear = logYear - startLogYear;
+
+          // Calculate current frequency with growth
+          let currentFreq = freq_initial * (1 + relativeLogYear * freq_growth_factor);
+          if (currentFreq < 0.0001) currentFreq = 0.0001;
+
+          // Calculate current amplitude factor with growth
+          let currentAmpFactor = amp_initial_factor * Math.exp(relativeLogYear * amp_growth_factor * amp_growth_strength);
+          // Clamp amplitude factor to reasonable values (e.g., 0.000001 to 1.0 for 0.0001% to 100% oscillation)
+          currentAmpFactor = Math.max(0.000001, Math.min(1.0, currentAmpFactor));
+
+          // Calculate the sinusoidal oscillation component
+          let oscillationTerm = currentAmpFactor * Math.sin(2 * Math.PI * currentFreq * logYear + phase);
+
+          // Apply oscillation multiplicatively to the power law midline
+          // Ensure the overall multiplicative factor is positive to avoid log errors
+          return powerLawMidlineValue * Math.max(0.001, (1 + oscillationTerm));
+      }
+
       // GLOBAL VARIABLES for sinusoidal model parameters - now individual variables for clarity
       let wave1Freq, wave1Amp, wave1YShift, wave1Phase, wave1FreqGrowth, wave1AmpGrowth, wave1AmpGrowthStrength, wave1ExpBase, wave1ExpGrowth;
       let wave2Freq, wave2Amp, wave2YShift, wave2Phase, wave2FreqGrowth, wave2AmpGrowth, wave2AmpGrowthStrength, wave2ExpBase, wave2ExpGrowth;
@@ -204,16 +265,16 @@
 
           // Wave 1 Parameters
           wave1Freq = 8.5; 
-          wave1Amp = 190;     
-          wave1YShift = 0; 
+          wave1Amp = 0.1; // <--- CHANGED TO FRACTIONAL AMPLITUDE
+          wave1YShift = 0.0; // <--- SET TO 0.0
           wave1Phase = 0.0;
           wave1FreqGrowth = 2.0; 
           wave1AmpGrowth = 2.5;    
           wave1AmpGrowthStrength = 21.7; 
-          wave1ExpBase = 222.0; 
-          wave1ExpGrowth = 55.0; 
+          wave1ExpBase = 0.0; // <--- SET TO 0.0
+          wave1ExpGrowth = 0.0; // <--- SET TO 0.0
           document.getElementById('wave1FreqInput').value = wave1Freq.toFixed(3);
-          document.getElementById('wave1AmpInput').value = wave1Amp.toFixed(3);
+          document.getElementById('wave1AmpInput').value = wave1Amp.toFixed(3); // <--- Updated to fixed(3) for factor
           document.getElementById('wave1YShiftInput').value = wave1YShift.toFixed(3);
           document.getElementById('wave1PhaseInput').value = wave1Phase.toFixed(3);
           document.getElementById('wave1FreqGrowthInput').value = wave1FreqGrowth.toFixed(3);
@@ -224,14 +285,14 @@
 
           // Wave 2 Parameters
           wave2Freq = 20; 
-          wave2Amp = 190.0;     
-          wave2YShift = 0.0; 
+          wave2Amp = 0.05; // <--- CHANGED TO FRACTIONAL AMPLITUDE
+          wave2YShift = 0.0; // <--- SET TO 0.0
           wave2Phase = 0.0;
           wave2FreqGrowth = 2.0; 
           wave2AmpGrowth = 2.5;    
           wave2AmpGrowthStrength = 21.7; 
-          wave2ExpBase = 222.0; 
-          wave2ExpGrowth = 55.0; 
+          wave2ExpBase = 0.0; // <--- SET TO 0.0
+          wave2ExpGrowth = 0.0; // <--- SET TO 0.0
           document.getElementById('wave2FreqInput').value = wave2Freq.toFixed(3);
           document.getElementById('wave2AmpInput').value = wave2Amp.toFixed(3);
           document.getElementById('wave2YShiftInput').value = wave2YShift.toFixed(3);
@@ -244,14 +305,14 @@
 
           // Wave 3 Parameters
           wave3Freq = 33;  
-          wave3Amp = 190;    
-          wave3YShift = 0.0; 
+          wave3Amp = 0.02; // <--- CHANGED TO FRACTIONAL AMPLITUDE
+          wave3YShift = 0.0; // <--- SET TO 0.0
           wave3Phase = 0.0;
           wave3FreqGrowth = 2.0; 
           wave3AmpGrowth = 2.5;   
           wave3AmpGrowthStrength = 21.7; 
-          wave3ExpBase = 222.0; 
-          wave3ExpGrowth = 55.0; 
+          wave3ExpBase = 0.0; // <--- SET TO 0.0
+          wave3ExpGrowth = 0.0; // <--- SET TO 0.0
           document.getElementById('wave3FreqInput').value = wave3Freq.toFixed(3);
           document.getElementById('wave3AmpInput').value = wave3Amp.toFixed(3);
           document.getElementById('wave3YShiftInput').value = wave3YShift.toFixed(3);
@@ -262,11 +323,7 @@
           document.getElementById('wave3ExpBaseInput').value = wave3ExpBase.toFixed(3);
           document.getElementById('wave3ExpGrowthInput').value = wave3ExpGrowth.toFixed(3);
       }
-
-
-
       
-
       /**
        * Calculates the value for the *separate* QCBD Crash line (red dashed).
        * This line visually represents the 'floor' or 'target' value the combined line
@@ -312,39 +369,7 @@
           }
       }
       
-      /**
-       * Helper function to calculate a single sinusoidal wave's value.
-       * This function now calculates the wave's value such that its minimum
-       * is directly controlled by `params.yShift` (Offset from Exp Baseline).
-       * @param {number} year - The current year.
-       * @param {object} params - Object containing parameters for this specific wave.
-       * @param {number} startLogYear - The logYear value at the start of the plot (2015).
-       * @returns {number} The calculated value for the individual wave (trough controlled).
-       */
-      function calculateIndividualWaveValue(year, params, startLogYear) {
-          let logYear = Math.log10(year - 1969);
-          let relativeLogYear = logYear - startLogYear; // Time relative to plot start in log scale
-
-          // Frequency grows multiplicatively with relativeLogYear
-          let myFreq = params.freq * (1 + relativeLogYear * params.freqGrowth);
-          if (myFreq < 0.0001) myFreq = 0.0001; // Ensure frequency remains positive
-
-          // Amplitude grows multiplicatively (exponentially) with relativeLogYear, now with an additional strength factor
-          let myAmp  = params.amp * Math.exp(relativeLogYear * params.ampGrowth * params.ampGrowthStrength); 
-          if (myAmp < 0.1) myAmp = 0.1; // Ensure amplitude remains positive
-
-          // NEW: Individual exponential baseline for the wave
-          let individualWaveExpBaseline = params.expBase * Math.exp(relativeLogYear * params.expGrowth);
-          if (individualWaveExpBaseline <= 0) individualWaveExpBaseline = 0.001; // Ensure positive
-
-          // Pure oscillation of the sine wave
-          let pureOscillation = myAmp * Math.sin(2 * Math.PI * myFreq * logYear + params.phase);
-          
-          // Individual wave value is its oscillation added to its exponential baseline plus a fixed offset
-          let individualWaveComponent = individualWaveExpBaseline + pureOscillation + params.yShift; 
-
-          return individualWaveComponent; // Return raw value, will be clamped later for plotting
-      }
+      // Removed calculateIndividualWaveValue function as it's replaced by calculateMultiplicativeWave
 
       /**
        * Helper function to generate combined data for a given set of parameters.
@@ -361,50 +386,70 @@
 
           // Loop through years from 2015 to 2035 with a step of 0.001 for more data points
           for (let year = 2015; year <= 2035; year = parseFloat((year + 0.001).toFixed(3))) { 
-              let logYear = Math.log10(year - 1969);
+              let days = daysSinceGenesis(new Date(`${year}-01-01`)); // Use start of year for days for consistency
+              if (days <= 0) days = 1; // Ensure days is positive for power law
 
-              let sumOfFullIndividualWaveComponents = 0; 
-              let sumOfPureOscillations = 0; 
+              // New calculation for sum of waves following power law midline
+              const startLogYearForGrowth = Math.log10(2015 - 1969);
+              let sumOfWavesFollowingPowerLawMidline = 0;
+              let totalOscillationFactorForQCBD = 0;
 
-              // Collect parameters for each wave, including the new ampGrowthStrength and expBase/expGrowth
-              const waveParams = [
-                  { freq: params.wave1Freq, amp: params.wave1Amp, yShift: params.wave1YShift, phase: params.wave1Phase, freqGrowth: params.wave1FreqGrowth, ampGrowth: params.wave1AmpGrowth, ampGrowthStrength: params.wave1AmpGrowthStrength, expBase: params.wave1ExpBase, expGrowth: params.wave1ExpGrowth },
-                  { freq: params.wave2Freq, amp: params.wave2Amp, yShift: params.wave2YShift, phase: params.wave2Phase, freqGrowth: params.wave2FreqGrowth, ampGrowth: params.wave2AmpGrowth, ampGrowthStrength: params.wave2AmpGrowthStrength, expBase: params.wave2ExpBase, expGrowth: params.wave2ExpGrowth },
-                  { freq: params.wave3Freq, amp: params.wave3Amp, yShift: params.wave3YShift, phase: params.wave3Phase, freqGrowth: params.wave3FreqGrowth, ampGrowth: params.wave3AmpGrowth, ampGrowthStrength: params.wave3AmpGrowthStrength, expBase: params.wave3ExpBase, expGrowth: params.wave3ExpGrowth }
+              // Parameters for the new wave functions - notice `amp` is now `amp_initial_factor`
+              const waveParametersForNewModel = [
+                  { amp_initial_factor: params.wave1Amp, freq_initial: params.wave1Freq, phase: params.wave1Phase,
+                    freq_growth_factor: params.wave1FreqGrowth, amp_growth_factor: params.wave1AmpGrowth, amp_growth_strength: params.wave1AmpGrowthStrength },
+                  { amp_initial_factor: params.wave2Amp, freq_initial: params.wave2Freq, phase: params.wave2Phase,
+                    freq_growth_factor: params.wave2FreqGrowth, amp_growth_factor: params.wave2AmpGrowth, amp_growth_strength: params.wave2AmpGrowthStrength },
+                  { amp_initial_factor: params.wave3Amp, freq_initial: params.wave3Freq, phase: params.wave3Phase,
+                    freq_growth_factor: params.wave3FreqGrowth, amp_growth_factor: params.wave3AmpGrowth, amp_growth_strength: params.wave3AmpGrowthStrength }
               ];
 
               for (let i = 0; i < 3; i++) {
-                  let currentWave = waveParams[i];
-                  let relativeLogYear = logYear - startLogYear; 
+                  let currentWaveConfig = waveParametersForNewModel[i];
 
-                  let myFreq = currentWave.freq * (1 + relativeLogYear * currentWave.freqGrowth);
-                  if (myFreq < 0.0001) myFreq = 0.0001; 
+                  // Calculate the individual wave based on the power law midline
+                  let currentWaveValue = calculateMultiplicativeWave(
+                      days,
+                      year,
+                      startLogYearForGrowth,
+                      currentWaveConfig.amp_initial_factor,
+                      currentWaveConfig.freq_initial,
+                      currentWaveConfig.phase,
+                      currentWaveConfig.freq_growth_factor,
+                      currentWaveConfig.amp_growth_factor,
+                      currentWaveConfig.amp_growth_strength,
+                      independentPowerLawAmplitude, // Pass power law amplitude
+                      independentPowerLawExponent   // Pass power law exponent
+                  );
 
-                  let myAmp = currentWave.amp * Math.exp(relativeLogYear * currentWave.ampGrowth * currentWave.ampGrowthStrength); 
-                  if (myAmp < 0.1) myAmp = 0.1; 
+                  sumOfWavesFollowingPowerLawMidline += currentWaveValue;
 
-                  let individualWaveExpBaseline = currentWave.expBase * Math.exp(relativeLogYear * currentWave.expGrowth);
-                  if (individualWaveExpBaseline <= 0) individualWaveExpBaseline = 0.001;
+                  // Also calculate the oscillation factor for QCBD dampening
+                  let logYearForOsc = Math.log10(year - 1969);
+                  let relativeLogYearForOsc = logYearForOsc - startLogYearForGrowth;
+                  let currentFreqForOsc = currentWaveConfig.freq_initial * (1 + relativeLogYearForOsc * currentWaveConfig.freq_growth_factor);
+                  let currentAmpFactorForOsc = currentWaveConfig.amp_initial_factor * Math.exp(relativeLogYearForOsc * currentWaveConfig.amp_growth_factor * currentWaveConfig.amp_growth_strength);
+                  currentAmpFactorForOsc = Math.max(0.000001, Math.min(1.0, currentAmpFactorForOsc)); // Clamp
 
-                  let pureOscillation = myAmp * Math.sin(2 * Math.PI * myFreq * logYear + currentWave.phase);
-                  
-                  let individualWaveComponent = individualWaveExpBaseline + pureOscillation + currentWave.yShift; 
-                  sumOfFullIndividualWaveComponents += individualWaveComponent;
-                  sumOfPureOscillations += pureOscillation; 
+                  totalOscillationFactorForQCBD += currentAmpFactorForOsc * Math.sin(2 * Math.PI * currentFreqForOsc * logYearForOsc + currentWaveConfig.phase);
               }
+
 
               let finalCombinedValue;
 
               if (year < params.qcbDateYear) {
-                  finalCombinedValue = sumOfFullIndividualWaveComponents;
+                  finalCombinedValue = sumOfWavesFollowingPowerLawMidline;
               } else {
                   const transitionFactor = getQCBDTransitionFactor(year, params.qcbDateYear, params.qcbTransitionDuration, params.qcbCrashStrength);
-                  
-                  let dampenedOscillations = sumOfPureOscillations * (1 - transitionFactor * (1 - params.qcbAmplitudeDampening));
 
-                  let targetCrashValue = params.socialDistrustValue + dampenedOscillations;
+                  // Dampen the total multiplicative oscillation factor
+                  let dampenedTotalOscillationFactor = totalOscillationFactorForQCBD * (1 - transitionFactor * (1 - params.qcbAmplitudeDampening));
 
-                  finalCombinedValue = sumOfFullIndividualWaveComponents * (1 - transitionFactor) + targetCrashValue * transitionFactor;
+                  // The target value now incorporates the dampened oscillations multiplicatively
+                  let targetCrashValue = params.socialDistrustValue * (1 + dampenedTotalOscillationFactor);
+
+                  // Blend the normal combined wave with the crashing target
+                  finalCombinedValue = sumOfWavesFollowingPowerLawMidline * (1 - transitionFactor) + targetCrashValue * transitionFactor;
               }
               
               combinedData.push(Math.max(0.001, finalCombinedValue));
@@ -543,39 +588,57 @@
             const year = currentDate.getFullYear() + (currentDate.getMonth() / 12); // Approximate year for calculations
             const logYear = Math.log10(year - 1969); // Log of years since 1969 for power law
 
-            let sumOfFullIndividualWaveComponents = 0; 
-            let sumOfPureOscillations = 0; 
+            // --- REPLACED CODE BLOCK START ---
+            const startLogYearForGrowth = Math.log10(2015 - 1969); // Consistent with original growth calculation
+            let sumOfWavesFollowingPowerLawMidline = 0; // New sum for our corrected waves (equivalent to old sumOfFullIndividualWaveComponents)
+            let totalOscillationFactorForQCBD = 0; // To collect the (amplitude_factor * sin) terms for QCBD dampening
 
-            const waveParameters = [
-                { freq: wave1Freq, amp: wave1Amp, yShift: wave1YShift, phase: wave1Phase, freqGrowth: wave1FreqGrowth, ampGrowth: wave1AmpGrowth, ampGrowthStrength: wave1AmpGrowthStrength, expBase: wave1ExpBase, expGrowth: wave1ExpGrowth },
-                { freq: wave2Freq, amp: wave2Amp, yShift: wave2YShift, phase: wave2Phase, freqGrowth: wave2FreqGrowth, ampGrowth: wave2AmpGrowth, ampGrowthStrength: wave2AmpGrowthStrength, expBase: wave2ExpBase, expGrowth: wave2ExpGrowth },
-                { freq: wave3Freq, amp: wave3Amp, yShift: wave3YShift, phase: wave3Phase, freqGrowth: wave3FreqGrowth, ampGrowth: wave3AmpGrowth, ampGrowthStrength: wave3AmpGrowthStrength, expBase: wave3ExpBase, expGrowth: wave3ExpGrowth }
+            // Parameters for the new wave functions - notice `amp` is now `amp_initial_factor`
+            const waveParametersForNewModel = [
+                { amp_initial_factor: wave1Amp, freq_initial: wave1Freq, phase: wave1Phase,
+                  freq_growth_factor: wave1FreqGrowth, amp_growth_factor: wave1AmpGrowth, amp_growth_strength: wave1AmpGrowthStrength },
+                { amp_initial_factor: wave2Amp, freq_initial: wave2Freq, phase: wave2Phase,
+                  freq_growth_factor: wave2FreqGrowth, amp_growth_factor: wave2AmpGrowth, amp_growth_strength: wave2AmpGrowthStrength },
+                { amp_initial_factor: wave3Amp, freq_initial: wave3Freq, phase: wave3Phase,
+                  freq_growth_factor: wave3FreqGrowth, amp_growth_factor: wave3AmpGrowth, amp_growth_strength: wave3AmpGrowthStrength }
             ];
 
             for (let i = 0; i < 3; i++) {
-                let currentWave = waveParameters[i];
-                let relativeLogYear = logYear - Math.log10(2015 - 1969); // Relative to startPlotYear for growth factors
+                let currentWaveConfig = waveParametersForNewModel[i];
 
-                let myFreq = currentWave.freq * (1 + relativeLogYear * currentWave.freqGrowth);
-                if (myFreq < 0.0001) myFreq = 0.0001; 
+                // Calculate the individual wave based on the power law midline
+                let currentWaveValue = calculateMultiplicativeWave(
+                    days,
+                    year,
+                    startLogYearForGrowth,
+                    currentWaveConfig.amp_initial_factor,
+                    currentWaveConfig.freq_initial,
+                    currentWaveConfig.phase,
+                    currentWaveConfig.freq_growth_factor,
+                    currentWaveConfig.amp_growth_factor,
+                    currentWaveConfig.amp_growth_strength,
+                    independentPowerLawAmplitude, // Pass power law amplitude
+                    independentPowerLawExponent   // Pass power law exponent
+                );
 
-                let myAmp = currentWave.amp * Math.exp(relativeLogYear * currentWave.ampGrowth * currentWave.ampGrowthStrength); 
-                if (myAmp < 0.1) myAmp = 0.1; 
+                sumOfWavesFollowingPowerLawMidline += currentWaveValue;
 
-                let individualWaveExpBaseline = currentWave.expBase * Math.exp(relativeLogYear * currentWave.expGrowth);
-                if (individualWaveExpBaseline <= 0) individualWaveExpBaseline = 0.001;
+                // Also calculate the oscillation factor for QCBD dampening
+                let logYearForOsc = Math.log10(year - 1969);
+                let relativeLogYearForOsc = logYearForOsc - startLogYearForGrowth;
+                let currentFreqForOsc = currentWaveConfig.freq_initial * (1 + relativeLogYearForOsc * currentWaveConfig.freq_growth_factor);
+                let currentAmpFactorForOsc = currentWaveConfig.amp_initial_factor * Math.exp(relativeLogYearForOsc * currentWaveConfig.amp_growth_factor * currentWaveConfig.amp_growth_strength);
+                currentAmpFactorForOsc = Math.max(0.000001, Math.min(1.0, currentAmpFactorForOsc)); // Clamp
 
-                let pureOscillation = myAmp * Math.sin(2 * Math.PI * myFreq * logYear + currentWave.phase);
-                
-                let individualWaveComponent = individualWaveExpBaseline + pureOscillation + currentWave.yShift; 
-                sumOfFullIndividualWaveComponents += individualWaveComponent;
-                sumOfPureOscillations += pureOscillation; 
+                totalOscillationFactorForQCBD += currentAmpFactorForOsc * Math.sin(2 * Math.PI * currentFreqForOsc * logYearForOsc + currentWaveConfig.phase);
 
                 // Only push data to arrays if it's within the display range
                 if (currentDate >= graphDisplayStartDate) {
-                    myWaves[i].push(Math.max(0.001, individualWaveComponent)); 
+                    myWaves[i].push(Math.max(0.001, currentWaveValue)); // Ensure values are positive for log plot
                 }
             }
+            // --- REPLACED CODE BLOCK END ---
+
 
             // Independent Power Law calculations using 'days' for x-axis
             let currentPowerLawValue = independentPowerLawAmplitude * Math.pow(days, independentPowerLawExponent);
@@ -611,17 +674,22 @@
 
             let finalCombinedValue;
 
+            // --- REPLACED QCBD FINAL COMBINED VALUE LOGIC START ---
             if (year < qcbDateYear) {
-                finalCombinedValue = sumOfFullIndividualWaveComponents;
+                finalCombinedValue = sumOfWavesFollowingPowerLawMidline;
             } else {
-                const transitionFactor = getQCBDTransitionFactor(year, qcbDateYear, qcbTransitionDuration, qcbCrashStrength); 
-                
-                let dampenedOscillations = sumOfPureOscillations * (1 - transitionFactor * (1 - qcbAmplitudeDampening));
+                const transitionFactor = getQCBDTransitionFactor(year, qcbDateYear, qcbTransitionDuration, qcbCrashStrength);
 
-                let targetCrashValue = socialDistrustValue + dampenedOscillations;
+                // Dampen the total multiplicative oscillation factor
+                let dampenedTotalOscillationFactor = totalOscillationFactorForQCBD * (1 - transitionFactor * (1 - qcbAmplitudeDampening));
 
-                finalCombinedValue = sumOfFullIndividualWaveComponents * (1 - transitionFactor) + targetCrashValue * transitionFactor;
+                // The target value now incorporates the dampened oscillations multiplicatively
+                let targetCrashValue = socialDistrustValue * (1 + dampenedTotalOscillationFactor);
+
+                // Blend the normal combined wave with the crashing target
+                finalCombinedValue = sumOfWavesFollowingPowerLawMidline * (1 - transitionFactor) + targetCrashValue * transitionFactor;
             }
+            // --- REPLACED QCBD FINAL COMBINED VALUE LOGIC END ---
             
             // Only push data to arrays if it's within the display range
             if (currentDate >= graphDisplayStartDate) {
@@ -804,6 +872,3 @@
     </script>
   </body>
 </html>
-
-
-
