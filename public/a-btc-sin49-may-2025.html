@@ -17,12 +17,7 @@
         <h2 style="font-size: 2em; margin-bottom: 15px; text-align: center;">Vibe Coding BTC Sinusoids</h2>
         <p style="margin-bottom: 10px;">The <a href="https://charts.bitbo.io/long-term-power-law/">power-law BTC equation</a> plotting BTC on a price-date log-log graph with max-min parameters. This is interesting, but anyone should be able to see the complex sinusoidal potential in that graph. This page is my attempt to give people their own control of this complexity.</p>
 
-        <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 10px;">
-            <!-- New Optimize Button -->
-            <button onclick="optimizeModel()" style="padding: 10px 20px; background-color: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 1.1em; align-self: flex-start;">Optimize Combined Line to BTC</button>
-        </div>
 
-        <br>
 
         <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 20px; margin-bottom: 15px;">
           <div style="border: 1px solid #ddd; padding: 15px; background-color: #f9f9f9; border-radius: 5px; flex: 1 1 450px; max-width: 550px;">
@@ -130,7 +125,15 @@
           </div>
         </div>
       </div>
+
+              <div style="margin-top: 20px; display: flex; flex-direction: column; gap: 10px;">
+            <!-- New Optimize Button -->
+            <button onclick="optimizeModel()" style="padding: 10px 20px; background-color: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 1.1em; align-self: flex-start;">Optimize Combined Line to BTC</button>
+        </div>
+
+
         <div id="statusMessage" style="margin-top: 10px; padding: 10px; background-color: #e0f7fa; border: 1px solid #b2ebf2; border-radius: 5px; color: #00796b; font-size: 0.9em;">Status: Ready</div>
+         <br>  
       <div style="width: 100%; height: 80vh; border: 1px solid #ccc; box-shadow: 2px 2px 5px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center;">
         <div id="myPlot" style="width:100%; height:100%;"></div>
       </div>
