@@ -133,9 +133,7 @@
 
              console.log('Optimize this many times')
              console.log(this.value)
-             for(let myLoop = 0; myLoop < this.value; myLoop++){
-               myOpto(myLoop)
-             }
+               myOpto(this.value)
            }">
               
           </div>
@@ -871,7 +869,10 @@
 
 
       async function myOpto(myVal){
-         await  optimizeModel(myVal)
+        for(let myLoop = 0; myLoop < myVal; myLoop++){
+            await  optimizeModel(myLoop)
+       }
+    
       }
 
 
