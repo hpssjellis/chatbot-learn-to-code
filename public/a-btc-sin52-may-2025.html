@@ -1023,7 +1023,7 @@
           updateInputFieldsWithOptimizedParams(bestParams);
           myGenerateLogLogData(); // Final plot update
 
-          document.getElementById('statusMessage').innerText = `Optimization complete! Final Error: ${bestError.toFixed(3)}`;
+          document.getElementById('statusMessage').innerText = `Count:${myRepeats}, Optimization complete! Final Error: ${bestError.toFixed(3)}`;
           console.log("Optimization finished. Best parameters:", bestParams);
           console.log("Final Error:", bestError);
       }
