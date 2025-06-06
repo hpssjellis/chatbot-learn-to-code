@@ -131,8 +131,7 @@
             <button onclick="optimizeModel(1)" >Optimize Combined Line to BTC</button>
            <input type=number value = 1 id="myNumIn" size=7   onChange="{
 
-             console.log('Optimize this many times')
-             console.log(this.value)
+             console.log(`Optimize this many times ${this.value}`)
                myOpto(this.value)
            }">
               
@@ -1022,7 +1021,7 @@
 
               // Optional: Update UI periodically to show progress
               if (iteration % 4 === 0 || iteration === optimizationIterations - 1) {
-                  document.getElementById('statusMessage').innerText = `Count:${myRepeats}, Optimizing... Iteration ${iteration + 1}/${optimizationIterations}, Current Best Error: ${bestError.toExponential(3)}`;
+                  document.getElementById('statusMessage').innerText = `Count:${myRepeats}, Optimizing... Iteration ${iteration + 1}/${optimizationIterations}, Current Best Error: ${bestError.toFixed(3)}`;
                   // Re-plot to show intermediate results (can be slow, comment out if needed for speed)
                   // updateInputFieldsWithOptimizedParams(bestParams);
                   // myGenerateLogLogData();
@@ -1035,10 +1034,9 @@
           updateInputFieldsWithOptimizedParams(bestParams);
           myGenerateLogLogData(); // Final plot update
 
-          document.getElementById('statusMessage').innerText = `Count:${myRepeats}, Optimization complete! Final Error: ${bestError.toExponential(3)}`;
-          console.log(`Repeats ${myRepeats} `);
+          document.getElementById('statusMessage').innerText = `Count:${myRepeats}, Optimization complete! Final Error: ${bestError.toFixed(3)}`;
           console.log("Optimization finished. Best parameters:", bestParams);
-          console.log("Final Error:", bestError);
+          console.log(`Repeats ${myRepeats}, Final Error ${bestError}`);
       }
 
       /**
