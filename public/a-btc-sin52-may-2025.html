@@ -134,7 +134,7 @@
              console.log('Optimize this many times')
              console.log(this.value)
              for(let myLoop = 0; myLoop < this.value; myLoop++){
-               await  optimizeModel(myLoop)
+               myOpto(myLoop)
              }
            }">
               
@@ -867,6 +867,14 @@
 
           return { slope, intercept };
       }
+
+
+
+      async function myOpto(myVal){
+         await  optimizeModel(myVal)
+      }
+
+
       
       /**
        * Optimizes the model parameters to minimize the error between the combined curve
