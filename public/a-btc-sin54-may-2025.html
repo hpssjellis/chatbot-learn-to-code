@@ -131,7 +131,7 @@
             <button onclick="optimizeModel(1)" >Optimize Combined Line to BTC</button>
            <input type=number value = 1 id="myNumIn" size=7   onChange="{
 
-             console.log(`Optimize this many times ${this.value}`)
+             (`Optimize this many times ${this.value}`)
                myOpto(this.value)
            }">
               
@@ -1034,9 +1034,9 @@
           updateInputFieldsWithOptimizedParams(bestParams);
           myGenerateLogLogData(); // Final plot update
 
-          document.getElementById('statusMessage').innerText = `Count:${myRepeats}, Optimization complete! Final Error: ${bestError.toFixed(3)}`;
+          document.getElementById('statusMessage').innerText = `Count:${myRepeats+1}, Optimization complete! Final Error: ${bestError.toFixed(3)}`;
           console.log("Optimization finished. Best parameters:", bestParams);
-          console.log(`Repeats ${myRepeats}, Final Error ${bestError}`);
+          console.log(`Repeats ${myRepeats+1}, Final Error ${bestError}`);
       }
 
       /**
