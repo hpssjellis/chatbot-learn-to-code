@@ -131,7 +131,7 @@
             <button onclick="optimizeModel(1)" >Optimize Combined Line to BTC</button>
            <input type=number value = 1 id="myNumIn" size=7   onChange="{
 
-             (`Optimize this many times ${this.value}`)
+             console.log(`Optimize this many times ${this.value}`)
                myOpto(this.value)
            }">
               
@@ -202,7 +202,6 @@
           if (currentFreq < 0.0001) currentFreq = 0.0001;
 
           // Calculate current amplitude factor with growth
-          // Removed the Math.min(1.0, currentAmpFactor) to allow for larger amplitudes
           let currentAmpFactor = amp_initial_factor * Math.exp(relativeLogYear * amp_growth_factor * amp_growth_strength);
           currentAmpFactor = Math.max(0.000001, currentAmpFactor); // Keep minimum to avoid issues
 
@@ -275,12 +274,12 @@
 
 
           // Wave 1 Parameters
-          wave1Freq = 30.2; 
-          wave1Amp = 0.92; // Corrected to fractional amplitude
-          wave1Phase = 0.313;
-          wave1FreqGrowth = 0.128; // Adjusted for more stable growth
-          wave1AmpGrowth = 1.8; // Adjusted for more stable growth
-          wave1AmpGrowthStrength = -0.5; // Adjusted initial value for broader exploration
+          wave1Freq = 24; 
+          wave1Amp = 0.8; // Corrected to fractional amplitude
+          wave1Phase = -3;
+          wave1FreqGrowth = 0.16; // Adjusted for more stable growth
+          wave1AmpGrowth = 1.566; // Adjusted for more stable growth
+          wave1AmpGrowthStrength = 0.0; // Adjusted initial value for broader exploration
           wave1PowerLawAmplitude = 3.500e-18;
           wave1PowerLawExponent = 5.850;
           document.getElementById('wave1FreqInput').value = wave1Freq.toFixed(3);
@@ -293,12 +292,12 @@
           document.getElementById('wave1PowerLawExponentInput').value = wave1PowerLawExponent.toFixed(3);
 
           // Wave 2 Parameters
-          wave2Freq = 40; 
-          wave2Amp = 0.82; // Corrected to fractional amplitude
-          wave2Phase = -0.644;
-          wave2FreqGrowth = 0.396; // Adjusted
-          wave2AmpGrowth = 1.9; // Adjusted
-          wave2AmpGrowthStrength = -0.3; // Adjusted initial value
+          wave2Freq = 23; 
+          wave2Amp = 0.9; // Corrected to fractional amplitude
+          wave2Phase = 1.0;
+          wave2FreqGrowth = 0.16; // Adjusted
+          wave2AmpGrowth = 1.566; // Adjusted
+          wave2AmpGrowthStrength = 0.0; // Adjusted initial value
           wave2PowerLawAmplitude = 3.500e-18;
           wave2PowerLawExponent = 5.850;
           document.getElementById('wave2FreqInput').value = wave2Freq.toFixed(3);
@@ -311,12 +310,12 @@
           document.getElementById('wave2PowerLawExponentInput').value = wave2PowerLawExponent.toFixed(3);
 
           // Wave 3 Parameters
-          wave3Freq = 63.8;  
-          wave3Amp = 0.72; // Corrected to fractional amplitude
-          wave3Phase = 0.4;
-          wave3FreqGrowth = 0.179; // Adjusted
-          wave3AmpGrowth = 1.606; // Adjusted
-          wave3AmpGrowthStrength = -0.1; // Adjusted initial value
+          wave3Freq = 110;  
+          wave3Amp = 0.60; // Corrected to fractional amplitude
+          wave3Phase = 0.0;
+          wave3FreqGrowth = 0.16; // Adjusted
+          wave3AmpGrowth = 1.566; // Adjusted
+          wave3AmpGrowthStrength = 0.0; // Adjusted initial value
           wave3PowerLawAmplitude = 3.500e-18;
           wave3PowerLawExponent = 5.850;
           document.getElementById('wave3FreqInput').value = wave3Freq.toFixed(3);
@@ -607,7 +606,7 @@
                   { amp_initial_factor: wave2Amp, freq_initial: wave2Freq, phase: wave2Phase,
                     freq_growth_factor: wave2FreqGrowth, amp_growth_factor: wave2AmpGrowth, amp_growth_strength: wave2AmpGrowthStrength,
                     powerLawAmp: wave2PowerLawAmplitude, powerLawExponent: wave2PowerLawExponent },
-                  { amp_initial_factor: wave3Amp, freq_initial: wave3Freq, phase: wave3Phase, // FIX: Changed params.wave3Freq to wave3Freq
+                  { amp_initial_factor: wave3Amp, freq_initial: wave3Freq, phase: wave3Phase, 
                     freq_growth_factor: wave3FreqGrowth, amp_growth_factor: wave3AmpGrowth, amp_growth_strength: wave3AmpGrowthStrength,
                     powerLawAmp: wave3PowerLawAmplitude, powerLawExponent: wave3PowerLawExponent }
             ];
@@ -956,6 +955,13 @@
                       // Specific perturbation for AmpGrowthStrength to allow greater exploration
                       perturbationMagnitude = currentLearningRate * (Math.abs(originalValue) * 0.1 + 0.5); // More aggressive absolute component
                   }
+                   else if (paramName.includes('PowerLawExponent')) { // Explicitly target PowerLawExponent
+                      // Proportional perturbation for exponent, reduced by a third
+                      perturbationMagnitude = Math.max(
+                          Math.abs(originalValue) * currentLearningRate * optimizationParamPerturbation * (2/3), // Reduced by a third
+                          1e-10 // A very small absolute floor
+                      );
+                  }
                    else if (paramName.includes('PowerLawAmplitude')) {
                       // Proportional perturbation for large/small amplitudes, with a floor
                       perturbationMagnitude = Math.max(
@@ -1116,7 +1122,6 @@
 
  //    const earlyDates = ["2010-12-31","2011-01-01","2011-01-02"];
 //    const earlyDaysSinceGenesis = [727,728,729];
-//    const earlyLogPrices = [-1.2039728043259361,-1.2039728043259361,-1.2039728043259361];
     </script>
   </body>
 </html>
