@@ -404,6 +404,9 @@
       let independentPowerLawAmplitudeMax, independentPowerLawExponentMax;
       let independentPowerLawAmplitudeMin, independentPowerLawExponentMin;
 
+      // Global variable to store the initial error for comparison across runs
+      let initialOptimizationError = null;
+
       // Global variables to store the BTC trace after it's fetched
       let btcTraceGlobal = null;
       let btcLogPricesGlobal = [];
@@ -1134,6 +1137,12 @@
           // First vertex is the current parameters
           let p0 = paramsToArray(initialParamsObj);
           let cost0 = calculateModelError(p0);
+
+          // Store initial error if it's the first run
+          if (initialOptimizationError === null) {
+              initialOptimizationError = cost0;
+          }
+
           simplex.push({ params: p0, cost: cost0 });
 
           // Other N vertices created by perturbing each parameter slightly
@@ -1242,7 +1251,7 @@
 
               // Update UI periodically based on livePlotUpdateEnabled flag
               if (livePlotUpdateEnabled && ((iter % 10 === 0) || (iter === nelderMeadIterationsPerRun - 1))) {
-                  document.getElementById('statusMessage').innerText = `Optimizing (Run ${runIndex + 1}). Iteration ${iter + 1}/${nelderMeadIterationsPerRun}, Current Best Error: ${bestError.toFixed(3)}`;
+                  document.getElementById('statusMessage').innerText = `Optimizing (Run ${runIndex + 1}). Initial Error: ${initialOptimizationError.toFixed(3)}, Current Best Error: ${bestError.toFixed(3)}`;
                   updateInputFieldsWithOptimizedParams(bestParams); // Update UI
                   myGenerateLogLogData(); // Re-plot
                   await new Promise(resolve => setTimeout(resolve, 0)); // Yield to browser
@@ -1253,9 +1262,9 @@
           updateInputFieldsWithOptimizedParams(bestParams);
           myGenerateLogLogData();
 
-          document.getElementById('statusMessage').innerText = `Optimization complete (Run ${runIndex + 1})! Final Error: ${bestError.toFixed(3)}`;
+          document.getElementById('statusMessage').innerText = `Optimization complete (Run ${runIndex + 1})! Initial Error: ${initialOptimizationError.toFixed(3)}, Final Error: ${bestError.toFixed(3)}`;
           console.log(`Optimization finished (Run ${runIndex + 1}). Best parameters:`, bestParams);
-          console.log(`Final Error: ${bestError}`);
+          console.log(`Initial Error: ${initialOptimizationError}, Final Error: ${bestError}`);
       }
 
       /**
