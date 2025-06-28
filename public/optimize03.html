@@ -402,7 +402,8 @@
           let count = 0;
 
           // Generate simulated data only for the BTC data points
-          const simulatedData = generateCombinedDataForError(params, btcDaysGlobal, btcYearsGlobal);
+          // CORRECTED: Use btcDaysSinceGenesisGlobal instead of btcDaysGlobal
+          const simulatedData = generateCombinedDataForError(params, btcDaysSinceGenesisGlobal, btcYearsGlobal);
 
           const minLen = Math.min(simulatedData.length, btcLogPricesGlobal.length);
 
