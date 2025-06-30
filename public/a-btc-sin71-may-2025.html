@@ -1,0 +1,1509 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Minimal BTC Sinusoid Optimizer</title>
+    <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <style>
+      /* Essential CSS for layout and input styling */
+      body {
+        font-family: sans-serif;
+        margin: 20px;
+        background-color: #f0f4f8;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .container {
+        max-width: 1200px; /* Increased max-width to accommodate more waves */
+        width: 100%;
+        padding: 20px;
+        background-color: #ffffff;
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+      }
+      h2 {
+        font-size: 2em;
+        margin-bottom: 15px;
+        text-align: center;
+      }
+      p {
+        margin-bottom: 15px;
+      }
+      .parameters-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        justify-content: center;
+        margin-bottom: 20px;
+      }
+      .param-section {
+        border: 1px solid #d1d5db;
+        padding: 15px;
+        border-radius: 6px;
+        flex: 1 1 300px;
+        max-width: 400px; /* Adjusted max-width for wave sections */
+        box-sizing: border-box;
+      }
+      .param-section h3 {
+        font-size: 1.2em;
+        margin-top: 0;
+        margin-bottom: 10px;
+        border-bottom: 1px solid #e5e7eb;
+        padding-bottom: 5px;
+      }
+      .input-group {
+        display: flex;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+      .input-group label {
+        flex: 0 0 160px;
+        text-align: right;
+        margin-right: 10px;
+      }
+      .input-group input {
+        flex: 1;
+        padding: 8px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 4px;
+      }
+      button {
+        background-color: #3b82f6;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+      button:hover {
+          opacity: 0.9;
+      }
+      #statusMessage {
+        margin-top: 15px;
+        padding: 12px;
+        border-radius: 6px;
+        text-align: center;
+      }
+      #myPlot {
+        width: 100%;
+        height: 70vh;
+        border: 1px solid #ccc;
+      }
+      .optimization-controls {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 15px;
+        margin-top: 20px;
+        margin-bottom: 20px;
+      }
+      .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .checkbox-group label {
+        margin-right: 0; /* Override default label margin */
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h2>Minimal BTC Sinusoid Optimizer</h2>
+      <p>This streamlined page focuses on optimizing up to five sinusoidal waves against real Bitcoin price data. Adjust the wave parameters and QCBD settings, then click "Optimize" to find the best fit.</p>
+      <p> The <a href="https://charts.bitbo.io/long-term-power-law/">power-law BTC equation</a> plotting BTC on a price-date log-log graph with max-min parameters. This is interesting, but anyone should be able to see the complex sinusoidal potential in that graph. This page is my attempt to give people their own control of this complexity.</p>
+
+      <div class="parameters-grid">
+        <div class="param-section">
+          <h3>QCBD Parameters</h3>
+          <div class="input-group">
+            <label for="qcbDateInput">QCBD Year:</label>
+            <input type="text" id="qcbDateInput" value="2034.2" onchange="qcbDateYear = parseFloat(this.value); myGenerateLogLogData();">
+          </div>
+          <div class="input-group">
+            <label for="socialDistrustValueInput">Social Distrust (Crash Target):</label>
+            <input type="text" id="socialDistrustValueInput" value="100" onchange="socialDistrustValue = parseFloat(this.value); myGenerateLogLogData();">
+          </div>
+          <div class="input-group">
+            <label for="qcbTransitionInput">QCBD Transition (Years):</label>
+            <input type="text" id="qcbTransitionInput" value="0.8" onchange="qcbTransitionDuration = parseFloat(this.value); myGenerateLogLogData();">
+          </div>
+          <div class="input-group">
+            <label for="qcbCrashStrengthInput">QCBD Crash Strength:</label>
+            <input type="text" value="1.2" id="qcbCrashStrengthInput" onchange="qcbCrashStrength = parseFloat(this.value); myGenerateLogLogData();">
+          </div>
+          <div class="input-group">
+            <label for="qcbAmplitudeDampeningInput">QCBD Amplitude Dampening:</label>
+            <input type="text" id="qcbAmplitudeDampeningInput" value="0.005" onchange="qcbAmplitudeDampening = parseFloat(this.value); myGenerateLogLogData();">
+          </div>
+        </div>
+
+        <div class="param-section">
+          <h3>Wave Parameters (Wave 1)</h3>
+          <div class="input-group">
+            <label for="wave1FreqInput">Frequency:</label>
+            <input type="text" value="24" id="wave1FreqInput" onchange="wave1Freq = parseFloat(this.value); myGenerateLogLogData();">
+          </div>
+          <div class="input-group">
+            <label for="wave1AmpInput">Amplitude (Factor):</label>
+            <input type="text" value="0.8" id="wave1AmpInput" onchange="wave1Amp = parseFloat(this.value); myGenerateLogLogData();">
+          </div>
+          <div class="input-group">
+            <label for="wave1PhaseInput">Phase (radians):</label>
+            <input type="text" value="-3" id="wave1PhaseInput" onchange="wave1Phase = parseFloat(this.value); myGenerateLogLogData();">
+          </div>
+          <div class="input-group">
+            <label for="wave1FreqGrowthInput">Freq Growth Factor:</label>
+            <input type="text" value="0.16" id="wave1FreqGrowthInput" onchange="wave1FreqGrowth = parseFloat(this.value); myGenerateLogLogData();">
+          </div>
+          <div class="input-group">
+            <label for="wave1AmpGrowthInput">Amp Growth Factor:</label>
+            <input type="text" value="1.566" id="wave1AmpGrowthInput" onchange="wave1AmpGrowth = parseFloat(this.value); myGenerateLogLogData();">
+          </div>
+          <div class="input-group">
+            <label for="wave1AmpGrowthStrengthInput">Amp Growth Strength:</label>
+            <input type="text" value="0.0" id="wave1AmpGrowthStrengthInput" onchange="wave1AmpGrowthStrength = parseFloat(this.value); myGenerateLogLogData();">
+          </div>
+          <hr style="margin: 10px 0;">
+          <div class="input-group">
+            <label for="wave1PowerLawAmplitudeInput">PL Amplitude:</label>
+            <input type="text" value="3.500e-18" id="wave1PowerLawAmplitudeInput" onchange="wave1PowerLawAmplitude = parseFloat(this.value); myGenerateLogLogData();">
+          </div>
+          <div class="input-group">
+            <label for="wave1PowerLawExponentInput">PL Exponent:</label>
+            <input type="text" value="5.850" id="wave1PowerLawExponentInput" onchange="wave1PowerLawExponent = parseFloat(this.value); myGenerateLogLogData();">
+          </div>
+        </div>
+
+        <div class="param-section">
+          <h3>Wave Parameters (Wave 2)</h3>
+          <div class="input-group">
+            <label for="wave2FreqInput">Frequency:</label>
+            <input type="text" value="23" id="wave2FreqInput" onchange="wave2Freq = parseFloat(this.value); myGenerateLogLogData();">
+          </div>
+          <div class="input-group">
+            <label for="wave2AmpInput">Amplitude (Factor):</label>
+            <input type="text" value="0.9" id="wave2AmpInput" onchange="wave2Amp = parseFloat(this.value); myGenerateLogLogData();">
+          </div>
+          <div class="input-group">
+            <label for="wave2PhaseInput">Phase (radians):</label>
+            <input type="text" value="1.0" id="wave2PhaseInput" onchange="wave2Phase = parseFloat(this.value); myGenerateLogLogData();">
+          </div>
+          <div class="input-group">
+            <label for="wave2FreqGrowthInput">Freq Growth Factor:</label>
+            <input type="text" value="0.16" id="wave2FreqGrowthInput" onchange="wave2FreqGrowth = parseFloat(this.value); myGenerateLogLogData();">
+          </div>
+          <div class="input-group">
+            <label for="wave2AmpGrowthInput">Amp Growth Factor:</label>
+            <input type="text" value="1.566" id="wave2AmpGrowthInput" onchange="wave2AmpGrowth = parseFloat(this.value); myGenerateLogLogData();">
+          </div>
+          <div class="input-group">
+            <label for="wave2AmpGrowthStrengthInput">Amp Growth Strength:</label>
+            <input type="text" value="0.0" id="wave2AmpGrowthStrengthInput" onchange="wave2AmpGrowthStrength = parseFloat(this.value); myGenerateLogLogData();">
+          </div>
+          <hr style="margin: 10px 0;">
+          <div class="input-group">
+            <label for="wave2PowerLawAmplitudeInput">PL Amplitude:</label>
+            <input type="text" value="3.500e-18" id="wave2PowerLawAmplitudeInput" onchange="wave2PowerLawAmplitude = parseFloat(this.value); myGenerateLogLogData();">
+          </div>
+          <div class="input-group">
+            <label for="wave2PowerLawExponentInput">PL Exponent:</label>
+            <input type="text" value="5.850" id="wave2PowerLawExponentInput" onchange="wave2PowerLawExponent = parseFloat(this.value); myGenerateLogLogData();">
+          </div>
+        </div>
+
+        <div class="param-section">
+          <h3>Wave Parameters (Wave 3)</h3>
+          <div class="input-group">
+            <label for="wave3FreqInput">Frequency:</label>
+            <input type="text" value="110" id="wave3FreqInput" onchange="wave3Freq = parseFloat(this.value); myGenerateLogLogData();">
+          </div>
+          <div class="input-group">
+            <label for="wave3AmpInput">Amplitude (Factor):</label>
+            <input type="text" value="0.60" id="wave3AmpInput" onchange="wave3Amp = parseFloat(this.value); myGenerateLogLogData();">
+          </div>
+          <div class="input-group">
+            <label for="wave3PhaseInput">Phase (radians):</label>
+            <input type="text" value="0.0" id="wave3PhaseInput" onchange="wave3Phase = parseFloat(this.value); myGenerateLogLogData();">
+          </div>
+          <div class="input-group">
+            <label for="wave3FreqGrowthInput">Freq Growth Factor:</label>
+            <input type="text" value="0.16" id="wave3FreqGrowthInput" onchange="wave3FreqGrowth = parseFloat(this.value); myGenerateLogLogData();">
+          </div>
+          <div class="input-group">
+            <label for="wave3AmpGrowthInput">Amp Growth Factor:</label>
+            <input type="text" value="1.566" id="wave3AmpGrowthInput" onchange="wave3AmpGrowth = parseFloat(this.value); myGenerateLogLogData();">
+          </div>
+          <div class="input-group">
+            <label for="wave3AmpGrowthStrengthInput">Amp Growth Strength:</label>
+            <input type="text" value="0.0" id="wave3AmpGrowthStrengthInput" onchange="wave3AmpGrowthStrength = parseFloat(this.value); myGenerateLogLogData();">
+          </div>
+          <hr style="margin: 10px 0;">
+          <div class="input-group">
+            <label for="wave3PowerLawAmplitudeInput">PL Amplitude:</label>
+            <input type="text" value="3.500e-18" id="wave3PowerLawAmplitudeInput" onchange="wave3PowerLawAmplitude = parseFloat(this.value); myGenerateLogLogData();">
+          </div>
+          <div class="input-group">
+            <label for="wave3PowerLawExponentInput">PL Exponent:</label>
+            <input type="text" value="5.850" id="wave3PowerLawExponentInput" onchange="wave3PowerLawExponent = parseFloat(this.value); myGenerateLogLogData();">
+          </div>
+        </div>
+
+        <div class="param-section">
+          <h3>Independent Power Law Parameters <small>(Not Affecting Combined Line)</small></h3>
+          <p style="font-size: 0.9em; color: #777; margin-bottom: 10px;">These lines are for visual comparison and are separate from the combined sinusoidal model.</p>
+
+
+          
+          <h4 style="font-size: 1.1em; margin-top: 15px; margin-bottom: 10px;">Max Independent Power Law</h4>
+          <div class="input-group">
+            <label for="independentPowerLawAmplitudeMaxInput">Amplitude (Max):</label>
+            <input type="text" id="independentPowerLawAmplitudeMaxInput" value="1.0e-16" size="15" onchange="independentPowerLawAmplitudeMax = parseFloat(this.value); myGenerateLogLogData();">
+          </div>
+          <div class="input-group">
+            <label for="independentPowerLawExponentMaxInput">Exponent (Max):</label>
+            <input type="text" id="independentPowerLawExponentMaxInput" value="4.95" size="10" onchange="independentPowerLawExponentMax = parseFloat(this.value); myGenerateLogLogData();">
+          </div>
+
+          
+          <h4 style="font-size: 1.1em; margin-top: 15px; margin-bottom: 10px;">Expected BTC</h4>
+          <div class="input-group">
+            <label for="independentPowerLawAmplitudeInput">Amplitude:</label>
+            <input type="text" id="independentPowerLawAmplitudeInput" value="1.0e-17" size="15" onchange="independentPowerLawAmplitude = parseFloat(this.value); myGenerateLogLogData();">
+          </div>
+          <div class="input-group">
+            <label for="independentPowerLawExponentInput">Exponent:</label>
+            <input type="text" id="independentPowerLawExponentInput" value="5.8" size="10" onchange="independentPowerLawExponent = parseFloat(this.value); myGenerateLogLogData();">
+          </div>
+
+
+          <h4 style="font-size: 1.1em; margin-top: 15px; margin-bottom: 10px;">Min Independent Power Law</h4>
+          <div class="input-group">
+            <label for="independentPowerLawAmplitudeMinInput">Amplitude (Min):</label>
+            <input type="text" id="independentPowerLawAmplitudeMinInput" value="1.0e-18" size="15" onchange="independentPowerLawAmplitudeMin = parseFloat(this.value); myGenerateLogLogData();">
+          </div>
+          <div class="input-group">
+            <label for="independentPowerLawExponentMinInput">PL Exponent:</label>
+            <input type="text" value="5.75" id="independentPowerLawExponentMinInput" onchange="independentPowerLawExponentMin = parseFloat(this.value); myGenerateLogLogData();">
+          </div>
+        </div>
+      </div>
+
+      <div class="optimization-controls">
+        <button onclick="performCQTAnalysis()">CQT Analysis (Suggest Wave Settings)</button> <!-- New Button -->
+        <button onclick="myOpto(parseInt(document.getElementById('numOptimizationRunsInput').value))">Optimize Combined Line to BTC</button>
+        <label for="numOptimizationRunsInput">Runs:</label>
+        <input type="number" value="9" id="numOptimizationRunsInput" size="7" min="1" onChange="console.log(`Will run optimization ${this.value} times`)">
+        <div class="checkbox-group">
+            <input type="checkbox" id="liveUpdateToggle" checked onchange="livePlotUpdateEnabled = this.checked">
+            <label for="liveUpdateToggle">Live Plot Update</label>
+        </div>
+      </div>
+
+      <div class="optimization-controls">
+          <button onclick="mlTrainModel()">ML-Training</button>
+          <label for="mlEpochsInput">Epochs:</label>
+          <input type="number" id="mlEpochsInput" value="50" min="1" size="5">
+
+          <button onclick="mlPredict()">ML-Prediction</button>
+          <label for="mlPredictionLengthInput">Prediction Points:</label>
+          <input type="number" id="mlPredictionLengthInput" value="200" min="1" size="5">
+      </div>
+
+      <div id="statusMessage">Status: Ready</div>
+      <br>  
+      <div id="myPlot"></div>
+    </div>
+
+    <script>
+      // Function to calculate days since January 3, 2009 (Bitcoin Genesis Block)
+      function daysSinceGenesis(date) {
+          const genesisDate = new Date('2009-01-03T00:00:00Z');
+          const diffTime = Math.abs(date.getTime() - genesisDate.getTime());
+          return Math.ceil(diffTime / (1000 * 60 * 60 * 24)); // Convert milliseconds to days
+      }
+
+      /**
+       * Calculates the value for a power law: Y = A * X^k.
+       * This function is designed to represent the straight midline on a log-log plot.
+       * @param {number} X - The independent variable (e.g., days since genesis).
+       * @param {number} A_pl - The coefficient (pre-factor) of the power law.
+       * @param {number} k_pl - The exponent of the power law.
+       * @returns {number} The Y value according to the power law.
+       */
+      function calculatePowerLawValue(X, A_pl, k_pl) {
+          if (X <= 0) return 0.001;
+          return A_pl * Math.pow(X, k_pl);
+      }
+
+      /**
+       * Calculates a sinusoidal wave value whose midline follows a power law.
+       * The oscillation is applied as a multiplicative factor to the power law baseline.
+       * Incorporates frequency and amplitude factor growth over time (logYear).
+       * @param {number} X_days - The independent variable in days since genesis (for power law).
+       * @param {number} year - The current year (for logYear calculations).
+       * @param {number} startLogYear - The logYear value at the start of the plot (for relativeLogYear).
+       * @param {number} amp_initial_factor - The initial fractional amplitude of oscillation.
+       * @param {number} freq_initial - The initial frequency of the oscillation.
+       * @param {number} phase - The phase offset of the oscillation.
+       * @param {number} freq_growth_factor - Factor for frequency growth.
+       * @param {number} amp_growth_factor - Factor for amplitude factor growth.
+       * @param {number} amp_growth_strength - Strength for amplitude factor growth.
+       * @param {number} powerLawAmp - The 'A' coefficient for the underlying power law midline.
+       * @param {number} powerLawExponent - The 'k' exponent for the underlying power law midline.
+       * @returns {number} The Y value of the wave, oscillating around the power law.
+       */
+      function calculateMultiplicativeWave(X_days, year, startLogYear,
+                                           amp_initial_factor, freq_initial, phase,
+                                           freq_growth_factor, amp_growth_factor, amp_growth_strength,
+                                           powerLawAmp, powerLawExponent) {
+          const powerLawMidlineValue = calculatePowerLawValue(X_days, powerLawAmp, powerLawExponent);
+          let logYear = Math.log10(year - 1969);
+          let relativeLogYear = logYear - startLogYear;
+          let currentFreq = freq_initial * (1 + relativeLogYear * freq_growth_factor);
+          if (currentFreq < 0.0001) currentFreq = 0.0001;
+          let currentAmpFactor = amp_initial_factor * Math.exp(relativeLogYear * amp_growth_factor * amp_growth_strength);
+          currentAmpFactor = Math.max(0.000001, currentAmpFactor);
+          let oscillationTerm = currentAmpFactor * Math.sin(2 * Math.PI * currentFreq * logYear + phase);
+          return powerLawMidlineValue * Math.max(0.001, (1 + oscillationTerm));
+      }
+
+      // GLOBAL VARIABLES for sinusoidal model parameters (now 3 waves)
+      let wave1Freq, wave1Amp, wave1Phase, wave1FreqGrowth, wave1AmpGrowth, wave1AmpGrowthStrength, wave1PowerLawAmplitude, wave1PowerLawExponent;
+      let wave2Freq, wave2Amp, wave2Phase, wave2FreqGrowth, wave2AmpGrowth, wave2AmpGrowthStrength, wave2PowerLawAmplitude, wave2PowerLawExponent;
+      let wave3Freq, wave3Amp, wave3Phase, wave3FreqGrowth, wave3AmpGrowth, wave3AmpGrowthStrength, wave3PowerLawAmplitude, wave3PowerLawExponent;
+      // Removed wave4 and wave5 as per user's 3-wave structure
+
+      // Global variables for QCBD parameters
+      let qcbDateYear, socialDistrustValue, qcbTransitionDuration, qcbCrashStrength, qcbAmplitudeDampening; 
+
+      // Independent Power Law Parameters (for display only, not optimized)
+      let independentPowerLawAmplitude, independentPowerLawExponent;
+      let independentPowerLawAmplitudeMax, independentPowerLawExponentMax;
+      let independentPowerLawAmplitudeMin, independentPowerLawExponentMin;
+
+      // Global variable to store the initial error for comparison across runs
+      let initialOptimizationError = null;
+
+      // Global variables to store the BTC trace after it's fetched
+      let btcTraceGlobal = null;
+      let btcLogPricesGlobal = [];
+      let btcDatesGlobal = [];
+      let btcDaysSinceGenesisGlobal = [];
+      let btcYearsGlobal = []; // Store approximated years for BTC data points
+
+      // Global optimization parameters (tuned for better results)
+      let optimizationLearningRate = 0.015; // Increased learning rate
+      let optimizationIterations = 50; // Number of optimization cycles
+      let optimizationParamPerturbation = 0.02; // Increased base perturbation
+      let livePlotUpdateEnabled = true; // Controls live updates during optimization
+
+      // ML Model related globals
+      let mlModel = null; // Stores the trained TensorFlow.js model
+      let N_LOOKBACK = 52; // Number of past weekly data points to look back for prediction (approx. 1 year)
+      let minLogPriceGlobal, maxLogPriceGlobal; // For normalizing and denormalizing log prices
+
+      /**
+       * Initializes the input fields with the current global variable values.
+       */
+      function initializeInputFields() {
+          qcbDateYear = 2034.2;
+          socialDistrustValue = 100; 
+          qcbTransitionDuration = 0.8;
+          qcbCrashStrength = 1.2; 
+          qcbAmplitudeDampening = 0.005; 
+          document.getElementById('qcbDateInput').value = qcbDateYear.toFixed(3);
+          document.getElementById('socialDistrustValueInput').value = socialDistrustValue.toFixed(3);
+          document.getElementById('qcbTransitionInput').value = qcbTransitionDuration.toFixed(3);
+          document.getElementById('qcbCrashStrengthInput').value = qcbCrashStrength.toFixed(3); 
+          document.getElementById('qcbAmplitudeDampeningInput').value = qcbAmplitudeDampening.toFixed(3); 
+
+          independentPowerLawAmplitudeMax = 1.0e-13; 
+          independentPowerLawExponentMax = 4.95; 
+          independentPowerLawAmplitude = 1.0e-17; 
+          independentPowerLawExponent = 5.85; 
+          independentPowerLawAmplitudeMin = 1.0e-18; 
+          independentPowerLawExponentMin = 6.00; 
+
+          // Wave 1 Parameters
+          wave1Freq = 24; 
+          wave1Amp = 0.8;
+          wave1Phase = -3;
+          wave1FreqGrowth = 0.16;
+          wave1AmpGrowth = 1.566;
+          wave1AmpGrowthStrength = 0.0;
+          wave1PowerLawAmplitude = 3.500e-18;
+          wave1PowerLawExponent = 5.850;
+          document.getElementById('wave1FreqInput').value = wave1Freq.toFixed(3);
+          document.getElementById('wave1AmpInput').value = wave1Amp.toFixed(3);
+          document.getElementById('wave1PhaseInput').value = wave1Phase.toFixed(3);
+          document.getElementById('wave1FreqGrowthInput').value = wave1FreqGrowth.toFixed(3);
+          document.getElementById('wave1AmpGrowthInput').value = wave1AmpGrowth.toFixed(3);
+          document.getElementById('wave1AmpGrowthStrengthInput').value = wave1AmpGrowthStrength.toFixed(3);
+          document.getElementById('wave1PowerLawAmplitudeInput').value = wave1PowerLawAmplitude.toExponential(3);
+          document.getElementById('wave1PowerLawExponentInput').value = wave1PowerLawExponent.toFixed(3);
+
+          // Wave 2 Parameters
+          wave2Freq = 23; 
+          wave2Amp = 0.9;
+          wave2Phase = 1.0;
+          wave2FreqGrowth = 0.16;
+          wave2AmpGrowth = 1.566;
+          wave2AmpGrowthStrength = 0.0;
+          wave2PowerLawAmplitude = 3.500e-18;
+          wave2PowerLawExponent = 5.850;
+          document.getElementById('wave2FreqInput').value = wave2Freq.toFixed(3);
+          document.getElementById('wave2AmpInput').value = wave2Amp.toFixed(3);
+          document.getElementById('wave2PhaseInput').value = wave2Phase.toFixed(3);
+          document.getElementById('wave2FreqGrowthInput').value = wave2FreqGrowth.toFixed(3);
+          document.getElementById('wave2AmpGrowthInput').value = wave2AmpGrowth.toFixed(3);
+          document.getElementById('wave2AmpGrowthStrengthInput').value = wave2AmpGrowthStrength.toFixed(3);
+          document.getElementById('wave2PowerLawAmplitudeInput').value = wave2PowerLawAmplitude.toExponential(3);
+          document.getElementById('wave2PowerLawExponentInput').value = wave2PowerLawExponent.toFixed(3);
+
+          // Wave 3 Parameters
+          wave3Freq = 110;  
+          wave3Amp = 0.60;
+          wave3Phase = 0.0;
+          wave3FreqGrowth = 0.16;
+          wave3AmpGrowth = 1.566;
+          wave3AmpGrowthStrength = 0.0;
+          wave3PowerLawAmplitude = 3.500e-18;
+          wave3PowerLawExponent = 5.850;
+          document.getElementById('wave3FreqInput').value = wave3Freq.toFixed(3);
+          document.getElementById('wave3AmpInput').value = wave3Amp.toFixed(3);
+          document.getElementById('wave3PhaseInput').value = wave3Phase.toFixed(3);
+          document.getElementById('wave3FreqGrowthInput').value = wave3FreqGrowth.toFixed(3);
+          document.getElementById('wave3AmpGrowthInput').value = wave3AmpGrowth.toFixed(3);
+          document.getElementById('wave3AmpGrowthStrengthInput').value = wave3AmpGrowthStrength.toFixed(3);
+          document.getElementById('wave3PowerLawAmplitudeInput').value = wave3PowerLawAmplitude.toExponential(3);
+          document.getElementById('wave3PowerLawExponentInput').value = wave3PowerLawExponent.toFixed(3);
+
+          // Set initial state of live update checkbox
+          document.getElementById('liveUpdateToggle').checked = livePlotUpdateEnabled;
+      }
+      
+      /**
+       * Calculates the value for the QCBD Crash line (red dashed).
+       * @param {number} year - The year for which to calculate the value.
+       * @param {number} qcbYear - The QCBD year.
+       * @param {number} socialDistrustVal - The social distrust value (the target floor).
+       * @param {number} transitionDur - The transition duration in years.
+       * @returns {number} The calculated value for the QCBD Crash line.
+       */
+      function getQCBDCrashLineValue(year, qcbYear, socialDistrustVal, transitionDur) {
+          if (year < qcbYear) {
+              return 0.001;
+          } else {
+              const transitionFactor = Math.min(1, (year - qcbYear) / transitionDur);
+              return 0.001 * (1 - transitionFactor) + socialDistrustVal * transitionFactor;
+          }
+      }
+
+      /**
+       * Calculates a transition factor (0 to 1) for the QCBD effect.
+       * @param {number} year - The current year.
+       * @param {number} qcbYear - The QCBD year.
+       * @param {number} transitionDur - The transition duration in years.
+       * @param {number} crashStrength - The strength of the crash effect.
+       * @returns {number} A factor between 0 and 1.
+       */
+      function getQCBDTransitionFactor(year, qcbYear, transitionDur, crashStrength) {
+          const startTransition = qcbYear;
+          const endTransition = qcbYear + transitionDur;
+          if (year < startTransition) {
+              return 0;
+          } else if (year >= startTransition && year <= endTransition) {
+              const t = (year - startTransition) / transitionDur;
+              return Math.min(1, t * crashStrength);
+          } else {
+              return 1;
+          }
+      }
+      
+      /**
+       * Generates combined data for a given set of parameters AT SPECIFIC DATES.
+       * This optimized version is used by the error calculation to only compute
+       * simulated values for dates where actual BTC data exists.
+       * @param {object} params - An object containing all model parameters.
+       * @param {Array<number>} daysArray - Array of days since genesis for BTC data points.
+       * @param {Array<number>} yearsArray - Array of approximate years for BTC data points.
+       * @returns {Array<number>} An array of combined Y-values for the simulated data.
+       */
+      function generateCombinedDataForError(params, daysArray, yearsArray) {
+          let combinedData = [];
+          const startLogYearForGrowth = Math.log10(2015 - 1969); // Consistent with original growth calculation
+
+          // Array of wave configurations (only 3 waves)
+          const waveParameters = [
+              { amp_initial_factor: params.wave1Amp, freq_initial: params.wave1Freq, phase: params.wave1Phase,
+                freq_growth_factor: params.wave1FreqGrowth, amp_growth_factor: params.wave1AmpGrowth, amp_growth_strength: params.wave1AmpGrowthStrength,
+                powerLawAmp: params.wave1PowerLawAmplitude, powerLawExponent: params.wave1PowerLawExponent },
+              { amp_initial_factor: params.wave2Amp, freq_initial: params.wave2Freq, phase: params.wave2Phase,
+                freq_growth_factor: params.wave2FreqGrowth, amp_growth_factor: params.wave2AmpGrowth, amp_growth_strength: params.wave2AmpGrowthStrength,
+                powerLawAmp: params.wave2PowerLawAmplitude, powerLawExponent: params.wave2PowerLawExponent },
+              { amp_initial_factor: params.wave3Amp, freq_initial: params.wave3Freq, phase: params.wave3Phase,
+                freq_growth_factor: params.wave3FreqGrowth, amp_growth_factor: params.wave3AmpGrowth, amp_growth_strength: params.wave3AmpGrowthStrength,
+                powerLawAmp: params.wave3PowerLawAmplitude, powerLawExponent: params.wave3PowerLawExponent }
+          ];
+
+          for (let i = 0; i < daysArray.length; i++) {
+              const days = daysArray[i];
+              const year = yearsArray[i];
+
+              let sumOfWavesFollowingPowerLawMidline = 0;
+              let totalOscillationFactorForQCBD = 0;
+
+              for (let j = 0; j < waveParameters.length; j++) {
+                  const currentWaveConfig = waveParameters[j];
+                  
+                  let currentWaveValue = calculateMultiplicativeWave(
+                      days, year, startLogYearForGrowth,
+                      currentWaveConfig.amp_initial_factor,
+                      currentWaveConfig.freq_initial,
+                      currentWaveConfig.phase,
+                      currentWaveConfig.freq_growth_factor,
+                      currentWaveConfig.amp_growth_factor,
+                      currentWaveConfig.amp_growth_strength,
+                      currentWaveConfig.powerLawAmp,
+                      currentWaveConfig.powerLawExponent
+                  );
+                  sumOfWavesFollowingPowerLawMidline += currentWaveValue;
+
+                  let logYearForOsc = Math.log10(year - 1969);
+                  let relativeLogYearForOsc = logYearForOsc - startLogYearForGrowth;
+                  let currentFreqForOsc = currentWaveConfig.freq_initial * (1 + relativeLogYearForOsc * currentWaveConfig.freq_growth_factor);
+                  let currentAmpFactorForOsc = currentWaveConfig.amp_initial_factor * Math.exp(relativeLogYearForOsc * currentWaveConfig.amp_growth_factor * currentWaveConfig.amp_growth_strength);
+                  currentAmpFactorForOsc = Math.max(0.000001, currentAmpFactorForOsc);
+                  totalOscillationFactorForQCBD += currentAmpFactorForOsc * Math.sin(2 * Math.PI * currentFreqForOsc * logYearForOsc + currentWaveConfig.phase);
+              }
+              
+              let finalCombinedValue;
+              if (year < params.qcbDateYear) {
+                  finalCombinedValue = sumOfWavesFollowingPowerLawMidline;
+              } else {
+                  const transitionFactor = getQCBDTransitionFactor(year, params.qcbDateYear, params.qcbTransitionDuration, params.qcbCrashStrength);
+                  let dampenedTotalOscillationFactor = totalOscillationFactorForQCBD * (1 - transitionFactor * (1 - params.qcbAmplitudeDampening));
+                  let targetCrashValue = params.socialDistrustValue * (1 + dampenedTotalOscillationFactor);
+                  finalCombinedValue = sumOfWavesFollowingPowerLawMidline * (1 - transitionFactor) + targetCrashValue * transitionFactor;
+              }
+              combinedData.push(Math.max(0.001, finalCombinedValue));
+          }
+          return combinedData;
+      }
+
+      /**
+       * Calculates the Mean Squared Error (MSE) between simulated and actual BTC log prices.
+       * This function now takes the parameters as an array and uses the optimized
+       * `generateCombinedDataForError` function to calculate simulated values only at relevant points.
+       * @param {Array<number>} paramArray - Array of model parameters.
+       * @returns {number} The Mean Squared Error.
+       */
+      function calculateModelError(paramArray) {
+          // Convert parameter array back to object for calculateMultiplicativeWave
+          const params = arrayToParams(paramArray);
+
+          let error = 0;
+          let count = 0;
+
+          // Generate simulated data only for the BTC data points
+          const simulatedData = generateCombinedDataForError(params, btcDaysSinceGenesisGlobal, btcYearsGlobal);
+
+          const minLen = Math.min(simulatedData.length, btcLogPricesGlobal.length);
+
+          for (let i = 0; i < minLen; i++) {
+              if (simulatedData[i] > 0) {
+                  const logSimulated = Math.log(simulatedData[i]);
+                  if (isFinite(btcLogPricesGlobal[i])) {
+                      error += Math.pow(logSimulated - btcLogPricesGlobal[i], 2);
+                      count++;
+                  }
+              }
+          }
+          return count > 0 ? error / count : Infinity;
+      }
+
+      /**
+       * Asynchronously fetches Bitcoin (BTCUSDT) weekly closing prices from Binance API.
+       * It then creates a Plotly trace for this data, stores it globally, and
+       * triggers a full redraw of the graph including the BTC data.
+       */
+      async function myAddBitcoinToPlot() {
+          const url = 'https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1w&limit=3000';
+          try {
+              document.getElementById('statusMessage').innerText = 'Fetching BTC data...';
+              const response = await fetch(url);
+              const data = await response.json(); // Binance data is chronological: oldest -> newest
+
+              // Clear global arrays
+              btcDatesGlobal = [];
+              btcDaysSinceGenesisGlobal = [];
+              btcLogPricesGlobal = [];
+              btcYearsGlobal = [];
+
+              // 1. Prepend early historical data (already chronological)
+              for (let i = 0; i < earlyDates.length; i++) {
+                  const date = new Date(earlyDates[i] + 'T00:00:00Z');
+                  btcDatesGlobal.push(earlyDates[i]);
+                  btcDaysSinceGenesisGlobal.push(earlyDaysSinceGenesis[i]);
+                  btcLogPricesGlobal.push(earlyLogPrices[i]);
+                  btcYearsGlobal.push(date.getFullYear() + (date.getMonth() / 12)); // Ensure years are populated
+              }
+
+              // 2. Append fetched Binance data (also chronological)
+              data.forEach(candle => {
+                  const date = new Date(candle[0]); // Unix timestamp to Date object
+                  const days = daysSinceGenesis(date); // Calculate days since genesis
+                  const price = parseFloat(candle[4]); // Closing price
+
+                  btcDatesGlobal.push(date.toISOString().split('T')[0]);
+                  btcDaysSinceGenesisGlobal.push(days);
+                  btcLogPricesGlobal.push(Math.log(price));
+                  btcYearsGlobal.push(date.getFullYear() + (date.getMonth() / 12)); // Ensure years are populated for fetched data
+              });
+
+              // Calculate min/max for normalization after all data is loaded
+              minLogPriceGlobal = Math.min(...btcLogPricesGlobal);
+              maxLogPriceGlobal = Math.max(...btcLogPricesGlobal);
+
+              btcTraceGlobal = {
+                  x: btcDaysSinceGenesisGlobal, // Use days since genesis for x-axis
+                  y: btcLogPricesGlobal.map(lp => Math.exp(lp)), // Convert log price to actual price for plotting
+                  mode: 'lines',
+                  line: { color: 'orange', width: 3 },
+                  name: 'BTC Price (USD)'
+              };
+
+              myGenerateLogLogData();
+              document.getElementById('statusMessage').innerText = '✅ Bitcoin data added to plot.';
+              console.log('✅ Bitcoin data added to plot.');
+          } catch (err) {
+              btcTraceGlobal = null; 
+              document.getElementById('statusMessage').innerText = '❌ Failed to load BTC data.';
+              console.error('❌ Failed to load BTC data:', err);
+          }
+      }
+
+      /**
+       * Generates and plots sinusoidal growth data and BTC data for display.
+       * This function generates a smooth curve for the model, not just points at BTC dates.
+       */
+      function myGenerateLogLogData() {
+        let xData = [];
+        let displayDates = [];
+        let myCombined = []; 
+        let myWaves = Array.from({length: 3}, () => []); // Initialize for 3 waves
+        let qcbCrashLineData = []; 
+        let independentPowerLawData = []; 
+        let independentPowerLawDataMax = []; 
+        let independentPowerLawDataMin = []; 
+
+
+        const dataGenStartDate = new Date('2011-01-01T00:00:00Z');
+        const dataGenEndDate = new Date('2040-12-31T00:00:00Z');
+        const graphDisplayStartDate = new Date('2011-01-01T00:00:00Z');
+
+        // Use current global parameters
+        const currentParams = {
+            qcbDateYear: qcbDateYear,
+            socialDistrustValue: socialDistrustValue,
+            qcbTransitionDuration: qcbTransitionDuration,
+            qcbCrashStrength: qcbCrashStrength,
+            qcbAmplitudeDampening: qcbAmplitudeDampening,
+            wave1Freq: wave1Freq, wave1Amp: wave1Amp, wave1Phase: wave1Phase,
+            wave1FreqGrowth: wave1FreqGrowth, wave1AmpGrowth: wave1AmpGrowth, wave1AmpGrowthStrength: wave1AmpGrowthStrength,
+            wave1PowerLawAmplitude: wave1PowerLawAmplitude, wave1PowerLawExponent: wave1PowerLawExponent,
+            wave2Freq: wave2Freq, wave2Amp: wave2Amp, wave2Phase: wave2Phase,
+            wave2FreqGrowth: wave2FreqGrowth, amp_growth_factor: wave2AmpGrowth, amp_growth_strength: wave2AmpGrowthStrength,
+            wave2PowerLawAmplitude: wave2PowerLawAmplitude, wave2PowerLawExponent: wave2PowerLawExponent,
+            wave3Freq: wave3Freq, wave3Amp: wave3Amp, wave3Phase: wave3Phase,
+            wave3FreqGrowth: wave3FreqGrowth, amp_growth_factor: wave3AmpGrowth, amp_growth_strength: wave3AmpGrowthStrength,
+            wave3PowerLawAmplitude: wave3PowerLawAmplitude, wave3PowerLawExponent: wave3PowerLawExponent
+        };
+
+
+        let currentDate = new Date(dataGenStartDate);
+        while (currentDate <= dataGenEndDate) {
+            const days = daysSinceGenesis(currentDate);
+            if (currentDate >= graphDisplayStartDate) {
+                xData.push(days);
+                displayDates.push(currentDate.toISOString().split('T')[0]);
+            }
+
+            const year = currentDate.getFullYear() + (currentDate.getMonth() / 12);
+            const startLogYearForGrowth = Math.log10(2015 - 1969);
+
+            let sumOfWavesFollowingPowerLawMidline = 0;
+            let totalOscillationFactorForQCBD = 0;
+
+            // Dynamically construct waveParameters for display (only 3 waves)
+            const waveParameters = [
+              { amp_initial_factor: currentParams.wave1Amp, freq_initial: currentParams.wave1Freq, phase: currentParams.wave1Phase,
+                freq_growth_factor: currentParams.wave1FreqGrowth, amp_growth_factor: currentParams.wave1AmpGrowth, amp_growth_strength: currentParams.wave1AmpGrowthStrength,
+                powerLawAmp: currentParams.wave1PowerLawAmplitude, powerLawExponent: currentParams.wave1PowerLawExponent },
+              { amp_initial_factor: currentParams.wave2Amp, freq_initial: currentParams.wave2Freq, phase: currentParams.wave2Phase,
+                freq_growth_factor: currentParams.wave2FreqGrowth, amp_growth_factor: currentParams.wave2AmpGrowth, amp_growth_strength: currentParams.wave2AmpGrowthStrength,
+                powerLawAmp: currentParams.wave2PowerLawAmplitude, powerLawExponent: currentParams.wave2PowerLawExponent },
+              { amp_initial_factor: currentParams.wave3Amp, freq_initial: currentParams.wave3Freq, phase: currentParams.wave3Phase,
+                freq_growth_factor: currentParams.wave3FreqGrowth, amp_growth_factor: currentParams.wave3AmpGrowth, amp_growth_strength: currentParams.wave3AmpGrowthStrength,
+                powerLawAmp: currentParams.wave3PowerLawAmplitude, powerLawExponent: currentParams.wave3PowerLawExponent }
+            ];
+
+            // Loop for all 3 waves
+            for (let i = 0; i < waveParameters.length; i++) {
+                const currentWaveConfig = waveParameters[i];
+                let currentWaveValue = calculateMultiplicativeWave(
+                    days, year, startLogYearForGrowth,
+                    currentWaveConfig.amp_initial_factor, currentWaveConfig.freq_initial, currentWaveConfig.phase,
+                    currentWaveConfig.freq_growth_factor, currentWaveConfig.amp_growth_factor, currentWaveConfig.amp_growth_strength,
+                    currentWaveConfig.powerLawAmp, currentWaveConfig.powerLawExponent
+                );
+                sumOfWavesFollowingPowerLawMidline += currentWaveValue;
+
+                let logYearForOsc = Math.log10(year - 1969);
+                let relativeLogYearForOsc = logYearForOsc - startLogYearForGrowth;
+                let currentFreqForOsc = currentWaveConfig.freq_initial * (1 + relativeLogYearForOsc * currentWaveConfig.freq_growth_factor);
+                let currentAmpFactorForOsc = currentWaveConfig.amp_initial_factor * Math.exp(relativeLogYearForOsc * currentWaveConfig.amp_growth_factor * currentWaveConfig.amp_growth_strength);
+                currentAmpFactorForOsc = Math.max(0.000001, currentAmpFactorForOsc);
+                totalOscillationFactorForQCBD += currentAmpFactorForOsc * Math.sin(2 * Math.PI * currentFreqForOsc * logYearForOsc + currentWaveConfig.phase);
+                
+                if (currentDate >= graphDisplayStartDate) {
+                    myWaves[i].push(Math.max(0.001, currentWaveValue)); // Push to correct wave array
+                }
+            }
+
+
+            let finalCombinedValue;
+            if (year < currentParams.qcbDateYear) {
+                finalCombinedValue = sumOfWavesFollowingPowerLawMidline;
+            } else {
+                const transitionFactor = getQCBDTransitionFactor(year, currentParams.qcbDateYear, currentParams.qcbTransitionDuration, currentParams.qcbCrashStrength);
+                let dampenedTotalOscillationFactor = totalOscillationFactorForQCBD * (1 - transitionFactor * (1 - currentParams.qcbAmplitudeDampening));
+                let targetCrashValue = currentParams.socialDistrustValue * (1 + dampenedTotalOscillationFactor);
+                finalCombinedValue = sumOfWavesFollowingPowerLawMidline * (1 - transitionFactor) + targetCrashValue * transitionFactor;
+            }
+            
+            if (currentDate >= graphDisplayStartDate) {
+                myCombined.push(Math.max(0.001, finalCombinedValue));
+            }
+
+            const qcbLineValueForPlot = getQCBDCrashLineValue(year, currentParams.qcbDateYear, currentParams.socialDistrustValue, currentParams.qcbTransitionDuration);
+            if (currentDate >= graphDisplayStartDate) {
+                qcbCrashLineData.push(qcbLineValueForPlot); 
+            }
+
+            // Independent Power Law calculations using 'days' for x-axis
+            let currentPowerLawValue = calculatePowerLawValue(days, independentPowerLawAmplitude, independentPowerLawExponent);
+            if (currentDate >= graphDisplayStartDate) {
+                independentPowerLawData.push(currentPowerLawValue);
+            }
+
+            let currentPowerLawValueMax = calculatePowerLawValue(days, independentPowerLawAmplitudeMax, independentPowerLawExponentMax);
+            if (currentDate >= graphDisplayStartDate) {
+                independentPowerLawDataMax.push(currentPowerLawValueMax);
+            }
+
+            let currentPowerLawValueMin = calculatePowerLawValue(days, independentPowerLawAmplitudeMin, independentPowerLawExponentMin);
+            if (currentDate >= graphDisplayStartDate) {
+                independentPowerLawDataMin.push(currentPowerLawValueMin);
+            }
+
+            currentDate.setDate(currentDate.getDate() + 30);
+        }
+
+        let myTraces = myWaves.map((wave, i) => ({
+          x: xData,
+          y: wave,
+          mode: 'lines',
+          line: { color: 'green', width: 1 }, 
+          name: `Wave ${i + 1}`, // Use backticks for template literals
+          visible: 'legendonly',   
+          hovertemplate: '<b>Date:</b> %{customdata}<br><b>Days:</b> %{x}<br><b>Price:</b> %{y:$,.2f}<extra></extra>',
+          customdata: displayDates
+        }));
+
+        myTraces.push({
+          x: xData,
+          y: myCombined,
+          mode: 'lines',
+          line: { color: 'blue', width: 3 },
+          name: 'Combined Model',
+          hovertemplate: '<b>Date:</b> %{customdata}<br><b>Days:</b> %{x}<br><b>Price:</b> %{y:$,.2f}<extra></extra>',
+          customdata: displayDates
+        });
+
+        myTraces.push({
+            x: xData,
+            y: independentPowerLawData,
+            mode: 'lines',
+            line: { color: 'yellow', width: 3, dash: 'solid' },
+            name: 'Expected Independent Power Law',
+            hovertemplate: '<b>Date:</b> %{customdata}<br><b>Days:</b> %{x}<br><b>Price:</b> %{y:$,.2f}<extra></extra>',
+            customdata: displayDates
+        });
+        myTraces.push({
+            x: xData,
+            y: independentPowerLawDataMax,
+            mode: 'lines',
+            line: { color: 'gold', width: 1, dash: 'dash' },
+            name: 'Max Independent Power Law',
+            hovertemplate: '<b>Date:</b> %{customdata}<br><b>Days:</b> %{x}<br><b>Price:</b> %{y:$,.2f}<extra></extra>',
+            customdata: displayDates
+        });
+        myTraces.push({
+            x: xData,
+            y: independentPowerLawDataMin,
+            mode: 'lines',
+            line: { color: 'goldenrod', width: 1, dash: 'dash' },
+            name: 'Min Independent Power Law',
+            hovertemplate: '<b>Date:</b> %{customdata}<br><b>Days:</b> %{x}<br><b>Price:</b> %{y:$,.2f}<extra></extra>',
+            customdata: displayDates
+        });
+
+
+        myTraces.push({
+            x: xData,
+            y: qcbCrashLineData,
+            mode: 'lines',
+            line: { color: 'red', width: 3, dash: 'dashdot' }, 
+            name: 'QCBD Crash Line',
+            hovertemplate: '<b>Date:</b> %{customdata}<br><b>Days:</b> %{x}<br><b>Price:</b> %{y:$,.2f}<extra></extra>',
+            customdata: displayDates
+        });
+
+        if (btcTraceGlobal) {
+            const filteredBtcX = [];
+            const filteredBtcY = [];
+            const filteredBtcDisplayDates = [];
+            const filteredBtcLogPrices = []; // Need log prices for the y-axis
+
+            // Filter BTC data based on the new x-axis display range (days since genesis)
+            const startDaysDisplay = daysSinceGenesis(graphDisplayStartDate);
+            const endDaysDisplay = daysSinceGenesis(dataGenEndDate); 
+
+            for (let i = 0; i < btcDaysSinceGenesisGlobal.length; i++) {
+                const btcDays = btcDaysSinceGenesisGlobal[i];
+
+                // Plotting actual price, but the data stored is log price
+                if (btcDays >= startDaysDisplay && btcDays <= endDaysDisplay) {
+                    filteredBtcX.push(btcDays);
+                    filteredBtcY.push(Math.exp(btcLogPricesGlobal[i])); // Convert log price back to actual price for plotting
+                    filteredBtcDisplayDates.push(btcDatesGlobal[i]);
+                    filteredBtcLogPrices.push(btcLogPricesGlobal[i]); // Keep log price for y-axis range calculation
+                }
+            }
+            myTraces.push({
+                x: filteredBtcX,
+                y: filteredBtcY,
+                mode: 'lines',
+                line: { color: 'orange', width: 3 },
+                name: 'BTC Price (USD)',
+                hovertemplate: '<b>Date:</b> %{customdata}<br><b>Days:</b> %{x}<br><b>Price:</b> %{y:$,.2f}<extra></extra>',
+                customdata: filteredBtcDisplayDates
+            });
+        }
+
+        const tickYears = [];
+        const tickDays = [];
+        for (let year = graphDisplayStartDate.getFullYear(); year <= dataGenEndDate.getFullYear(); year++) {
+            tickYears.push(year.toString());
+            tickDays.push(daysSinceGenesis(new Date(`${year}-01-01`)));
+        }
+
+        let myLayout = {
+          title: 'BTC Sinusoid Optimization Progress',
+          xaxis: {
+            title: 'Days Since Genesis (Log Scale)',
+            type: 'log',
+            tickvals: tickDays,
+            ticktext: tickYears,
+            tickangle: 45,
+            range: [Math.log10(daysSinceGenesis(graphDisplayStartDate)), Math.log10(daysSinceGenesis(dataGenEndDate))],
+            gridcolor: '#e0e0e0',
+            linecolor: '#cccccc',
+            linewidth: 1,
+            mirror: true,
+            rangeslider: { visible: true },
+            rangeselector: {
+                buttons: [
+                    { count: 1, label: '1y', step: 'year', stepmode: 'backward' },
+                    { count: 5, label: '5y', step: 'year', stepmode: 'backward' },
+                    { step: 'all' }
+                ]
+            }
+          },
+          yaxis: {
+            title: 'Simulated Dollars (Log Scale)',
+            type: 'log',
+            range: [0, 7] 
+          },
+          margin: { t: 40 }
+        };
+
+        Plotly.newPlot('myPlot', myTraces, myLayout);
+      }
+      
+      /**
+       * Starts multiple optimization runs.
+       * @param {number} numRuns - The number of optimization runs to execute.
+       */
+      async function myOpto(myVal){
+        for(let myLoop = 0; myLoop < myVal; myLoop++){
+            await  optimizeModel(myLoop)
+       }
+      }
+
+      /**
+       * Converts parameter object to an array for Nelder-Mead.
+       * Defines the order of parameters for optimization.
+       * @param {object} paramsObj - The parameters object.
+       * @returns {Array<number>} An array of parameter values.
+       */
+      function paramsToArray(paramsObj) {
+          return [
+              paramsObj.qcbDateYear,
+              paramsObj.socialDistrustValue,
+              paramsObj.qcbTransitionDuration,
+              paramsObj.qcbCrashStrength,
+              paramsObj.qcbAmplitudeDampening,
+              paramsObj.wave1Freq,
+              paramsObj.wave1Amp,
+              paramsObj.wave1Phase,
+              paramsObj.wave1FreqGrowth,
+              paramsObj.wave1AmpGrowth,
+              paramsObj.wave1AmpGrowthStrength,
+              paramsObj.wave1PowerLawAmplitude,
+              paramsObj.wave1PowerLawExponent,
+              paramsObj.wave2Freq,
+              paramsObj.wave2Amp,
+              paramsObj.wave2Phase,
+              paramsObj.wave2FreqGrowth,
+              paramsObj.wave2AmpGrowth,
+              paramsObj.wave2AmpGrowthStrength,
+              paramsObj.wave2PowerLawAmplitude,
+              paramsObj.wave2PowerLawExponent,
+              paramsObj.wave3Freq,
+              paramsObj.wave3Amp,
+              paramsObj.wave3Phase,
+              paramsObj.wave3FreqGrowth,
+              paramsObj.wave3AmpGrowth,
+              paramsObj.wave3AmpGrowthStrength,
+              paramsObj.wave3PowerLawAmplitude, 
+              paramsObj.wave3PowerLawExponent
+          ];
+      }
+
+      /**
+       * Converts a parameter array back to an object.
+       * Must match the order defined in paramsToArray.
+       * @param {Array<number>} paramsArr - The array of parameter values.
+       * @returns {object} The parameters object.
+       */
+      function arrayToParams(paramsArr) {
+          let i = 0;
+          return {
+              qcbDateYear: paramsArr[i++],
+              socialDistrustValue: paramsArr[i++],
+              qcbTransitionDuration: paramsArr[i++],
+              qcbCrashStrength: paramsArr[i++],
+              qcbAmplitudeDampening: paramsArr[i++],
+              wave1Freq: paramsArr[i++],
+              wave1Amp: paramsArr[i++],
+              wave1Phase: paramsArr[i++],
+              wave1FreqGrowth: paramsArr[i++],
+              wave1AmpGrowth: paramsArr[i++],
+              wave1AmpGrowthStrength: paramsArr[i++],
+              wave1PowerLawAmplitude: paramsArr[i++],
+              wave1PowerLawExponent: paramsArr[i++],
+              wave2Freq: paramsArr[i++],
+              wave2Amp: paramsArr[i++],
+              wave2Phase: paramsArr[i++],
+              wave2FreqGrowth: paramsArr[i++],
+              wave2AmpGrowth: paramsArr[i++],
+              wave2AmpGrowthStrength: paramsArr[i++],
+              wave2PowerLawAmplitude: paramsArr[i++],
+              wave2PowerLawExponent: paramsArr[i++],
+              wave3Freq: paramsArr[i++],
+              wave3Amp: paramsArr[i++],
+              wave3Phase: paramsArr[i++],
+              wave3FreqGrowth: paramsArr[i++],
+              wave3AmpGrowth: paramsArr[i++],
+              wave3AmpGrowthStrength: paramsArr[i++],
+              wave3PowerLawAmplitude: paramsArr[i++],
+              wave3PowerLawExponent: paramsArr[i++]
+          };
+      }
+
+      /**
+       * Clamps parameter values to sensible bounds after optimization operations.
+       * This helps prevent the optimizer from exploring unrealistic parameter spaces.
+       * @param {object} params - The parameters object to clamp.
+       * @returns {object} The clamped parameters object.
+       */
+      function clampParameters(params) {
+          const clamped = { ...params };
+          clamped.qcbDateYear = Math.max(2020, Math.min(2040, clamped.qcbDateYear));
+          clamped.socialDistrustValue = Math.max(1, clamped.socialDistrustValue);
+          clamped.qcbTransitionDuration = Math.max(0.01, clamped.qcbTransitionDuration);
+          clamped.qcbCrashStrength = Math.max(0.01, clamped.qcbCrashStrength); // Should be positive
+          clamped.qcbAmplitudeDampening = Math.max(0.0, Math.min(1.0, clamped.qcbAmplitudeDampening)); // Between 0 and 1
+
+          // Function to apply clamping to individual wave parameters
+          const applyWaveClamping = (wavePrefix) => {
+              clamped[`${wavePrefix}Freq`] = Math.max(0.01, clamped[`${wavePrefix}Freq`]);
+              clamped[`${wavePrefix}Amp`] = Math.max(0.000001, Math.min(10.0, clamped[`${wavePrefix}Amp`]));
+              // Phase can be any real number, no clamping needed
+              clamped[`${wavePrefix}FreqGrowth`] = Math.max(-0.5, Math.min(0.5, clamped[`${wavePrefix}FreqGrowth`]));
+              clamped[`${wavePrefix}AmpGrowth`] = Math.max(-0.5, Math.min(2.0, clamped[`${wavePrefix}AmpGrowth`]));
+              clamped[`${wavePrefix}AmpGrowthStrength`] = Math.max(0.0, Math.min(5.0, clamped[`${wavePrefix}AmpGrowthStrength`]));
+              clamped[`${wavePrefix}PowerLawAmplitude`] = Math.max(1e-25, clamped[`${wavePrefix}PowerLawAmplitude`]);
+              clamped[`${wavePrefix}PowerLawExponent`] = Math.max(0.1, Math.min(10.0, clamped[`${wavePrefix}PowerLawExponent`]));
+          };
+
+          // Apply clamping for all 3 waves
+          applyWaveClamping('wave1');
+          applyWaveClamping('wave2');
+          applyWaveClamping('wave3');
+
+          return clamped;
+      }
+
+      /**
+       * Optimizes the model parameters using a custom iterative approach.
+       * @param {number} myRepeats - An integer passed to the optimization function to indicate the repetition count.
+       */
+      async function optimizeModel(myRepeats) {
+          if (!btcTraceGlobal || btcLogPricesGlobal.length === 0) {
+              document.getElementById('statusMessage').innerText = 'Please load BTC data first by refreshing the page.';
+              return;
+          }
+
+          document.getElementById('statusMessage').innerText = `Optimizing (Run ${myRepeats + 1})... This may take a moment.`;
+
+          let currentParams = {
+              qcbDateYear: qcbDateYear,
+              socialDistrustValue: socialDistrustValue,
+              qcbTransitionDuration: qcbTransitionDuration,
+              qcbCrashStrength: qcbCrashStrength,
+              qcbAmplitudeDampening: qcbAmplitudeDampening,
+              wave1Freq: wave1Freq, wave1Amp: wave1Amp, wave1Phase: wave1Phase,
+              wave1FreqGrowth: wave1FreqGrowth, wave1AmpGrowth: wave1AmpGrowth, wave1AmpGrowthStrength: wave1AmpGrowthStrength,
+              wave1PowerLawAmplitude: wave1PowerLawAmplitude, wave1PowerLawExponent: wave1PowerLawExponent,
+              wave2Freq: wave2Freq, wave2Amp: wave2Amp, wave2Phase: wave2Phase,
+              wave2FreqGrowth: wave2FreqGrowth, wave2AmpGrowth: wave2AmpGrowth, wave2AmpGrowthStrength: wave2AmpGrowthStrength,
+              wave2PowerLawAmplitude: wave2PowerLawAmplitude, wave2PowerLawExponent: wave2PowerLawExponent,
+              wave3Freq: wave3Freq, wave3Amp: wave3Amp, wave3Phase: wave3Phase,
+              wave3FreqGrowth: wave3FreqGrowth, wave3AmpGrowth: wave3AmpGrowth, wave3AmpGrowthStrength: wave3AmpGrowthStrength,
+              wave3PowerLawAmplitude: wave3PowerLawAmplitude, wave3PowerLawExponent: wave3PowerLawExponent
+          };
+
+          let bestError = Infinity;
+          let bestParams = { ...currentParams };
+
+          // Get the actual BTC log prices for comparison, filtering for the relevant date range
+          const dataGenStartDate = new Date('2015-01-01T00:00:00Z'); // Optimization starts from 2015 data
+          // Find the index in btcDatesGlobal that corresponds to dataGenStartDate
+          const startIndex = btcDatesGlobal.findIndex(dateStr => new Date(dateStr) >= dataGenStartDate);
+          // Slice btcLogPricesGlobal from startIndex to get relevant data for error calculation
+          const actualLogPricesForError = btcLogPricesGlobal.slice(startIndex);
+          // Also get the corresponding days and years for the error calculation
+          const daysSinceGenesisForError = btcDaysSinceGenesisGlobal.slice(startIndex);
+          const yearsForError = btcYearsGlobal.slice(startIndex);
+
+
+          const paramNames = Object.keys(currentParams);
+          const initialLearningRate = optimizationLearningRate;
+          const absolutePerturbationBase = 0.05; // A small absolute amount to ensure movement
+
+          for (let iteration = 0; iteration < optimizationIterations; iteration++) {
+              let currentLearningRate = initialLearningRate * (1 - iteration / optimizationIterations); // Decrease learning rate
+              if (currentLearningRate < 0.000001) currentLearningRate = 0.000001; // Minimum learning rate
+
+              let iterationImproved = false;
+
+              // Shuffle parameter order to avoid bias
+              paramNames.sort(() => Math.random() - 0.5);
+
+              for (const paramName of paramNames) {
+                  const originalValue = currentParams[paramName];
+                  let currentBestForParam = originalValue;
+
+                  // Calculate current error before any perturbation for this parameter
+                  // Use generateCombinedDataForError which takes days and years arrays for efficiency
+                  let simulatedData = generateCombinedDataForError(currentParams, daysSinceGenesisForError, yearsForError);
+                  let currentError = calculateModelError(paramsToArray(currentParams)); // Re-calculate error using the array-based function
+
+                  // Update overall best if current state is better
+                  if (currentError < bestError) {
+                      bestError = currentError;
+                      bestParams = { ...currentParams };
+                      iterationImproved = true;
+                  }
+
+                  let perturbationMagnitude;
+                  if (paramName.includes('Phase')) {
+                      perturbationMagnitude = currentLearningRate * 0.2;
+                  } else if (paramName.includes('Freq')) {
+                      perturbationMagnitude = currentLearningRate * (Math.abs(originalValue) * 0.01 + 0.1);
+                  } else if (paramName.includes('AmpGrowthStrength')) {
+                      perturbationMagnitude = currentLearningRate * (Math.abs(originalValue) * 0.1 + 0.5);
+                  } else if (paramName.includes('PowerLawExponent')) {
+                      perturbationMagnitude = Math.max(
+                          Math.abs(originalValue) * currentLearningRate * optimizationParamPerturbation * (2/3),
+                          1e-10
+                      );
+                  } else if (paramName.includes('PowerLawAmplitude')) {
+                      perturbationMagnitude = Math.max(
+                          Math.abs(originalValue) * currentLearningRate * optimizationParamPerturbation,
+                          1e-20
+                      );
+                  } else {
+                      perturbationMagnitude = currentLearningRate * (Math.abs(originalValue) * optimizationParamPerturbation + absolutePerturbationBase);
+                  }
+
+                  // Test positive perturbation
+                  let valPlus = originalValue + perturbationMagnitude;
+                  currentParams[paramName] = valPlus;
+                  currentParams = clampParameters(currentParams); // Clamp after modification
+                  simulatedData = generateCombinedDataForError(currentParams, daysSinceGenesisForError, yearsForError);
+                  let errorPlus = calculateModelError(paramsToArray(currentParams));
+
+                  // Test negative perturbation
+                  let valMinus = originalValue - perturbationMagnitude;
+                  currentParams[paramName] = valMinus;
+                  currentParams = clampParameters(currentParams); // Clamp after modification
+                  simulatedData = generateCombinedDataForError(currentParams, daysSinceGenesisForError, yearsForError);
+                  let errorMinus = calculateModelError(paramsToArray(currentParams));
+
+                  // Decide which direction is better
+                  if (errorPlus < currentError && errorPlus < errorMinus) {
+                      currentBestForParam = valPlus;
+                      iterationImproved = true;
+                  } else if (errorMinus < currentError && errorMinus < errorPlus) {
+                      currentBestForParam = valMinus;
+                      iterationImproved = true;
+                  } else {
+                      currentBestForParam = originalValue; // Stick with original if no improvement
+                  }
+                  currentParams[paramName] = currentBestForParam; // Apply the best value for this param
+              }
+
+              // Update the best parameters for the next iteration
+              Object.assign(currentParams, bestParams); // Revert to the overall best parameters found so far for the next iteration's starting point
+
+              if (!iterationImproved && currentLearningRate < 0.000001) { // Stop if no improvement and learning rate is very small
+                  break;
+              }
+
+              // Optional: Update UI periodically to show progress
+              if (livePlotUpdateEnabled && ((iteration % 4 === 0) || (iteration === optimizationIterations - 1))) {
+                  document.getElementById('statusMessage').innerText = `Count:${myRepeats}, Optimizing... Iteration ${iteration + 1}/${optimizationIterations}, Current Best Error: ${bestError.toFixed(3)}`;
+                  updateInputFieldsWithOptimizedParams(bestParams);
+                  myGenerateLogLogData();
+                  await new Promise(r => setTimeout(r, 50)); // Small delay to allow UI refresh
+              }
+              await new Promise(r => setTimeout(r, 0)); // Yield to UI
+          }
+
+          // Apply the very best parameters found at the end
+          updateInputFieldsWithOptimizedParams(bestParams);
+          myGenerateLogLogData(); // Final plot update
+
+          document.getElementById('statusMessage').innerText = `Count:${myRepeats+1}, Optimization complete! Final Error: ${bestError.toFixed(3)}`;
+          console.log("Optimization finished. Best parameters:", bestParams);
+          console.log(`Repeats ${myRepeats+1}, Final Error ${bestError}`);
+      }
+
+      /**
+       * Updates the input fields with the optimized parameters.
+       * @param {object} params - The object containing the optimized parameter values.
+       */
+      function updateInputFieldsWithOptimizedParams(params) {
+          // QCBD Parameters
+          qcbDateYear = params.qcbDateYear;
+          socialDistrustValue = params.socialDistrustValue;
+          qcbTransitionDuration = params.qcbTransitionDuration;
+          qcbCrashStrength = params.qcbCrashStrength;
+          qcbAmplitudeDampening = params.qcbAmplitudeDampening;
+          document.getElementById('qcbDateInput').value = qcbDateYear.toFixed(3);
+          document.getElementById('socialDistrustValueInput').value = socialDistrustValue.toFixed(3);
+          document.getElementById('qcbTransitionInput').value = qcbTransitionDuration.toFixed(3);
+          document.getElementById('qcbCrashStrengthInput').value = qcbCrashStrength.toFixed(3);
+          document.getElementById('qcbAmplitudeDampeningInput').value = qcbAmplitudeDampening.toFixed(3);
+
+          // Wave 1 Parameters
+          wave1Freq = params.wave1Freq; wave1Amp = params.wave1Amp; wave1Phase = params.wave1Phase;
+          wave1FreqGrowth = params.wave1FreqGrowth; wave1AmpGrowth = params.wave1AmpGrowth; wave1AmpGrowthStrength = params.wave1AmpGrowthStrength;
+          wave1PowerLawAmplitude = params.wave1PowerLawAmplitude; wave1PowerLawExponent = params.wave1PowerLawExponent;
+          document.getElementById('wave1FreqInput').value = wave1Freq.toFixed(3);
+          document.getElementById('wave1AmpInput').value = wave1Amp.toFixed(3);
+          document.getElementById('wave1PhaseInput').value = wave1Phase.toFixed(3);
+          document.getElementById('wave1FreqGrowthInput').value = wave1FreqGrowth.toFixed(3);
+          document.getElementById('wave1AmpGrowthInput').value = wave1AmpGrowth.toFixed(3);
+          document.getElementById('wave1AmpGrowthStrengthInput').value = wave1AmpGrowthStrength.toFixed(3);
+          document.getElementById('wave1PowerLawAmplitudeInput').value = wave1PowerLawAmplitude.toExponential(3);
+          document.getElementById('wave1PowerLawExponentInput').value = wave1PowerLawExponent.toFixed(3);
+
+          // Wave 2 Parameters
+          wave2Freq = params.wave2Freq; wave2Amp = params.wave2Amp; wave2Phase = params.wave2Phase;
+          wave2FreqGrowth = params.wave2FreqGrowth; wave2AmpGrowth = params.wave2AmpGrowth; wave2AmpGrowthStrength = params.wave2AmpGrowthStrength;
+          wave2PowerLawAmplitude = params.wave2PowerLawAmplitude; wave2PowerLawExponent = params.wave2PowerLawExponent;
+          document.getElementById('wave2FreqInput').value = wave2Freq.toFixed(3);
+          document.getElementById('wave2AmpInput').value = wave2Amp.toFixed(3);
+          document.getElementById('wave2PhaseInput').value = wave2Phase.toFixed(3);
+          document.getElementById('wave2FreqGrowthInput').value = wave2FreqGrowth.toFixed(3);
+          document.getElementById('wave2AmpGrowthInput').value = wave2AmpGrowth.toFixed(3);
+          document.getElementById('wave2AmpGrowthStrengthInput').value = wave2AmpGrowthStrength.toFixed(3);
+          document.getElementById('wave2PowerLawAmplitudeInput').value = wave2PowerLawAmplitude.toExponential(3);
+          document.getElementById('wave2PowerLawExponentInput').value = wave2PowerLawExponent.toFixed(3);
+
+          // Wave 3 Parameters
+          wave3Freq = params.wave3Freq; wave3Amp = params.wave3Amp; wave3Phase = params.wave3Phase;
+          wave3FreqGrowth = params.wave3FreqGrowth; wave3AmpGrowth = params.wave3AmpGrowth; wave3AmpGrowthStrength = params.wave3AmpGrowthStrength;
+          wave3PowerLawAmplitude = params.wave3PowerLawAmplitude; wave3PowerLawExponent = params.wave3PowerLawExponent;
+          document.getElementById('wave3FreqInput').value = wave3Freq.toFixed(3);
+          document.getElementById('wave3AmpInput').value = wave3Amp.toFixed(3);
+          document.getElementById('wave3PhaseInput').value = wave3Phase.toFixed(3);
+          document.getElementById('wave3FreqGrowthInput').value = wave3FreqGrowth.toFixed(3);
+          document.getElementById('wave3AmpGrowthInput').value = wave3AmpGrowth.toFixed(3);
+          document.getElementById('wave3AmpGrowthStrengthInput').value = wave3AmpGrowthStrength.toFixed(3);
+          document.getElementById('wave3PowerLawAmplitudeInput').value = wave3PowerLawAmplitude.toExponential(3);
+          document.getElementById('wave3PowerLawExponentInput').value = wave3PowerLawExponent.toFixed(3);
+      }
+   
+      // Initialize on page load
+      document.addEventListener('DOMContentLoaded', () => {
+          initializeInputFields();
+          myAddBitcoinToPlot(); // Fetch BTC data on load
+      }, { passive: true }); // Added passive: true here
+
+      // Global arrays for early historical data 
+      const earlyDates = ["2010-12-31","2011-01-01","2011-01-02"];
+      const earlyDaysSinceGenesis = [727,728,729];
+      const earlyLogPrices = [-1.2039728043259361,-1.2039728043259361,-1.2039728043259361];
+
+
+      // Function to normalize data to a [0, 1] range
+      function normalize(val, min, max) {
+          return (val - min) / (max - min);
+      }
+
+      // Function to denormalize data from [0, 1] range back to original scale
+      function denormalize(val, min, max) {
+          return val * (max - min) + min;
+      }
+
+      /**
+       * Trains a TensorFlow.js LSTM model on the historical Bitcoin data.
+       */
+      async function mlTrainModel() {
+          if (btcLogPricesGlobal.length === 0) {
+              document.getElementById('statusMessage').innerText = '❌ BTC data not loaded. Please ensure data is fetched.';
+              return;
+          }
+
+          const epochs = parseInt(document.getElementById('mlEpochsInput').value);
+          if (isNaN(epochs) || epochs < 1) {
+              document.getElementById('statusMessage').innerText = '❌ Invalid number of epochs. Please enter a positive integer.';
+              return;
+          }
+
+          document.getElementById('statusMessage').innerText = '🚀 Training ML model...';
+
+          // 1. Prepare data for LSTM
+          const normalizedLogPrices = btcLogPricesGlobal.map(price =>
+              normalize(price, minLogPriceGlobal, maxLogPriceGlobal)
+          );
+
+          const xs = []; // Input sequences (e.g., N_LOOKBACK past log prices)
+          const ys = []; // Target values (the next log price)
+
+          for (let i = 0; i < normalizedLogPrices.length - N_LOOKBACK; i++) {
+              // Each value in the sequence needs to be an array itself for the 3D tensor
+              xs.push(normalizedLogPrices.slice(i, i + N_LOOKBACK).map(val => [val]));
+              ys.push(normalizedLogPrices[i + N_LOOKBACK]);
+          }
+
+          // Convert to TensorFlow tensors
+          // Input shape for LSTM: [num_samples, timesteps, features] -> [num_samples, N_LOOKBACK, 1]
+          const xsTensor = tf.tensor3d(xs, [xs.length, N_LOOKBACK, 1]);
+          const ysTensor = tf.tensor2d(ys, [ys.length, 1]);
+
+          // 2. Define the model architecture
+          mlModel = tf.sequential();
+          mlModel.add(tf.layers.lstm({
+              units: 50, // Number of LSTM units
+              inputShape: [N_LOOKBACK, 1], // Input shape: [timesteps, features]
+              returnSequences: false // Only return the last output
+          }));
+          mlModel.add(tf.layers.dense({ units: 1 })); // Output a single predicted value
+
+          // 3. Compile the model
+          mlModel.compile({
+              optimizer: tf.train.adam(0.001), // Adam optimizer with a learning rate
+              loss: 'meanSquaredError' // Mean Squared Error is common for regression
+          });
+
+          // 4. Train the model
+          await mlModel.fit(xsTensor, ysTensor, {
+              epochs: epochs, // Use user-defined epochs
+              batchSize: 32,
+              callbacks: {
+                  onEpochEnd: (epoch, logs) => {
+                      document.getElementById('statusMessage').innerText = `🚀 Training ML model... Epoch ${epoch + 1}/${epochs}, Loss: ${logs.loss.toFixed(6)}`;
+                  },
+                  onTrainEnd: () => {
+                      document.getElementById('statusMessage').innerText = '✅ ML Model Training Complete!';
+                      console.log('ML Model Training Complete!');
+                  }
+              }
+          });
+
+          // Dispose tensors to free up memory
+          xsTensor.dispose();
+          ysTensor.dispose();
+      }
+
+      /**
+       * Makes predictions using the trained ML model and appends them to the global BTC data.
+       */
+      async function mlPredict() {
+          if (!mlModel) {
+              document.getElementById('statusMessage').innerText = '⚠️ ML Model not trained. Please run ML-Training first.';
+              return;
+          }
+          if (btcLogPricesGlobal.length === 0) {
+              document.getElementById('statusMessage').innerText = '❌ BTC data not loaded for prediction.';
+              return;
+          }
+
+          const predictionLength = parseInt(document.getElementById('mlPredictionLengthInput').value);
+          if (isNaN(predictionLength) || predictionLength < 1) {
+              document.getElementById('statusMessage').innerText = '❌ Invalid number of prediction points. Please enter a positive integer.';
+              return;
+          }
+
+          document.getElementById('statusMessage').innerText = '🔮 Generating ML predictions and extending BTC data...';
+
+          // Get the last N_LOOKBACK points from the current btcLogPricesGlobal for the initial input sequence
+          let inputSequenceForPrediction = btcLogPricesGlobal.slice(btcLogPricesGlobal.length - N_LOOKBACK);
+          // Normalize and wrap each value for the 3D tensor input
+          inputSequenceForPrediction = inputSequenceForPrediction.map(price => [normalize(price, minLogPriceGlobal, maxLogPriceGlobal)]);
+          
+          // Start predictions from the day after the last known BTC data point
+          let lastBtcDate = new Date(btcDatesGlobal[btcDatesGlobal.length - 1]);
+          let currentPredictionDate = new Date(lastBtcDate);
+
+          for (let i = 0; i < predictionLength; i++) {
+              // Create a tensor from the current input sequence
+              const inputTensor = tf.tensor3d([inputSequenceForPrediction], [1, N_LOOKBACK, 1]);
+
+              // Make a prediction
+              const prediction = mlModel.predict(inputTensor);
+              let predictedNormalizedLogPrice = prediction.dataSync()[0]; // Get the scalar prediction
+
+              // Denormalize the prediction back to log price scale
+              let predictedLogPrice = denormalize(predictedNormalizedLogPrice, minLogPriceGlobal, maxLogPriceGlobal);
+              
+              // Update the date and days since genesis for the prediction point
+              currentPredictionDate.setDate(currentPredictionDate.getDate() + 7); // Assume weekly intervals like historical data
+              const newPredictedDateString = currentPredictionDate.toISOString().split('T')[0];
+              const newPredictedDaysSinceGenesis = daysSinceGenesis(currentPredictionDate);
+              const newPredictedYear = currentPredictionDate.getFullYear() + (currentPredictionDate.getMonth() / 12);
+
+              // Append the new prediction to the global BTC data arrays
+              btcDatesGlobal.push(newPredictedDateString);
+              btcDaysSinceGenesisGlobal.push(newPredictedDaysSinceGenesis);
+              btcLogPricesGlobal.push(predictedLogPrice);
+              btcYearsGlobal.push(newPredictedYear);
+
+              // Update the input sequence for the next prediction (sliding window)
+              inputSequenceForPrediction.shift(); // Remove the oldest value
+              inputSequenceForPrediction.push([predictedNormalizedLogPrice]); // Add the new normalized prediction, wrapped in an array
+
+              inputTensor.dispose(); // Dispose tensor
+          }
+
+          // Re-calculate min/max for normalization after new data has been added
+          minLogPriceGlobal = Math.min(...btcLogPricesGlobal);
+          maxLogPriceGlobal = Math.max(...btcLogPricesGlobal);
+
+          // Re-create the btcTraceGlobal to include the newly appended prediction data
+          btcTraceGlobal = {
+              x: btcDaysSinceGenesisGlobal,
+              y: btcLogPricesGlobal.map(lp => Math.exp(lp)), // Convert log price to actual price for plot
+              mode: 'lines',
+              line: { color: 'orange', width: 3 },
+              name: 'BTC Price (USD) + ML Prediction', // Update name to reflect inclusion
+              hovertemplate: '<b>Date:</b> %{customdata}<br><b>Days:</b> %{x}<br><b>Price:</b> %{y:$,.2f}<extra></extra>',
+              customdata: btcDatesGlobal
+          };
+
+          myGenerateLogLogData(); // Re-plot to include the extended BTC trace
+          document.getElementById('statusMessage').innerText = '✅ ML Predictions added to BTC data and plotted!';
+          console.log('ML Predictions added to BTC data and plotted!');
+      }
+
+      /**
+       * Performs a simplified "CQT-like" analysis to suggest initial wave frequencies.
+       * This function calculates frequencies based on common Bitcoin cycle periods
+       * and updates the corresponding input fields.
+       */
+      function performCQTAnalysis() {
+          document.getElementById('statusMessage').innerText = 'Analyzing BTC data for wave suggestions...';
+
+          // Define common Bitcoin cycle periods in years
+          const cyclePeriodsYears = [
+              4.0,   // Halving cycle
+              2.0,   // Half-halving cycle
+              1.0    // Annual cycle
+              // Removed 0.5 and 0.25 as we now only have 3 waves
+          ];
+
+          // We need an average year to calculate the logYear period for these cycles.
+          // Let's use the current year or an average of the historical data's years.
+          // For simplicity, let's pick a representative year, e.g., 2020.
+          const representativeYear = 2020;
+          const logBaseYear = 1969; // From the model's logYear calculation
+
+          const suggestedWaveFrequencies = [];
+
+          for (const periodYears of cyclePeriodsYears) {
+              // Calculate the logYear value for the start and end of the period
+              const logYearStart = Math.log10(representativeYear - logBaseYear);
+              const logYearEnd = Math.log10(representativeYear + periodYears - logBaseYear);
+              
+              // The period in logYear units
+              const periodLogYear = logYearEnd - logYearStart;
+
+              // Calculate frequency (cycles per logYear unit)
+              if (periodLogYear > 0) {
+                  suggestedWaveFrequencies.push(1 / periodLogYear);
+              } else {
+                  suggestedWaveFrequencies.push(0.01); // Fallback for very small periods
+              }
+          }
+
+          // Update the wave frequency input fields with the suggested values
+          // We have 3 waves, and 3 suggested frequencies.
+          if (suggestedWaveFrequencies.length >= 3) {
+              wave1Freq = suggestedWaveFrequencies[0];
+              wave2Freq = suggestedWaveFrequencies[1];
+              wave3Freq = suggestedWaveFrequencies[2];
+
+              document.getElementById('wave1FreqInput').value = wave1Freq.toFixed(3);
+              document.getElementById('wave2FreqInput').value = wave2Freq.toFixed(3);
+              document.getElementById('wave3FreqInput').value = wave3Freq.toFixed(3);
+
+              document.getElementById('statusMessage').innerText = '✅ Wave frequencies suggested based on common BTC cycles.';
+              myGenerateLogLogData(); // Re-plot with new frequencies
+          } else {
+              document.getElementById('statusMessage').innerText = '⚠️ Not enough suggested frequencies for all 3 waves.';
+          }
+      }
+
+    </script>
+  </body>
+</html>
