@@ -1051,7 +1051,7 @@
               paramsObj.wave3FreqGrowth,
               paramsObj.wave3AmpGrowth,
               paramsObj.wave3AmpGrowthStrength,
-              params3PowerLawAmplitude,
+              paramsObj.wave3PowerLawAmplitude, // Corrected typo here
               paramsObj.wave3PowerLawExponent,
               paramsObj.wave4Freq,
               paramsObj.wave4Amp,
@@ -1194,13 +1194,16 @@
               wave2PowerLawAmplitude: wave2PowerLawAmplitude, wave2PowerLawExponent: wave2PowerLawExponent,
               wave3Freq: wave3Freq, wave3Amp: wave3Amp, wave3Phase: wave3Phase,
               wave3FreqGrowth: wave3FreqGrowth, wave3AmpGrowth: wave3AmpGrowth, wave3AmpGrowthStrength: wave3AmpGrowthStrength,
-              wave3PowerLawAmplitude: wave3PowerLawAmplitude, wave3PowerLawExponent: wave3PowerLawExponent,
+              wave3PowerLawAmplitude: wave3PowerLawAmplitude,
+              wave3PowerLawExponent: wave3PowerLawExponent,
               wave4Freq: wave4Freq, wave4Amp: wave4Amp, wave4Phase: wave4Phase,
               wave4FreqGrowth: wave4FreqGrowth, wave4AmpGrowth: wave4AmpGrowth, wave4AmpGrowthStrength: wave4AmpGrowthStrength,
-              wave4PowerLawAmplitude: wave4PowerLawAmplitude, wave4PowerLawExponent: wave4PowerLawExponent,
+              wave4PowerLawAmplitude: wave4PowerLawAmplitude,
+              wave4PowerLawExponent: wave4PowerLawExponent,
               wave5Freq: wave5Freq, wave5Amp: wave5Amp, wave5Phase: wave5Phase,
               wave5FreqGrowth: wave5FreqGrowth, wave5AmpGrowth: wave5AmpGrowth, wave5AmpGrowthStrength: wave5AmpGrowthStrength,
-              wave5PowerLawAmplitude: wave5PowerLawAmplitude, wave5PowerLawExponent: wave5PowerLawExponent
+              wave5PowerLawAmplitude: wave5PowerLawAmplitude,
+              wave5PowerLawExponent: wave5PowerLawExponent
           };
 
           const N = paramsToArray(initialParamsObj).length; // Number of parameters
@@ -1467,7 +1470,8 @@
           const ys = []; // Target values (the next log price)
 
           for (let i = 0; i < normalizedLogPrices.length - N_LOOKBACK; i++) {
-              xs.push(normalizedLogPrices.slice(i, i + N_LOOKBACK));
+              // Each value in the sequence needs to be an array itself for the 3D tensor
+              xs.push(normalizedLogPrices.slice(i, i + N_LOOKBACK).map(val => [val]));
               ys.push(normalizedLogPrices[i + N_LOOKBACK]);
           }
 
@@ -1528,7 +1532,8 @@
 
           const predictionLength = 200; // Number of future points to predict
           let inputSequence = btcLogPricesGlobal.slice(btcLogPricesGlobal.length - N_LOOKBACK);
-          inputSequence = inputSequence.map(price => normalize(price, minLogPriceGlobal, maxLogPriceGlobal)); // Normalize
+          // Normalize and wrap each value for the 3D tensor input
+          inputSequence = inputSequence.map(price => [normalize(price, minLogPriceGlobal, maxLogPriceGlobal)]);
           
           const predictedLogPrices = [];
           const predictedDaysSinceGenesis = [];
@@ -1557,7 +1562,7 @@
 
               // Update the input sequence for the next prediction (sliding window)
               inputSequence.shift(); // Remove the oldest value
-              inputSequence.push(predictedNormalizedLogPrice); // Add the new normalized prediction
+              inputSequence.push([predictedNormalizedLogPrice]); // Add the new normalized prediction, wrapped in an array
 
               inputTensor.dispose(); // Dispose tensor
           }
