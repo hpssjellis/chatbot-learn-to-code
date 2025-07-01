@@ -448,7 +448,7 @@
        * Initializes the input fields with the current global variable values.
        */
       function initializeInputFields() {
-          qcbDateYear = 2034.2;
+          qcbDateYear = 2034.9;
           socialDistrustValue = 100; 
           qcbTransitionDuration = 0.8;
           qcbCrashStrength = 1.2; 
@@ -467,14 +467,14 @@
           independentPowerLawExponentMin = 6.00; 
 
           // Wave 1 Parameters
-          wave1Freq = 24; 
-          wave1Amp = 0.8;
-          wave1Phase = -3;
-          wave1FreqGrowth = 0.16;
-          wave1AmpGrowth = 1.566;
-          wave1AmpGrowthStrength = 0.0;
-          wave1PowerLawAmplitude = 3.500e-18;
-          wave1PowerLawExponent = 5.850;
+          wave1Freq = 22.523; 
+          wave1Amp = 1.755;
+          wave1Phase = 0.004;
+          wave1FreqGrowth = 0.174;
+          wave1AmpGrowth = 1.010;
+          wave1AmpGrowthStrength = 0.004;
+          wave1PowerLawAmplitude = 3.542e-18;
+          wave1PowerLawExponent = 5.904;
           document.getElementById('wave1FreqInput').value = wave1Freq.toFixed(3);
           document.getElementById('wave1AmpInput').value = wave1Amp.toFixed(3);
           document.getElementById('wave1PhaseInput').value = wave1Phase.toFixed(3);
@@ -485,14 +485,14 @@
           document.getElementById('wave1PowerLawExponentInput').value = wave1PowerLawExponent.toFixed(3);
 
           // Wave 2 Parameters
-          wave2Freq = 23; 
-          wave2Amp = 0.9;
-          wave2Phase = 1.0;
-          wave2FreqGrowth = 0.16;
-          wave2AmpGrowth = 1.566;
+          wave2Freq = 26.871; 
+          wave2Amp = 1.005;
+          wave2Phase = -0.990;
+          wave2FreqGrowth = 0.167;
+          wave2AmpGrowth = 1.594;
           wave2AmpGrowthStrength = 0.0;
-          wave2PowerLawAmplitude = 3.500e-18;
-          wave2PowerLawExponent = 5.850;
+          wave2PowerLawAmplitude = 3.496e-18;
+          wave2PowerLawExponent = 5.614;
           document.getElementById('wave2FreqInput').value = wave2Freq.toFixed(3);
           document.getElementById('wave2AmpInput').value = wave2Amp.toFixed(3);
           document.getElementById('wave2PhaseInput').value = wave2Phase.toFixed(3);
@@ -503,14 +503,14 @@
           document.getElementById('wave2PowerLawExponentInput').value = wave2PowerLawExponent.toFixed(3);
 
           // Wave 3 Parameters
-          wave3Freq = 110;  
-          wave3Amp = 0.60;
-          wave3Phase = 0.0;
-          wave3FreqGrowth = 0.16;
-          wave3AmpGrowth = 1.566;
-          wave3AmpGrowthStrength = 0.0;
-          wave3PowerLawAmplitude = 3.500e-18;
-          wave3PowerLawExponent = 5.850;
+          wave3Freq = 127.571;  
+          wave3Amp = 1.206;
+          wave3Phase = -0.990;
+          wave3FreqGrowth = 0.181;
+          wave3AmpGrowth = 1.603;
+          wave3AmpGrowthStrength = 0.005;
+          wave3PowerLawAmplitude = 3.760e-18;
+          wave3PowerLawExponent = 5.674;
           document.getElementById('wave3FreqInput').value = wave3Freq.toFixed(3);
           document.getElementById('wave3AmpInput').value = wave3Amp.toFixed(3);
           document.getElementById('wave3PhaseInput').value = wave3Phase.toFixed(3);
@@ -521,14 +521,14 @@
           document.getElementById('wave3PowerLawExponentInput').value = wave3PowerLawExponent.toFixed(3);
 
           // Wave 4 Parameters
-          wave4Freq = 500;
-          wave4Amp = 0.3;
-          wave4Phase = 0.5;
-          wave4FreqGrowth = 0.05;
-          wave4AmpGrowth = 0.8;
-          wave4AmpGrowthStrength = 0.0;
-          wave4PowerLawAmplitude = 3.500e-18;
-          wave4PowerLawExponent = 5.850;
+          wave4Freq = 540.206;
+          wave4Amp = 0.503;
+          wave4Phase = -0.990;
+          wave4FreqGrowth = 0.067;
+          wave4AmpGrowth = 0.814;
+          wave4AmpGrowthStrength = 0.005;
+          wave4PowerLawAmplitude = 3.487e-18;
+          wave4PowerLawExponent = 5.822;
           document.getElementById('wave4FreqInput').value = wave4Freq.toFixed(3);
           document.getElementById('wave4AmpInput').value = wave4Amp.toFixed(3);
           document.getElementById('wave4PhaseInput').value = wave4Phase.toFixed(3);
@@ -539,14 +539,14 @@
           document.getElementById('wave4PowerLawExponentInput').value = wave4PowerLawExponent.toFixed(3);
 
           // Wave 5 Parameters
-          wave5Freq = 1000;
-          wave5Amp = 0.1;
-          wave5Phase = 1.0;
+          wave5Freq = 1089.882;
+          wave5Amp = 0.505;
+          wave5Phase = -0.990;
           wave5FreqGrowth = 0.02;
-          wave5AmpGrowth = 0.5;
-          wave5AmpGrowthStrength = 0.0;
-          wave5PowerLawAmplitude = 3.500e-18;
-          wave5PowerLawExponent = 5.850;
+          wave5AmpGrowth = 0.001;
+          wave5AmpGrowthStrength = 0.001;
+          wave5PowerLawAmplitude = 4.143e-18;
+          wave5PowerLawExponent = 5.657;
           document.getElementById('wave5FreqInput').value = wave5Freq.toFixed(3);
           document.getElementById('wave5AmpInput').value = wave5Amp.toFixed(3);
           document.getElementById('wave5PhaseInput').value = wave5Phase.toFixed(3);
@@ -1659,10 +1659,10 @@
           };
 
           const wavePrefixes = ['wave1', 'wave2', 'wave3', 'wave4', 'wave5'];
-          // Define a reasonable range and step for frequencies to test.
-          // These values are in 'cycles per log(year-1969)' as per the model.
-          // Adjust these ranges as needed for your specific analysis.
-          const frequencyTestRange = { min: 1, max: 200, step: 1 }; // Increased max for broader search
+          // Define a broader, logarithmically spaced range for CQT
+          // Frequencies are in cycles per log(year-1969) unit.
+          // Rough estimates: 4-year cycle ~30, 1-year cycle ~118, quarterly ~476, weekly ~6250
+          const frequencyTestRangeCQT = { min: 1, max: 7000, factor: 1.05 }; // Increased max and factor for broader/faster search
 
           for (let i = 0; i < wavePrefixes.length; i++) {
               const prefix = wavePrefixes[i];
@@ -1672,7 +1672,7 @@
               document.getElementById('statusMessage').innerText = `Analyzing frequencies for ${prefix}... Current best error: ${minErrorForWave.toFixed(3)}`;
               await new Promise(resolve => setTimeout(resolve, 10)); // Yield to UI to update status
 
-              for (let freq = frequencyTestRange.min; freq <= frequencyTestRange.max; freq += frequencyTestRange.step) {
+              for (let freq = frequencyTestRangeCQT.min; freq <= frequencyTestRangeCQT.max; freq *= frequencyTestRangeCQT.factor) {
                   let tempParams = { ...currentParams }; // Create a copy of the current best parameters
                   tempParams[`${prefix}Freq`] = freq; // Modify only the current wave's frequency in the copy
 
@@ -1683,6 +1683,9 @@
                       minErrorForWave = error;
                       bestFreqForWave = freq;
                   }
+                  // Update status more frequently during the inner loop
+                  document.getElementById('statusMessage').innerText = `Analyzing frequencies for ${prefix}... Testing Freq: ${freq.toFixed(2)}, Best Error: ${minErrorForWave.toFixed(3)}`;
+                  await new Promise(resolve => setTimeout(resolve, 0)); // Yield
               }
               // Update the currentParams object with the best frequency found for this wave
               currentParams[`${prefix}Freq`] = bestFreqForWave;
