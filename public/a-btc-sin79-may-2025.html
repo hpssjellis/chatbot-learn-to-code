@@ -348,7 +348,7 @@
 
       <div class="optimization-controls" style="flex-direction: column; align-items: stretch;">
           <label for="kerasLayersInput" style="text-align: center; margin-bottom: 5px; color: #333;">Edit Keras Layers (JS Code):</label>
-          <textarea id="kerasLayersInput" rows="8" style="width: 100%; background-color: black; color: white; font-family: monospace; padding: 10px; border-radius: 5px;"></textarea>
+          <textarea id="kerasLayersInput" rows="5" style="width: 100%; background-color: black; color: white; font-family: monospace; padding: 10px; border-radius: 5px;"></textarea>
           <button onclick="mlTrainModel()" style="margin-top: 10px;">Apply Keras Changes & Re-Train</button>
       </div>
 
@@ -567,11 +567,7 @@
           document.getElementById('liveUpdateToggle').checked = livePlotUpdateEnabled;
 
           // Set initial Keras layers code
-          document.getElementById('kerasLayersInput').value = `model.add(tf.layers.lstm({
-    units: 64,
-    inputShape: [N_LOOKBACK, 1],
-    returnSequences: false
-}));
+          document.getElementById('kerasLayersInput').value = `model.add(tf.layers.lstm({units: 64, inputShape: [N_LOOKBACK, 1], returnSequences: false }));
 model.add(tf.layers.dense({ units: 32, activation: 'relu' }));
 model.add(tf.layers.dense({ units: 1 }));`;
       }
