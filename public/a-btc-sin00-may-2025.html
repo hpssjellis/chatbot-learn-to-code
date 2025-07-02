@@ -254,7 +254,7 @@
         <div class="param-section">
           <h3>Wave Parameters (Wave 4)</h3>
           <div class="input-group">
-            <label for="wave4FreqInput">Frequency:</label>
+            <label for="wave4FreqInput">Frequency:</labeL>
             <input type="text" value="500" id="wave4FreqInput" onchange="wave4Freq = parseFloat(this.value); myGenerateLogLogData();">
           </div>
           <div class="input-group">
@@ -344,6 +344,12 @@
           <button onclick="mlPredict()">ML-Prediction</button>
           <label for="mlPredictionLengthInput">Prediction Points:</label>
           <input type="number" id="mlPredictionLengthInput" value="200" min="1" size="5">
+      </div>
+
+      <div class="optimization-controls" style="flex-direction: column; align-items: stretch;">
+          <label for="kerasLayersInput" style="text-align: center; margin-bottom: 5px; color: #333;">Edit Keras Layers (JS Code):</label>
+          <textarea id="kerasLayersInput" rows="5" style="width: 100%; background-color: black; color: white; font-family: monospace; padding: 10px; border-radius: 5px;"></textarea>
+          <button onclick="mlTrainModel()" style="margin-top: 10px;">Apply Keras Changes & Re-Train</button>
       </div>
 
       <!-- New buttons for CQT and FFTLog analysis -->
@@ -448,7 +454,7 @@
        * Initializes the input fields with the current global variable values.
        */
       function initializeInputFields() {
-          qcbDateYear = 2034.9;
+          qcbDateYear = 2034.2;
           socialDistrustValue = 100; 
           qcbTransitionDuration = 0.8;
           qcbCrashStrength = 1.2; 
@@ -559,6 +565,11 @@
 
           // Set initial state of live update checkbox
           document.getElementById('liveUpdateToggle').checked = livePlotUpdateEnabled;
+
+          // Set initial Keras layers code
+          document.getElementById('kerasLayersInput').value = `model.add(tf.layers.lstm({ units: 64, inputShape: [N_LOOKBACK, 1], returnSequences: false }));
+model.add(tf.layers.dense({ units: 32, activation: 'relu' }));
+model.add(tf.layers.dense({ units: 1 }));`;
       }
       
       /**
@@ -806,14 +817,15 @@
             wave3PowerLawAmplitude: wave3PowerLawAmplitude, wave3PowerLawExponent: wave3PowerLawExponent,
             wave4Freq: wave4Freq, wave4Amp: wave4Amp, wave4Phase: wave4Phase,
             wave4FreqGrowth: wave4FreqGrowth, wave4AmpGrowth: wave4AmpGrowth, wave4AmpGrowthStrength: wave4AmpGrowthStrength,
-            wave4PowerLawAmplitude: wave4PowerLawAmplitude, wave4PowerLawExponent: wave4PowerLawExponent,
+            wave4PowerLawAmplitude: wave4PowerLawAmplitude,
+            wave4PowerLawExponent: wave4PowerLawExponent,
             wave5Freq: wave5Freq, wave5Amp: wave5Amp, wave5Phase: wave5Phase, // Corrected typo here, was wave5Amp, should be wave5Phase
             wave5FreqGrowth: wave5FreqGrowth, wave5AmpGrowth: wave5AmpGrowth, wave5AmpGrowthStrength: wave5AmpGrowthStrength,
             wave5PowerLawAmplitude: wave5PowerLawAmplitude, wave5PowerLawExponent: wave5PowerLawExponent
         };
 
 
-        let currentDate = new Date(dataGenStartDate);
+        let currentDate = new Date('2011-01-01T00:00:00Z');
         while (currentDate <= dataGenEndDate) {
             const days = daysSinceGenesis(currentDate);
             if (currentDate >= graphDisplayStartDate) {
@@ -874,7 +886,7 @@
             if (year < currentParams.qcbDateYear) {
                 finalCombinedValue = sumOfWavesFollowingPowerLawMidline;
             } else {
-                const transitionFactor = getQCBDTransitionFactor(year, currentParams.qcbDateYear, currentParams.qcbTransitionDuration, currentParams.qcbCrashStrength);
+                const transitionFactor = getQCBDTransitionFactor(year, currentParams.qcbDateYear, currentParams.socialDistrustValue, currentParams.qcbTransitionDuration, currentParams.qcbCrashStrength);
                 let dampenedTotalOscillationFactor = totalOscillationFactorForQCBD * (1 - transitionFactor * (1 - currentParams.qcbAmplitudeDampening));
                 let targetCrashValue = currentParams.socialDistrustValue * (1 + dampenedTotalOscillationFactor);
                 finalCombinedValue = sumOfWavesFollowingPowerLawMidline * (1 - transitionFactor) + targetCrashValue * transitionFactor;
@@ -1234,7 +1246,7 @@
               wave4FreqGrowth: wave4FreqGrowth, wave4AmpGrowth: wave4AmpGrowth, wave4AmpGrowthStrength: wave4AmpGrowthStrength,
               wave4PowerLawAmplitude: wave4PowerLawAmplitude,
               wave4PowerLawExponent: wave4PowerLawExponent,
-              wave5Freq: wave5Freq, wave5Amp: wave5Amp, wave5Phase: wave5Phase, // Corrected typo here, was wave5Amp, should be wave5Phase
+              wave5Freq: wave5Freq, wave5Amp: wave5Amp, wave5Phase: wave5Amp, // Corrected typo here, was wave5Amp, should be wave5Phase
               wave5FreqGrowth: wave5FreqGrowth, wave5AmpGrowth: wave5AmpGrowth, wave5AmpGrowthStrength: wave5AmpGrowthStrength,
               wave5PowerLawAmplitude: wave5PowerLawAmplitude,
               wave5PowerLawExponent: wave5PowerLawExponent
@@ -1477,9 +1489,6 @@
           return val * (max - min) + min;
       }
 
-      // ML-specific global variable for the prediction trace - NO LONGER USED AS SEPARATE TRACE
-      // let mlPredictionTraceGlobal = null;
-
       /**
        * Trains a TensorFlow.js LSTM model on the historical Bitcoin data.
        */
@@ -1516,14 +1525,27 @@
           const xsTensor = tf.tensor3d(xs, [xs.length, N_LOOKBACK, 1]);
           const ysTensor = tf.tensor2d(ys, [ys.length, 1]);
 
-          // 2. Define the model architecture
-          mlModel = tf.sequential();
-          mlModel.add(tf.layers.lstm({
-              units: 50, // Number of LSTM units
-              inputShape: [N_LOOKBACK, 1], // Input shape: [timesteps, features]
-              returnSequences: false // Only return the last output
-          }));
-          mlModel.add(tf.layers.dense({ units: 1 })); // Output a single predicted value
+          // 2. Define the model architecture from textarea
+          try {
+              // Get the user-defined Keras layers code
+              const kerasLayersCode = document.getElementById('kerasLayersInput').value;
+
+              // Create a function dynamically from the user's code
+              // This function will receive 'tf' and 'N_LOOKBACK' as arguments
+              // and is expected to define and return a tf.Sequential model.
+              const modelBuilderFunction = new Function('tf', 'N_LOOKBACK', `
+                  const model = tf.sequential();
+                  ${kerasLayersCode}
+                  return model;
+              `);
+
+              mlModel = modelBuilderFunction(tf, N_LOOKBACK); // Build the model
+
+          } catch (e) {
+              document.getElementById('statusMessage').innerText = `❌ Error building ML model: ${e.message}`;
+              console.error('Error building ML model:', e);
+              return;
+          }
 
           // 3. Compile the model
           mlModel.compile({
@@ -1536,8 +1558,9 @@
               epochs: epochs, // Use user-defined epochs
               batchSize: 32,
               callbacks: {
-                  onEpochEnd: (epoch, logs) => {
+                  onEpochEnd: async (epoch, logs) => { // Added async here
                       document.getElementById('statusMessage').innerText = `🚀 Training ML model... Epoch ${epoch + 1}/${epochs}, Loss: ${logs.loss.toFixed(6)}`;
+                      await tf.nextFrame(); // Yield to browser
                   },
                   onTrainEnd: () => {
                       document.getElementById('statusMessage').innerText = '✅ ML Model Training Complete!';
@@ -1748,6 +1771,7 @@
                       minErrorForWave = error;
                       bestFreqForWave = freq;
                   }
+                  await new Promise(resolve => setTimeout(resolve, 0)); // Yield
               }
               currentParams[`${prefix}Freq`] = bestFreqForWave;
               console.log(`Best frequency for ${prefix} (FFTLog-like): ${bestFreqForWave.toFixed(3)} with error ${minErrorForWave.toFixed(3)}`);
@@ -1757,7 +1781,6 @@
           myGenerateLogLogData();
           document.getElementById('statusMessage').innerText = '✅ FFTLog-like frequency analysis complete! Frequencies adjusted.';
       }
-
 
 
       
@@ -1771,6 +1794,7 @@
  //    const earlyDates = ["2010-12-31","2011-01-01","2011-01-02"];
 //    const earlyDaysSinceGenesis = [727,728,729];
 //    const earlyLogPrices = [-1.2039728043259361,-1.2039728043259361,-1.2039728043259361];
+
 
 
       
