@@ -1,3 +1,168 @@
+import * as tf from '@tensorflow/tfjs';
+
+// Assume N_LOOKBACK is defined, e.g., for a time series model looking back 10 steps
+const N_LOOKBACK = 10;
+
+const model = tf.sequential();
+
+// Your initial LSTM layer, set up for sequence input
+model.add(tf.layers.lstm({
+  units: 64,             // Number of LSTM units (internal memory cells)
+  inputShape: [N_LOOKBACK, 1], // Input shape: [sequence_length, number_of_features]
+  returnSequences: false // Output only the last hidden state (for sequence-to-one prediction)
+}));
+
+// --- Existing Dense Layer ---
+model.add(tf.layers.dense({
+  units: 32,             // Number of neurons in this hidden layer
+  activation: 'relu'     // Common activation function for hidden layers
+}));
+
+// --- New Layer Examples (with sensible parameters for this context) ---
+
+// 1. tf.layers.dropout()
+// Prevents overfitting by randomly setting a fraction of input units to 0.
+// Often placed after a dense layer to regularize its outputs.
+model.add(tf.layers.dropout({
+  rate: 0.2              // Drop out 20% of the neurons from the previous layer's output
+}));
+
+// 2. tf.layers.batchNormalization()
+// Normalizes the activations of the previous layer. Helps stabilize and accelerate training.
+// Can be placed after dense layers or convolutional layers.
+model.add(tf.layers.batchNormalization());
+
+// 3. tf.layers.dense() - Another example, you already have one but good to show another usage
+// Another fully connected layer to process features further.
+model.add(tf.layers.dense({
+  units: 16,             // Fewer units than the previous dense layer, further condensing information
+  activation: 'relu'
+}));
+
+// --- Alternative or Additional Layer for different model architectures ---
+
+// 4. tf.layers.gru()
+// A Gated Recurrent Unit layer, often used as an alternative to LSTM.
+// If used, it would typically replace the initial LSTM, or be used in stacked recurrent layers.
+// Example as a replacement for the first LSTM, if you wanted to try GRU instead:
+/*
+const gruModel = tf.sequential();
+gruModel.add(tf.layers.gru({
+  units: 64,
+  inputShape: [N_LOOKBACK, 1],
+  returnSequences: false
+}));
+gruModel.add(tf.layers.dense({ units: 32, activation: 'relu' }));
+gruModel.add(tf.layers.dense({ units: 1 }));
+*/
+// Or if you wanted to stack them (less common for simple sequence-to-one):
+/*
+model.add(tf.layers.lstm({
+  units: 64,
+  inputShape: [N_LOOKBACK, 1],
+  returnSequences: true // Must be true if stacking recurrent layers
+}));
+model.add(tf.layers.gru({
+  units: 32,
+  returnSequences: false // Only the final output needed for the next dense layer
+}));
+*/
+
+// 5. tf.layers.repeatVector()
+// Repeats the input n times. Useful if you want to take a single vector output (e.g., from an encoder)
+// and repeat it to be processed by a decoder in a sequence-to-sequence model.
+// Not directly applicable after `returnSequences: false` in your current setup, but conceptually:
+/*
+// If the first LSTM returned a single vector and you wanted to expand it:
+model.add(tf.layers.lstm({ units: 64, inputShape: [N_LOOKBACK, 1], returnSequences: false }));
+model.add(tf.layers.repeatVector({ n: N_LOOKBACK })); // Repeats the 64-unit vector N_LOOKBACK times
+model.add(tf.layers.lstm({ units: 32, returnSequences: true })); // Now process this repeated sequence
+*/
+
+// 6. tf.layers.timeDistributed()
+// Applies a layer to every time step of a sequence. Useful for applying a Dense layer
+// to each output of an LSTM when `returnSequences: true`.
+// Example if the first LSTM returned sequences:
+/*
+model.add(tf.layers.lstm({ units: 64, inputShape: [N_LOOKBACK, 1], returnSequences: true }));
+model.add(tf.layers.timeDistributed({
+  layer: tf.layers.dense({ units: 32, activation: 'relu' }) // Apply this Dense layer to each timestep
+}));
+model.add(tf.layers.dense({ units: 1 })); // Final output layer
+*/
+
+// --- Layers for Image/2D Data (less common for simple time series, but good to know) ---
+// These wouldn't typically fit directly after an LSTM unless you're reshaping.
+
+// 7. tf.layers.conv2d()
+// Applies 2D convolution. If your 'features' were actually a small image at each time step.
+/*
+model.add(tf.layers.conv2d({
+  filters: 16,
+  kernelSize: 3,
+  activation: 'relu',
+  inputShape: [28, 28, 1] // Example: For initial image processing
+}));
+*/
+
+// 8. tf.layers.maxPooling2d()
+// Downsamples the input. Companion to conv2d.
+/*
+model.add(tf.layers.maxPooling2d({
+  poolSize: [2, 2]
+}));
+*/
+
+// 9. tf.layers.flatten()
+// Flattens the input. Essential to connect convolutional/pooling layers to dense layers.
+// If you had Conv/Pooling, you'd add this before your dense layers.
+/*
+// ... after some conv2d and maxPooling2d layers
+model.add(tf.layers.flatten()); // Flattens output for dense layers
+*/
+
+// 10. tf.layers.embedding()
+// Turns positive integers (word IDs) into dense vectors. Used as the first layer in NLP.
+// Not directly applicable after an LSTM, but if your input was a sequence of word IDs:
+/*
+const nlpModel = tf.sequential();
+nlpModel.add(tf.layers.embedding({
+  inputDim: 10000,       // Vocabulary size
+  outputDim: 128,        // Embedding vector size
+  inputLength: N_LOOKBACK // Sequence length
+}));
+nlpModel.add(tf.layers.lstm({
+  units: 64,
+  returnSequences: false
+}));
+nlpModel.add(tf.layers.dense({ units: 1, activation: 'sigmoid' }));
+*/
+
+
+// --- Final Output Layer ---
+// Your existing output layer for a single prediction.
+model.add(tf.layers.dense({
+  units: 1                // Single output neuron for a regression task
+}));
+
+// Compile the model (essential before training)
+model.compile({
+  optimizer: tf.train.adam(0.001), // Adam optimizer with a learning rate
+  loss: 'meanSquaredError'         // Common loss for regression problems
+});
+
+model.summary();
+
+
+
+
+
+
+
+
+
+
+
 // Assuming you have 'tf' imported: import * as tf from '@tensorflow/tfjs';
 
 // --- Convolutional Layers (for image processing, etc.) ---
