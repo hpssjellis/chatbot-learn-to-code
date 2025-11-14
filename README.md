@@ -38,7 +38,14 @@ latest power-lw
 
 
 
+## Original Model
 
+```
+
+mlModel.add(tf.layers.lstm({ units: 64, inputShape: [N_LOOKBACK, 1], returnSequences: false }));
+mlModel.add(tf.layers.dense({ units: 32, activation: 'relu' }));
+mlModel.add(tf.layers.dense({ units: 1 }));
+```
 
 Try other models
 
@@ -65,3 +72,107 @@ mlModel.add(tf.layers.dense({ units: 1 }));
 
 ```
 
+
+
+```
+// Hybrid CNN-LSTM Architecture
+// Captures both local patterns (CNN) and temporal dependencies (LSTM)
+
+// Conv1D layers to extract local patterns
+mlModel.add(tf.layers.conv1d({
+  filters: 64,
+  kernelSize: 3,
+  activation: 'relu',
+  inputShape: [N_LOOKBACK, 1]
+}));
+mlModel.add(tf.layers.conv1d({
+  filters: 32,
+  kernelSize: 3,
+  activation: 'relu'
+}));
+mlModel.add(tf.layers.maxPooling1d({ poolSize: 2 }));
+
+// LSTM layers for temporal dependencies
+mlModel.add(tf.layers.lstm({ units: 128, returnSequences: true }));
+mlModel.add(tf.layers.dropout({ rate: 0.3 }));
+mlModel.add(tf.layers.lstm({ units: 64, returnSequences: false }));
+mlModel.add(tf.layers.dropout({ rate: 0.2 }));
+
+// Dense layers with attention-like mechanism
+mlModel.add(tf.layers.dense({ units: 64, activation: 'relu' }));
+mlModel.add(tf.layers.dropout({ rate: 0.2 }));
+mlModel.add(tf.layers.dense({ units: 32, activation: 'relu' }));
+mlModel.add(tf.layers.dense({ units: 1 }));
+
+```
+
+
+
+```
+
+// Transformer-style Stacked LSTM
+// Stacked LSTM with residual-like connections
+
+mlModel.add(tf.layers.lstm({ units: 128, returnSequences: true, inputShape: [N_LOOKBACK, 1] }));
+mlModel.add(tf.layers.layerNormalization());
+mlModel.add(tf.layers.dropout({ rate: 0.3 }));
+mlModel.add(tf.layers.lstm({ units: 128, returnSequences: true }));
+mlModel.add(tf.layers.layerNormalization());
+mlModel.add(tf.layers.dropout({ rate: 0.3 }));
+mlModel.add(tf.layers.lstm({ units: 64, returnSequences: false }));
+mlModel.add(tf.layers.dense({ units: 64, activation: 'relu' }));
+mlModel.add(tf.layers.dense({ units: 1 }));
+```
+
+
+
+```
+
+// Efficient Multi-Scale LSTM
+// Lighter but smarter architecture
+
+// First LSTM - captures medium-term patterns
+mlModel.add(tf.layers.lstm({ 
+  units: 50, 
+  returnSequences: true, 
+  inputShape: [N_LOOKBACK, 1] 
+}));
+mlModel.add(tf.layers.dropout({ rate: 0.2 }));
+
+// Second LSTM - captures long-term trends
+mlModel.add(tf.layers.lstm({ 
+  units: 50, 
+  returnSequences: false 
+}));
+mlModel.add(tf.layers.dropout({ rate: 0.2 }));
+
+// Dense with skip connection concept
+mlModel.add(tf.layers.dense({ units: 25, activation: 'relu' }));
+mlModel.add(tf.layers.dense({ units: 10, activation: 'relu' }));
+mlModel.add(tf.layers.dense({ units: 1 }));
+
+```
+
+
+
+```
+// GRU Version - Fast and Efficient
+// GRU is ~25% faster than LSTM with similar performance
+
+mlModel.add(tf.layers.gru({ 
+  units: 64, 
+  returnSequences: true, 
+  inputShape: [N_LOOKBACK, 1] 
+}));
+mlModel.add(tf.layers.dropout({ rate: 0.25 }));
+
+mlModel.add(tf.layers.gru({ 
+  units: 32, 
+  returnSequences: false 
+}));
+mlModel.add(tf.layers.dropout({ rate: 0.2 }));
+
+mlModel.add(tf.layers.dense({ units: 16, activation: 'relu' }));
+mlModel.add(tf.layers.dense({ units: 1 }));
+
+```
