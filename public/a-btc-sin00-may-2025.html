@@ -107,6 +107,31 @@
       .checkbox-group label {
         margin-right: 0; /* Override default label margin */
       }
+
+.progress-bar {
+    width: 100%;
+    height: 20px;
+    background-color: #e5e7eb;
+    border-radius: 4px;
+    margin-top: 10px;
+    overflow: hidden;
+    display: none;
+}
+.progress-bar.active {
+    display: block;
+}
+.progress-fill {
+    height: 100%;
+    background-color: #3b82f6;
+    width: 0%;
+    transition: width 0.3s;
+    text-align: center;
+    line-height: 20px;
+    color: white;
+    font-size: 12px;
+}
+
+      
     </style>
   </head>
   <body>
@@ -336,15 +361,43 @@
         </div>
       </div>
 
-      <div class="optimization-controls">
-          <button onclick="mlTrainModel()">ML-Training</button>
-          <label for="mlEpochsInput">Epochs:</label>
-          <input type="number" id="mlEpochsInput" value="50" min="1" size="5">
+<div class="optimization-controls">
+    <button onclick="mlTrainModel()" id="mlTrainBtn">ML-Training</button>
+    <label for="mlEpochsInput">Epochs:</label>
+    <input type="number" id="mlEpochsInput" value="50" min="1" size="5">
+    
+    <label for="mlBatchSizeInput">Batch:</label>
+    <input type="number" id="mlBatchSizeInput" value="32" min="1" max="128" size="4">
+    
+    <label for="mlLearningRateInput">LR:</label>
+    <input type="number" id="mlLearningRateInput" value="0.001" min="0.0001" max="1" step="0.0001" size="6">
+    
+    <label for="mlOptimizerSelect">Optimizer:</label>
+    <select id="mlOptimizerSelect">
+        <option value="adam">Adam</option>
+        <option value="sgd">SGD</option>
+        <option value="rmsprop">RMSprop</option>
+    </select>
+    
+    <button onclick="mlStopTraining()" id="mlStopBtn" disabled>Stop</button>
+</div>
 
-          <button onclick="mlPredict()">ML-Prediction</button>
-          <label for="mlPredictionLengthInput">Prediction Points:</label>
-          <input type="number" id="mlPredictionLengthInput" value="200" min="1" size="5">
-      </div>
+<div class="optimization-controls">
+    <div class="progress-bar" id="mlTrainingProgress">
+        <div class="progress-fill" id="mlProgressFill"></div>
+    </div>
+</div>
+
+<div class="optimization-controls">
+    <button onclick="mlPredict()">ML-Prediction</button>
+    <label for="mlPredictionLengthInput">Prediction Points:</label>
+    <input type="number" id="mlPredictionLengthInput" value="200" min="1" size="5">
+    
+    <button onclick="mlExportPredictions()">Export CSV</button>
+    <button onclick="mlSaveModel()">Save Model</button>
+    <button onclick="document.getElementById('mlModelUpload').click()">Load Model</button>
+    <input type="file" id="mlModelUpload" style="display:none" multiple accept=".json,.bin" onchange="mlLoadModel(event)">
+</div>
 
       <div class="optimization-controls" style="flex-direction: column; align-items: stretch;">
           <label for="kerasLayersInput" style="text-align: center; margin-bottom: 5px; color: #333;">Edit Keras Layers (JS Code):</label>
@@ -448,6 +501,12 @@
       // ML Model related globals
       let mlModel = null; // Stores the trained TensorFlow.js model
       let N_LOOKBACK = 52; // Number of past weekly data points to look back for prediction (approx. 1 year)
+
+let mlPredictionsGlobal = [];
+let mlIsTraining = false;
+let mlTrainingStartTime = null;
+
+      
       let minLogPriceGlobal, maxLogPriceGlobal; // For normalizing and denormalizing log prices
 
       /**
@@ -567,9 +626,9 @@
           document.getElementById('liveUpdateToggle').checked = livePlotUpdateEnabled;
 
           // Set initial Keras layers code
-          document.getElementById('kerasLayersInput').value = `model.add(tf.layers.lstm({ units: 64, inputShape: [N_LOOKBACK, 1], returnSequences: false }));
-model.add(tf.layers.dense({ units: 32, activation: 'relu' }));
-model.add(tf.layers.dense({ units: 1 }));`;
+          document.getElementById('kerasLayersInput').value = `mlModel.add(tf.layers.lstm({ units: 64, inputShape: [N_LOOKBACK, 1], returnSequences: false }));
+mlModel.add(tf.layers.dense({ units: 32, activation: 'relu' }));
+mlModel.add(tf.layers.dense({ units: 1 }));`;
       }
       
       /**
@@ -1494,167 +1553,307 @@ model.add(tf.layers.dense({ units: 1 }));`;
       /**
        * Trains a TensorFlow.js LSTM model on the historical Bitcoin data.
        */
-      async function mlTrainModel() {
-          if (btcLogPricesGlobal.length === 0) {
-              document.getElementById('statusMessage').innerText = '❌ BTC data not loaded. Please ensure data is fetched.';
-              return;
-          }
+     async function mlTrainModel() {
+    if (mlIsTraining) {
+        document.getElementById('statusMessage').innerText = '⚠️ Training already in progress';
+        return;
+    }
 
-          const epochs = parseInt(document.getElementById('mlEpochsInput').value);
-          if (isNaN(epochs) || epochs < 1) {
-              document.getElementById('statusMessage').innerText = '❌ Invalid number of epochs. Please enter a positive integer.';
-              return;
-          }
+    if (btcLogPricesGlobal.length === 0) {
+        document.getElementById('statusMessage').innerText = '❌ BTC data not loaded. Please refresh page.';
+        document.getElementById('statusMessage').style.backgroundColor = '#f8d7da';
+        return;
+    }
 
-          document.getElementById('statusMessage').innerText = '🚀 Training ML model...';
+    const epochs = parseInt(document.getElementById('mlEpochsInput').value);
+    const batchSize = parseInt(document.getElementById('mlBatchSizeInput').value);
+    const learningRate = parseFloat(document.getElementById('mlLearningRateInput').value);
+    const optimizer = document.getElementById('mlOptimizerSelect').value;
 
-          // 1. Prepare data for LSTM
-          const normalizedLogPrices = btcLogPricesGlobal.map(price =>
-              normalize(price, minLogPriceGlobal, maxLogPriceGlobal)
-          );
+    if (isNaN(epochs) || epochs < 1) {
+        document.getElementById('statusMessage').innerText = '❌ Invalid epochs value';
+        return;
+    }
+    if (isNaN(batchSize) || batchSize < 1) {
+        document.getElementById('statusMessage').innerText = '❌ Invalid batch size';
+        return;
+    }
 
-          const xs = []; // Input sequences (e.g., N_LOOKBACK past log prices)
-          const ys = []; // Target values (the next log price)
+    mlIsTraining = true;
+    mlTrainingStartTime = Date.now();
+    document.getElementById('mlTrainBtn').disabled = true;
+    document.getElementById('mlStopBtn').disabled = false;
+    document.getElementById('mlTrainingProgress').classList.add('active');
+    document.getElementById('statusMessage').innerText = '🚀 Starting ML training...';
+    document.getElementById('statusMessage').style.backgroundColor = '#cfe2ff';
+    document.getElementById('statusMessage').style.color = '#084298';
 
-          for (let i = 0; i < normalizedLogPrices.length - N_LOOKBACK; i++) {
-              // Each value in the sequence needs to be an array itself for the 3D tensor
-              xs.push(normalizedLogPrices.slice(i, i + N_LOOKBACK).map(val => [val]));
-              ys.push(normalizedLogPrices[i + N_LOOKBACK]);
-          }
+    try {
+        const normalizedLogPrices = btcLogPricesGlobal.map(price =>
+            normalize(price, minLogPriceGlobal, maxLogPriceGlobal)
+        );
 
-          // Convert to TensorFlow tensors
-          // Input shape for LSTM: [num_samples, timesteps, features] -> [num_samples, N_LOOKBACK, 1]
-          const xsTensor = tf.tensor3d(xs, [xs.length, N_LOOKBACK, 1]);
-          const ysTensor = tf.tensor2d(ys, [ys.length, 1]);
+        const xs = [];
+        const ys = [];
 
-          // 2. Define the model architecture from textarea
-          try {
-              // Get the user-defined Keras layers code
-              const kerasLayersCode = document.getElementById('kerasLayersInput').value;
+        for (let i = 0; i < normalizedLogPrices.length - N_LOOKBACK; i++) {
+            xs.push(normalizedLogPrices.slice(i, i + N_LOOKBACK).map(val => [val]));
+            ys.push(normalizedLogPrices[i + N_LOOKBACK]);
+        }
 
-              // Create a function dynamically from the user's code
-              // This function will receive 'tf' and 'N_LOOKBACK' as arguments
-              // and is expected to define and return a tf.Sequential model.
-              const modelBuilderFunction = new Function('tf', 'N_LOOKBACK', `
-                  const model = tf.sequential();
-                  ${kerasLayersCode}
-                  return model;
-              `);
+        if (xs.length === 0) {
+            throw new Error('Not enough data for training');
+        }
 
-              mlModel = modelBuilderFunction(tf, N_LOOKBACK); // Build the model
+        const xsTensor = tf.tensor3d(xs, [xs.length, N_LOOKBACK, 1]);
+        const ysTensor = tf.tensor2d(ys, [ys.length, 1]);
 
-          } catch (e) {
-              document.getElementById('statusMessage').innerText = `❌ Error building ML model: ${e.message}`;
-              console.error('Error building ML model:', e);
-              return;
-          }
+        const kerasLayersCode = document.getElementById('kerasLayersInput').value;
+        mlModel = tf.sequential();
+        eval(kerasLayersCode);
 
-          // 3. Compile the model
-          mlModel.compile({
-              optimizer: tf.train.adam(0.001), // Adam optimizer with a learning rate
-              loss: 'meanSquaredError' // Mean Squared Error is common for regression
-          });
+        const optimizerObj = optimizer === 'adam' ? tf.train.adam(learningRate) :
+                           optimizer === 'sgd' ? tf.train.sgd(learningRate) :
+                           tf.train.rmsprop(learningRate);
 
-          // 4. Train the model
-          await mlModel.fit(xsTensor, ysTensor, {
-              epochs: epochs, // Use user-defined epochs
-              batchSize: 32,
-              callbacks: {
-                  onEpochEnd: async (epoch, logs) => { // Added async here
-                      document.getElementById('statusMessage').innerText = `🚀 Training ML model... Epoch ${epoch + 1}/${epochs}, Loss: ${logs.loss.toFixed(6)}`;
-                      await tf.nextFrame(); // Yield to browser
-                  },
-                  onTrainEnd: () => {
-                      document.getElementById('statusMessage').innerText = '✅ ML Model Training Complete!';
-                      console.log('ML Model Training Complete!');
-                  }
-              }
-          });
+        mlModel.compile({
+            optimizer: optimizerObj,
+            loss: 'meanSquaredError',
+            metrics: ['mae']
+        });
 
-          // Dispose tensors to free up memory
-          xsTensor.dispose();
-          ysTensor.dispose();
-      }
+        await mlModel.fit(xsTensor, ysTensor, {
+            epochs: epochs,
+            batchSize: batchSize,
+            validationSplit: 0.2,
+            callbacks: {
+                onEpochEnd: async (epoch, logs) => {
+                    if (!mlIsTraining) {
+                        mlModel.stopTraining = true;
+                        return;
+                    }
+                    
+                    const progress = ((epoch + 1) / epochs) * 100;
+                    const progressFill = document.getElementById('mlProgressFill');
+                    progressFill.style.width = progress + '%';
+                    progressFill.textContent = `${progress.toFixed(0)}%`;
+                    
+                    const elapsed = Math.floor((Date.now() - mlTrainingStartTime) / 1000);
+                    document.getElementById('statusMessage').innerText = 
+                        `🚀 Epoch ${epoch + 1}/${epochs} | Loss: ${logs.loss.toFixed(6)} | Val: ${logs.val_loss.toFixed(6)} | ${elapsed}s`;
+                    
+                    await tf.nextFrame();
+                },
+                onTrainEnd: () => {
+                    const totalTime = Math.floor((Date.now() - mlTrainingStartTime) / 1000);
+                    document.getElementById('statusMessage').innerText = 
+                        `✅ Training complete! ${totalTime}s`;
+                    document.getElementById('statusMessage').style.backgroundColor = '#d1e7dd';
+                    document.getElementById('statusMessage').style.color = '#0f5132';
+                }
+            }
+        });
+
+        xsTensor.dispose();
+        ysTensor.dispose();
+
+    } catch (error) {
+        document.getElementById('statusMessage').innerText = `❌ Training failed: ${error.message}`;
+        document.getElementById('statusMessage').style.backgroundColor = '#f8d7da';
+        document.getElementById('statusMessage').style.color = '#842029';
+        console.error('Training error:', error);
+    } finally {
+        mlIsTraining = false;
+        document.getElementById('mlTrainBtn').disabled = false;
+        document.getElementById('mlStopBtn').disabled = true;
+        setTimeout(() => {
+            document.getElementById('mlTrainingProgress').classList.remove('active');
+        }, 1000);
+    }
+}
+
+function mlStopTraining() {
+    mlIsTraining = false;
+    document.getElementById('statusMessage').innerText = '⏹️ Stopping training...';
+    document.getElementById('statusMessage').style.backgroundColor = '#fff3cd';
+    document.getElementById('statusMessage').style.color = '#664d03';
+}
+
+function mlValidateArchitecture() {
+    try {
+        const kerasLayersCode = document.getElementById('kerasLayersInput').value;
+        const testModel = tf.sequential();
+        
+        // Replace mlModel with testModel in the user's code for validation
+        const testCode = kerasLayersCode.replace(/mlModel/g, 'testModel');
+        eval(testCode);
+        
+        testModel.dispose();
+        document.getElementById('statusMessage').innerText = '✅ Architecture is valid!';
+        document.getElementById('statusMessage').style.backgroundColor = '#d1e7dd';
+        document.getElementById('statusMessage').style.color = '#0f5132';
+    } catch (e) {
+        document.getElementById('statusMessage').innerText = `❌ Architecture error: ${e.message}`;
+        document.getElementById('statusMessage').style.backgroundColor = '#f8d7da';
+        document.getElementById('statusMessage').style.color = '#842029';
+    }
+}
+
+function mlExportPredictions() {
+    if (mlPredictionsGlobal.length === 0) {
+        document.getElementById('statusMessage').innerText = '⚠️ No predictions to export. Run ML-Prediction first.';
+        return;
+    }
+
+    let csv = 'Date,Days Since Genesis,Predicted Price (USD),Log Price,Year\n';
+    mlPredictionsGlobal.forEach(pred => {
+        csv += `${pred.date},${pred.days},${pred.price.toFixed(2)},${pred.logPrice.toFixed(6)},${pred.year.toFixed(2)}\n`;
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `btc_ml_predictions_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+
+    document.getElementById('statusMessage').innerText = '✅ Predictions exported to CSV';
+    document.getElementById('statusMessage').style.backgroundColor = '#d1e7dd';
+}
+
+async function mlSaveModel() {
+    if (!mlModel) {
+        document.getElementById('statusMessage').innerText = '⚠️ No model to save. Train a model first.';
+        return;
+    }
+
+    try {
+        await mlModel.save('downloads://btc-ml-model');
+        document.getElementById('statusMessage').innerText = '✅ Model saved to downloads';
+        document.getElementById('statusMessage').style.backgroundColor = '#d1e7dd';
+    } catch (error) {
+        document.getElementById('statusMessage').innerText = `❌ Save failed: ${error.message}`;
+        document.getElementById('statusMessage').style.backgroundColor = '#f8d7da';
+    }
+}
+
+async function mlLoadModel(event) {
+    const files = event.target.files;
+    if (files.length === 0) return;
+
+    try {
+        document.getElementById('statusMessage').innerText = '📁 Loading model...';
+        mlModel = await tf.loadLayersModel(tf.io.browserFiles(Array.from(files)));
+        document.getElementById('statusMessage').innerText = '✅ Model loaded successfully';
+        document.getElementById('statusMessage').style.backgroundColor = '#d1e7dd';
+    } catch (error) {
+        document.getElementById('statusMessage').innerText = `❌ Load failed: ${error.message}. Select ALL files (model.json + weights)`;
+        document.getElementById('statusMessage').style.backgroundColor = '#f8d7da';
+        console.error('Model load error:', error);
+    }
+}
+
+
+
+
+      
 
       /**
        * Makes predictions using the trained ML model and appends them to the global BTC data.
        */
-      async function mlPredict() {
-          if (!mlModel) {
-              document.getElementById('statusMessage').innerText = '⚠️ ML Model not trained. Please run ML-Training first.';
-              return;
-          }
-          if (btcLogPricesGlobal.length === 0) {
-              document.getElementById('statusMessage').innerText = '❌ BTC data not loaded for prediction.';
-              return;
-          }
+    async function mlPredict() {
+    if (!mlModel) {
+        document.getElementById('statusMessage').innerText = '⚠️ ML Model not trained. Please run ML-Training first.';
+        document.getElementById('statusMessage').style.backgroundColor = '#fff3cd';
+        return;
+    }
 
-          const predictionLength = parseInt(document.getElementById('mlPredictionLengthInput').value);
-          if (isNaN(predictionLength) || predictionLength < 1) {
-              document.getElementById('statusMessage').innerText = '❌ Invalid number of prediction points. Please enter a positive integer.';
-              return;
-          }
+    if (btcLogPricesGlobal.length === 0) {
+        document.getElementById('statusMessage').innerText = '❌ BTC data not loaded for prediction.';
+        return;
+    }
 
-          document.getElementById('statusMessage').innerText = '🔮 Generating ML predictions and extending BTC data...';
+    const predictionLength = parseInt(document.getElementById('mlPredictionLengthInput').value);
+    if (isNaN(predictionLength) || predictionLength < 1) {
+        document.getElementById('statusMessage').innerText = '❌ Invalid number of prediction points.';
+        return;
+    }
 
-          // Get the last N_LOOKBACK points from the current btcLogPricesGlobal for the initial input sequence
-          let inputSequenceForPrediction = btcLogPricesGlobal.slice(btcLogPricesGlobal.length - N_LOOKBACK);
-          // Normalize and wrap each value for the 3D tensor input
-          inputSequenceForPrediction = inputSequenceForPrediction.map(price => [normalize(price, minLogPriceGlobal, maxLogPriceGlobal)]);
-          
-          // Start predictions from the day after the last known BTC data point
-          let lastBtcDate = new Date(btcDatesGlobal[btcDatesGlobal.length - 1]);
-          let currentPredictionDate = new Date(lastBtcDate);
+    document.getElementById('statusMessage').innerText = '🔮 Generating ML predictions...';
+    document.getElementById('statusMessage').style.backgroundColor = '#cfe2ff';
 
-          for (let i = 0; i < predictionLength; i++) {
-              // Create a tensor from the current input sequence
-              const inputTensor = tf.tensor3d([inputSequenceForPrediction], [1, N_LOOKBACK, 1]);
+    try {
+        const startTime = Date.now();
+        mlPredictionsGlobal = [];
 
-              // Make a prediction
-              const prediction = mlModel.predict(inputTensor);
-              let predictedNormalizedLogPrice = prediction.dataSync()[0]; // Get the scalar prediction
+        let inputSequenceForPrediction = btcLogPricesGlobal.slice(btcLogPricesGlobal.length - N_LOOKBACK);
+        inputSequenceForPrediction = inputSequenceForPrediction.map(price => [normalize(price, minLogPriceGlobal, maxLogPriceGlobal)]);
 
-              // Denormalize the prediction back to log price scale
-              let predictedLogPrice = denormalize(predictedNormalizedLogPrice, minLogPriceGlobal, maxLogPriceGlobal);
-              
-              // Update the date and days since genesis for the prediction point
-              currentPredictionDate.setDate(currentPredictionDate.getDate() + 7); // Assume weekly intervals like historical data
-              const newPredictedDateString = currentPredictionDate.toISOString().split('T')[0];
-              const newPredictedDaysSinceGenesis = daysSinceGenesis(currentPredictionDate);
-              const newPredictedYear = currentPredictionDate.getFullYear() + (currentPredictionDate.getMonth() / 12);
+        let lastBtcDate = new Date(btcDatesGlobal[btcDatesGlobal.length - 1]);
+        let currentPredictionDate = new Date(lastBtcDate);
+        let lastDaysSinceGenesis = btcDaysSinceGenesisGlobal[btcDaysSinceGenesisGlobal.length - 1];
 
-              // Append the new prediction to the global BTC data arrays
-              btcDatesGlobal.push(newPredictedDateString);
-              btcDaysSinceGenesisGlobal.push(newPredictedDaysSinceGenesis);
-              btcLogPricesGlobal.push(predictedLogPrice);
-              btcYearsGlobal.push(newPredictedYear);
+        for (let i = 0; i < predictionLength; i++) {
+            const inputTensor = tf.tensor3d([inputSequenceForPrediction], [1, N_LOOKBACK, 1]);
+            const prediction = mlModel.predict(inputTensor);
+            let predictedNormalizedLogPrice = prediction.dataSync()[0];
+            let predictedLogPrice = denormalize(predictedNormalizedLogPrice, minLogPriceGlobal, maxLogPriceGlobal);
 
-              // Update the input sequence for the next prediction (sliding window)
-              inputSequenceForPrediction.shift(); // Remove the oldest value
-              inputSequenceForPrediction.push([predictedNormalizedLogPrice]); // Add the new normalized prediction, wrapped in an array
+            currentPredictionDate.setDate(currentPredictionDate.getDate() + 7);
+            const newPredictedDateString = currentPredictionDate.toISOString().split('T')[0];
+            const newPredictedDaysSinceGenesis = daysSinceGenesis(currentPredictionDate);
+            const newPredictedYear = currentPredictionDate.getFullYear() + (currentPredictionDate.getMonth() / 12);
 
-              inputTensor.dispose(); // Dispose tensor
-          }
+            mlPredictionsGlobal.push({
+                date: newPredictedDateString,
+                days: newPredictedDaysSinceGenesis,
+                logPrice: predictedLogPrice,
+                price: Math.exp(predictedLogPrice),
+                year: newPredictedYear
+            });
 
-          // Re-calculate min/max for normalization after new data has been added
-          minLogPriceGlobal = Math.min(...btcLogPricesGlobal);
-          maxLogPriceGlobal = Math.max(...btcLogPricesGlobal);
+            btcDatesGlobal.push(newPredictedDateString);
+            btcDaysSinceGenesisGlobal.push(newPredictedDaysSinceGenesis);
+            btcLogPricesGlobal.push(predictedLogPrice);
+            btcYearsGlobal.push(newPredictedYear);
 
-          // Re-create the btcTraceGlobal to include the newly appended prediction data
-          btcTraceGlobal = {
-              x: btcDaysSinceGenesisGlobal,
-              y: btcLogPricesGlobal.map(lp => Math.exp(lp)), // Convert log price to actual price for plot
-              mode: 'lines',
-              line: { color: 'orange', width: 3 },
-              name: 'BTC Price (USD) + ML Prediction', // Update name to reflect inclusion
-              hovertemplate: '<b>Date:</b> %{customdata}<br><b>Days:</b> %{x}<br><b>Price:</b> %{y:$,.2f}<extra></extra>',
-              customdata: btcDatesGlobal
-          };
+            inputSequenceForPrediction.shift();
+            inputSequenceForPrediction.push([predictedNormalizedLogPrice]);
 
-          myGenerateLogLogData(); // Re-plot to include the extended BTC trace
-          document.getElementById('statusMessage').innerText = '✅ ML Predictions added to BTC data and plotted!';
-          console.log('ML Predictions added to BTC data and plotted!');
-      }
+            inputTensor.dispose();
+            prediction.dispose();
+        }
+
+        const elapsed = Date.now() - startTime;
+
+        minLogPriceGlobal = Math.min(...btcLogPricesGlobal);
+        maxLogPriceGlobal = Math.max(...btcLogPricesGlobal);
+
+        btcTraceGlobal = {
+            x: btcDaysSinceGenesisGlobal,
+            y: btcDatesGlobal.map((_, i) => Math.exp(btcLogPricesGlobal[i])),
+            mode: 'lines',
+            line: { color: 'orange', width: 3 },
+            name: 'BTC Price (USD) + ML Prediction'
+        };
+
+        myGenerateLogLogData();
+
+        document.getElementById('statusMessage').innerText = 
+            `✅ ML Predictions added! Generated ${predictionLength} points in ${elapsed}ms`;
+        document.getElementById('statusMessage').style.backgroundColor = '#d1e7dd';
+        document.getElementById('statusMessage').style.color = '#0f5132';
+        
+        console.log(`ML Predictions complete. ${predictionLength} points added to plot.`);
+
+    } catch (error) {
+        document.getElementById('statusMessage').innerText = `❌ Prediction failed: ${error.message}`;
+        document.getElementById('statusMessage').style.backgroundColor = '#f8d7da';
+        document.getElementById('statusMessage').style.color = '#842029';
+        console.error('Prediction error:', error);
+    }
+}
 
       /**
        * Performs a conceptual "CQT analysis" to find optimal frequencies for the 5 waves.
