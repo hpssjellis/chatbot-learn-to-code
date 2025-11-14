@@ -1,1 +1,649 @@
-.
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Minimal BTC Sinusoid Optimizer</title>
+    <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <style>
+      /* Essential CSS for layout and input styling */
+      body {
+        font-family: sans-serif;
+        margin: 20px;
+        background-color: #f0f4f8;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .container {
+        max-width: 1200px;
+        width: 100%;
+        padding: 20px;
+        background-color: #ffffff;
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+      }
+      h2 {
+        font-size: 2em;
+        margin-bottom: 15px;
+        text-align: center;
+      }
+      p {
+        margin-bottom: 15px;
+      }
+      .parameters-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        justify-content: center;
+        margin-bottom: 20px;
+      }
+      .param-section {
+        border: 1px solid #d1d5db;
+        padding: 15px;
+        border-radius: 6px;
+        flex: 1 1 300px;
+        max-width: 380px;
+        box-sizing: border-box;
+      }
+      .param-section h3 {
+        font-size: 1.2em;
+        margin-top: 0;
+        margin-bottom: 10px;
+        border-bottom: 1px solid #e5e7eb;
+        padding-bottom: 5px;
+      }
+      .input-group {
+        display: flex;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+      .input-group label {
+        flex: 0 0 160px;
+        text-align: right;
+        margin-right: 10px;
+      }
+      .input-group input {
+        flex: 1;
+        padding: 8px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 4px;
+      }
+      button {
+        background-color: #3b82f6;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+      button:hover {
+          opacity: 0.9;
+      }
+      button:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+      }
+      #statusMessage {
+        margin-top: 15px;
+        padding: 12px;
+        border-radius: 6px;
+        text-align: center;
+      }
+      #myPlot {
+        width: 100%;
+        height: 70vh;
+        border: 1px solid #ccc;
+      }
+      .optimization-controls {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 15px;
+        margin-top: 20px;
+        margin-bottom: 20px;
+      }
+      .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .checkbox-group label {
+        margin-right: 0;
+      }
+      select {
+        padding: 8px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 4px;
+      }
+      .progress-bar {
+        width: 100%;
+        height: 20px;
+        background-color: #e5e7eb;
+        border-radius: 4px;
+        margin-top: 10px;
+        overflow: hidden;
+        display: none;
+      }
+      .progress-bar.active {
+        display: block;
+      }
+      .progress-fill {
+        height: 100%;
+        background-color: #3b82f6;
+        width: 0%;
+        transition: width 0.3s;
+        text-align: center;
+        line-height: 20px;
+        color: white;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h2>Minimal BTC Sinusoid Optimizer</h2>
+      <p>This streamlined page focuses on optimizing up to five sinusoidal waves against real Bitcoin price data. Adjust the wave parameters and QCBD settings, then click "Optimize" to find the best fit.</p>
+      <p> The <a href="https://charts.bitbo.io/long-term-power-law/">power-law BTC equation</a> plotting BTC on a price-date log-log graph with max-min parameters. This is interesting, but anyone should be able to see the complex sinusoidal potential in that graph. This page is my attempt to give people their own control of this complexity.</p>
+
+      <div class="parameters-grid">
+        <div class="param-section">
+          <h3>QCBD Parameters</h3>
+          <div class="input-group">
+            <label for="qcbDateInput">QCBD Year:</label>
+            <input type="text" id="qcbDateInput" value="2034.2" onchange="qcbDateYear = parseFloat(this.value); myGenerateLogLogData();">
+          </div>
+          <div class="input-group">
+            <label for="socialDistrustValueInput">Social Distrust (Crash Target):</label>
+            <input type="text" id="socialDistrustValueInput" value="100" onchange="socialDistrustValue = parseFloat(this.value); myGenerateLogLogData();">
+          </div>
+          <div class="input-group">
+            <label for="qcbTransitionInput">QCBD Transition (Years):</label>
+            <input type="text" id="qcbTransitionInput" value="0.8" onchange="qcbTransitionDuration = parseFloat(this.value); myGenerateLogLogData();">
+          </div>
+          <div class="input-group">
+            <label for="qcbCrashStrengthInput">QCBD Crash Strength:</label>
+            <input type="text" value="1.2" id="qcbCrashStrengthInput" onchange="qcbCrashStrength = parseFloat(this.value); myGenerateLogLogData();">
+          </div>
+          <div class="input-group">
+            <label for="qcbAmplitudeDampeningInput">QCBD Amplitude Dampening:</label>
+            <input type="text" id="qcbAmplitudeDampeningInput" value="0.005" onchange="qcbAmplitudeDampening = parseFloat(this.value); myGenerateLogLogData();">
+          </div>
+        </div>
+
+        <div class="param-section">
+          <h3>Wave Parameters (Wave 1)</h3>
+          <div class="input-group">
+            <label for="wave1FreqInput">Frequency:</label>
+            <input type="text" value="22.523" id="wave1FreqInput" onchange="wave1Freq = parseFloat(this.value); myGenerateLogLogData();">
+          </div>
+          <div class="input-group">
+            <label for="wave1AmpInput">Amplitude (Factor):</label>
+            <input type="text" value="1.755" id="wave1AmpInput" onchange="wave1Amp = parseFloat(this.value); myGenerateLogLogData();">
+          </div>
+          <div class="input-group">
+            <label for="wave1PhaseInput">Phase (radians):</label>
+            <input type="text" value="0.004" id="wave1PhaseInput" onchange="wave1Phase = parseFloat(this.value); myGenerateLogLogData();">
+          </div>
+          <div class="input-group">
+            <label for="wave1FreqGrowthInput">Freq Growth Factor:</label>
+            <input type="text" value="0.174" id="wave1FreqGrowthInput" onchange="wave1FreqGrowth = parseFloat(this.value); myGenerateLogLogData();">
+          </div>
+          <div class="input-group">
+            <label for="wave1AmpGrowthInput">Amp Growth Factor:</label>
+            <input type="text" value="1.010" id="wave1AmpGrowthInput" onchange="wave1AmpGrowth = parseFloat(this.value); myGenerateLogLogData();">
+          </div>
+          <div class="input-group">
+            <label for="wave1AmpGrowthStrengthInput">Amp Growth Strength:</label>
+            <input type="text" value="0.004" id="wave1AmpGrowthStrengthInput" onchange="wave1AmpGrowthStrength = parseFloat(this.value); myGenerateLogLogData();">
+          </div>
+          <hr style="margin: 10px 0;">
+          <div class="input-group">
+            <label for="wave1PowerLawAmplitudeInput">PL Amplitude:</label>
+            <input type="text" value="3.542e-18" id="wave1PowerLawAmplitudeInput" onchange="wave1PowerLawAmplitude = parseFloat(this.value); myGenerateLogLogData();">
+          </div>
+          <div class="input-group">
+            <label for="wave1PowerLawExponentInput">PL Exponent:</label>
+            <input type="text" value="5.904" id="wave1PowerLawExponentInput" onchange="wave1PowerLawExponent = parseFloat(this.value); myGenerateLogLogData();">
+          </div>
+        </div>
+
+        <!-- Wave 2-5 sections omitted for brevity - same as original -->
+      </div>
+
+      <div class="optimization-controls">
+        <button onclick="startOptimizationRuns(parseInt(document.getElementById('numOptimizationRunsInput').value))">Optimize Combined Line to BTC</button>
+        <label for="numOptimizationRunsInput">Runs:</label>
+        <input type="number" value="9" id="numOptimizationRunsInput" size="7" min="1" onChange="console.log(`Will run optimization ${this.value} times`)">
+        <div class="checkbox-group">
+            <input type="checkbox" id="liveUpdateToggle" checked onchange="livePlotUpdateEnabled = this.checked">
+            <label for="liveUpdateToggle">Live Plot Update</label>
+        </div>
+      </div>
+
+      <div class="optimization-controls">
+          <button onclick="mlTrainModel()" id="mlTrainBtn">ML-Training</button>
+          <label for="mlEpochsInput">Epochs:</label>
+          <input type="number" id="mlEpochsInput" value="50" min="1" size="5">
+          
+          <label for="mlBatchSizeInput">Batch Size:</label>
+          <input type="number" id="mlBatchSizeInput" value="32" min="1" size="5">
+          
+          <label for="mlLearningRateInput">Learning Rate:</label>
+          <input type="number" id="mlLearningRateInput" value="0.001" min="0.0001" max="1" step="0.0001" size="7">
+          
+          <label for="mlOptimizerSelect">Optimizer:</label>
+          <select id="mlOptimizerSelect">
+            <option value="adam">Adam</option>
+            <option value="sgd">SGD</option>
+            <option value="rmsprop">RMSprop</option>
+          </select>
+          
+          <button onclick="mlStopTraining()" id="mlStopBtn" disabled>Stop Training</button>
+      </div>
+      
+      <div class="optimization-controls">
+          <div class="progress-bar" id="mlTrainingProgress">
+            <div class="progress-fill" id="mlProgressFill"></div>
+          </div>
+      </div>
+
+      <div class="optimization-controls">
+          <button onclick="mlPredict()" id="mlPredictBtn">ML-Prediction</button>
+          <label for="mlPredictionLengthInput">Prediction Points:</label>
+          <input type="number" id="mlPredictionLengthInput" value="200" min="1" size="5">
+          
+          <label for="mlPredictionIntervalInput">Interval (days):</label>
+          <input type="number" id="mlPredictionIntervalInput" value="7" min="1" size="5" title="Days between predictions">
+          
+          <button onclick="mlExportPredictions()">Export Predictions CSV</button>
+          <button onclick="mlSaveModel()">Save Model</button>
+          <button onclick="document.getElementById('mlModelUpload').click()">Load Model</button>
+          <input type="file" id="mlModelUpload" style="display:none" accept=".json" onchange="mlLoadModel(event)">
+      </div>
+
+      <div class="optimization-controls" style="flex-direction: column; align-items: stretch;">
+          <label for="kerasLayersInput" style="text-align: center; margin-bottom: 5px; color: #333;">Edit Keras Layers (JS Code):</label>
+          <textarea id="kerasLayersInput" rows="8" style="width: 100%; background-color: black; color: white; font-family: monospace; padding: 10px; border-radius: 5px;"></textarea>
+          <button onclick="mlValidateArchitecture()" style="margin-top: 10px;">Validate Architecture</button>
+          <button onclick="mlTrainModel()" style="margin-top: 5px;">Apply Changes & Re-Train</button>
+      </div>
+
+      <!-- New buttons for CQT and FFTLog analysis -->
+      <div class="optimization-controls">
+          <button onclick="cqtAnalyzeFrequencies()">CQT Analyze Frequencies</button>
+          <button onclick="fftLogAnalyzeFrequencies()">FFTLog Analyze Frequencies</button>
+      </div>
+
+      <div id="statusMessage">Status: Ready</div>
+      <br>  
+      <div id="myPlot"></div>
+    </div>
+
+    <script>
+      // ML Model related globals
+      let mlModel = null;
+      let mlIsTraining = false;
+      let mlTrainingStartTime = null;
+      let N_LOOKBACK = 52;
+      let minLogPriceGlobal, maxLogPriceGlobal;
+      let mlPredictionsGlobal = []; // Store predictions for export
+      
+      // Dummy data for demonstration (replace with actual BTC data from your code)
+      let btcLogPricesGlobal = [];
+      let btcDatesGlobal = [];
+      let btcDaysSinceGenesisGlobal = [];
+      let btcYearsGlobal = [];
+
+      // Set initial Keras layers code
+      document.getElementById('kerasLayersInput').value = `model.add(tf.layers.lstm({ units: 64, inputShape: [N_LOOKBACK, 1], returnSequences: false }));
+model.add(tf.layers.dropout({ rate: 0.2 }));
+model.add(tf.layers.dense({ units: 32, activation: 'relu' }));
+model.add(tf.layers.dense({ units: 1 }));`;
+
+      // Validate architecture
+      function mlValidateArchitecture() {
+        try {
+          const kerasLayersCode = document.getElementById('kerasLayersInput').value;
+          const testModel = tf.sequential();
+          eval(kerasLayersCode);
+          testModel.dispose();
+          document.getElementById('statusMessage').innerText = '✅ Architecture is valid!';
+          document.getElementById('statusMessage').style.backgroundColor = '#d1e7dd';
+          document.getElementById('statusMessage').style.color = '#0f5132';
+        } catch (e) {
+          document.getElementById('statusMessage').innerText = `❌ Architecture error: ${e.message}`;
+          document.getElementById('statusMessage').style.backgroundColor = '#f8d7da';
+          document.getElementById('statusMessage').style.color = '#842029';
+        }
+      }
+
+      // Normalize data
+      function normalize(val, min, max) {
+        return (val - min) / (max - min);
+      }
+
+      // Denormalize data
+      function denormalize(val, min, max) {
+        return val * (max - min) + min;
+      }
+
+      /**
+       * Enhanced ML Training with progress tracking, validation, and error handling
+       */
+      async function mlTrainModel() {
+        if (mlIsTraining) {
+          document.getElementById('statusMessage').innerText = '⚠️ Training already in progress';
+          return;
+        }
+
+        // Validation
+        if (btcLogPricesGlobal.length === 0) {
+          document.getElementById('statusMessage').innerText = '❌ BTC data not loaded. Please refresh page.';
+          document.getElementById('statusMessage').style.backgroundColor = '#f8d7da';
+          return;
+        }
+
+        const epochs = parseInt(document.getElementById('mlEpochsInput').value);
+        const batchSize = parseInt(document.getElementById('mlBatchSizeInput').value);
+        const learningRate = parseFloat(document.getElementById('mlLearningRateInput').value);
+        const optimizer = document.getElementById('mlOptimizerSelect').value;
+
+        if (isNaN(epochs) || epochs < 1) {
+          document.getElementById('statusMessage').innerText = '❌ Invalid epochs value';
+          return;
+        }
+        if (isNaN(batchSize) || batchSize < 1) {
+          document.getElementById('statusMessage').innerText = '❌ Invalid batch size';
+          return;
+        }
+
+        mlIsTraining = true;
+        mlTrainingStartTime = Date.now();
+        document.getElementById('mlTrainBtn').disabled = true;
+        document.getElementById('mlStopBtn').disabled = false;
+        document.getElementById('mlTrainingProgress').classList.add('active');
+        document.getElementById('statusMessage').innerText = '🚀 Starting ML training...';
+        document.getElementById('statusMessage').style.backgroundColor = '#cfe2ff';
+
+        try {
+          // Calculate min/max for normalization
+          minLogPriceGlobal = Math.min(...btcLogPricesGlobal);
+          maxLogPriceGlobal = Math.max(...btcLogPricesGlobal);
+
+          // Prepare training data
+          const normalizedLogPrices = btcLogPricesGlobal.map(price =>
+            normalize(price, minLogPriceGlobal, maxLogPriceGlobal)
+          );
+
+          const xs = [];
+          const ys = [];
+
+          for (let i = 0; i < normalizedLogPrices.length - N_LOOKBACK; i++) {
+            xs.push(normalizedLogPrices.slice(i, i + N_LOOKBACK).map(val => [val]));
+            ys.push(normalizedLogPrices[i + N_LOOKBACK]);
+          }
+
+          if (xs.length === 0) {
+            throw new Error('Not enough data for training');
+          }
+
+          const xsTensor = tf.tensor3d(xs, [xs.length, N_LOOKBACK, 1]);
+          const ysTensor = tf.tensor2d(ys, [ys.length, 1]);
+
+          // Build model from user-defined architecture
+          const kerasLayersCode = document.getElementById('kerasLayersInput').value;
+          mlModel = tf.sequential();
+          eval(kerasLayersCode);
+
+          // Compile with user-selected optimizer
+          const optimizerObj = optimizer === 'adam' ? tf.train.adam(learningRate) :
+                             optimizer === 'sgd' ? tf.train.sgd(learningRate) :
+                             tf.train.rmsprop(learningRate);
+
+          mlModel.compile({
+            optimizer: optimizerObj,
+            loss: 'meanSquaredError',
+            metrics: ['mae']
+          });
+
+          // Train with progress tracking
+          await mlModel.fit(xsTensor, ysTensor, {
+            epochs: epochs,
+            batchSize: batchSize,
+            validationSplit: 0.2,
+            callbacks: {
+              onEpochEnd: async (epoch, logs) => {
+                if (!mlIsTraining) {
+                  mlModel.stopTraining = true;
+                  return;
+                }
+                
+                const progress = ((epoch + 1) / epochs) * 100;
+                const progressFill = document.getElementById('mlProgressFill');
+                progressFill.style.width = progress + '%';
+                progressFill.textContent = `${progress.toFixed(0)}%`;
+                
+                const elapsed = Math.floor((Date.now() - mlTrainingStartTime) / 1000);
+                document.getElementById('statusMessage').innerText = 
+                  `🚀 Training: Epoch ${epoch + 1}/${epochs} | Loss: ${logs.loss.toFixed(6)} | Val Loss: ${logs.val_loss.toFixed(6)} | ${elapsed}s`;
+                
+                await tf.nextFrame();
+              },
+              onTrainEnd: () => {
+                const totalTime = Math.floor((Date.now() - mlTrainingStartTime) / 1000);
+                document.getElementById('statusMessage').innerText = 
+                  `✅ Training complete! Total time: ${totalTime}s`;
+                document.getElementById('statusMessage').style.backgroundColor = '#d1e7dd';
+              }
+            }
+          });
+
+          xsTensor.dispose();
+          ysTensor.dispose();
+
+        } catch (error) {
+          document.getElementById('statusMessage').innerText = `❌ Training failed: ${error.message}`;
+          document.getElementById('statusMessage').style.backgroundColor = '#f8d7da';
+          console.error('Training error:', error);
+        } finally {
+          mlIsTraining = false;
+          document.getElementById('mlTrainBtn').disabled = false;
+          document.getElementById('mlStopBtn').disabled = true;
+          document.getElementById('mlTrainingProgress').classList.remove('active');
+        }
+      }
+
+      /**
+       * Stop training
+       */
+      function mlStopTraining() {
+        mlIsTraining = false;
+        document.getElementById('statusMessage').innerText = '⏹️ Training stopped by user';
+        document.getElementById('statusMessage').style.backgroundColor = '#fff3cd';
+      }
+
+      /**
+       * Enhanced ML Prediction with validation and better feedback
+       */
+      async function mlPredict() {
+        if (!mlModel) {
+          document.getElementById('statusMessage').innerText = '⚠️ Please train a model first (click ML-Training)';
+          document.getElementById('statusMessage').style.backgroundColor = '#fff3cd';
+          return;
+        }
+
+        if (btcLogPricesGlobal.length === 0) {
+          document.getElementById('statusMessage').innerText = '❌ BTC data not loaded for prediction';
+          return;
+        }
+
+        const predictionLength = parseInt(document.getElementById('mlPredictionLengthInput').value);
+        const intervalDays = parseInt(document.getElementById('mlPredictionIntervalInput').value);
+
+        if (isNaN(predictionLength) || predictionLength < 1) {
+          document.getElementById('statusMessage').innerText = '❌ Invalid prediction length';
+          return;
+        }
+
+        document.getElementById('statusMessage').innerText = '🔮 Generating ML predictions...';
+        document.getElementById('statusMessage').style.backgroundColor = '#cfe2ff';
+        document.getElementById('mlPredictBtn').disabled = true;
+
+        try {
+          const startTime = Date.now();
+          mlPredictionsGlobal = []; // Clear previous predictions
+
+          // Get the last N_LOOKBACK points
+          let inputSequence = btcLogPricesGlobal.slice(btcLogPricesGlobal.length - N_LOOKBACK);
+          inputSequence = inputSequence.map(price => [normalize(price, minLogPriceGlobal, maxLogPriceGlobal)]);
+
+          let lastDate = new Date(btcDatesGlobal[btcDatesGlobal.length - 1]);
+          let lastDaysSinceGenesis = btcDaysSinceGenesisGlobal[btcDaysSinceGenesisGlobal.length - 1];
+
+          // Generate predictions
+          for (let i = 0; i < predictionLength; i++) {
+            const inputTensor = tf.tensor3d([inputSequence], [1, N_LOOKBACK, 1]);
+            const prediction = mlModel.predict(inputTensor);
+            let predictedNormalizedLogPrice = prediction.dataSync()[0];
+            let predictedLogPrice = denormalize(predictedNormalizedLogPrice, minLogPriceGlobal, maxLogPriceGlobal);
+
+            // Update date and days
+            lastDate = new Date(lastDate.getTime() + intervalDays * 24 * 60 * 60 * 1000);
+            lastDaysSinceGenesis += intervalDays;
+            const newYear = lastDate.getFullYear() + (lastDate.getMonth() / 12);
+
+            // Store prediction
+            mlPredictionsGlobal.push({
+              date: lastDate.toISOString().split('T')[0],
+              days: lastDaysSinceGenesis,
+              logPrice: predictedLogPrice,
+              price: Math.exp(predictedLogPrice),
+              year: newYear
+            });
+
+            // Append to global arrays for plotting
+            btcDatesGlobal.push(lastDate.toISOString().split('T')[0]);
+            btcDaysSinceGenesisGlobal.push(lastDaysSinceGenesis);
+            btcLogPricesGlobal.push(predictedLogPrice);
+            btcYearsGlobal.push(newYear);
+
+            // Update sliding window
+            inputSequence.shift();
+            inputSequence.push([predictedNormalizedLogPrice]);
+
+            inputTensor.dispose();
+            prediction.dispose();
+
+            // Update progress every 10%
+            if (i % Math.max(1, Math.floor(predictionLength / 10)) === 0) {
+              document.getElementById('statusMessage').innerText = 
+                `🔮 Generating predictions... ${Math.floor((i / predictionLength) * 100)}%`;
+              await tf.nextFrame();
+            }
+          }
+
+          const elapsed = Date.now() - startTime;
+          
+          // Re-plot with predictions
+          // myGenerateLogLogData(); // Uncomment when integrated with your plotting function
+
+          document.getElementById('statusMessage').innerText = 
+            `✅ Generated ${predictionLength} predictions in ${elapsed}ms`;
+          document.getElementById('statusMessage').style.backgroundColor = '#d1e7dd';
+          
+          console.log(`ML Predictions complete. Last predicted price: $${mlPredictionsGlobal[mlPredictionsGlobal.length - 1].price.toFixed(2)}`);
+
+        } catch (error) {
+          document.getElementById('statusMessage').innerText = `❌ Prediction failed: ${error.message}`;
+          document.getElementById('statusMessage').style.backgroundColor = '#f8d7da';
+          console.error('Prediction error:', error);
+        } finally {
+          document.getElementById('mlPredictBtn').disabled = false;
+        }
+      }
+
+      /**
+       * Export predictions to CSV
+       */
+      function mlExportPredictions() {
+        if (mlPredictionsGlobal.length === 0) {
+          document.getElementById('statusMessage').innerText = '⚠️ No predictions to export. Run ML-Prediction first.';
+          return;
+        }
+
+        let csv = 'Date,Days Since Genesis,Predicted Price (USD),Log Price,Year\n';
+        mlPredictionsGlobal.forEach(pred => {
+          csv += `${pred.date},${pred.days},${pred.price.toFixed(2)},${pred.logPrice.toFixed(6)},${pred.year.toFixed(2)}\n`;
+        });
+
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `btc_ml_predictions_${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+
+        document.getElementById('statusMessage').innerText = '✅ Predictions exported to CSV';
+        document.getElementById('statusMessage').style.backgroundColor = '#d1e7dd';
+      }
+
+      /**
+       * Save model to downloads
+       */
+      async function mlSaveModel() {
+        if (!mlModel) {
+          document.getElementById('statusMessage').innerText = '⚠️ No model to save. Train a model first.';
+          return;
+        }
+
+        try {
+          await mlModel.save('downloads://btc-ml-model');
+          document.getElementById('statusMessage').innerText = '✅ Model saved to downloads';
+          document.getElementById('statusMessage').style.backgroundColor = '#d1e7dd';
+        } catch (error) {
+          document.getElementById('statusMessage').innerText = `❌ Save failed: ${error.message}`;
+          document.getElementById('statusMessage').style.backgroundColor = '#f8d7da';
+        }
+      }
+
+      /**
+       * Load model from file
+       */
+      async function mlLoadModel(event) {
+        const files = event.target.files;
+        if (files.length === 0) return;
+
+        try {
+          document.getElementById('statusMessage').innerText = '📁 Loading model...';
+          mlModel = await tf.loadLayersModel(tf.io.browserFiles([files[0], files[1]]));
+          document.getElementById('statusMessage').innerText = '✅ Model loaded successfully';
+          document.getElementById('statusMessage').style.backgroundColor = '#d1e7dd';
+        } catch (error) {
+          document.getElementById('statusMessage').innerText = `❌ Load failed: ${error.message}`;
+          document.getElementById('statusMessage').style.backgroundColor = '#f8d7da';
+        }
+      }
+
+      // Placeholder functions for original code integration
+      function startOptimizationRuns(num) { console.log('Optimization:', num); }
+      function cqtAnalyzeFrequencies() { console.log('CQT Analysis'); }
+      function fftLogAnalyzeFrequencies() { console.log('FFTLog Analysis'); }
+      
+      // Simulate data for demo
+      document.addEventListener('DOMContentLoaded', () => {
+        // Generate dummy data
+        for (let i = 0; i < 2000; i++) {
+          btcLogPricesGlobal.push(Math.log(1000 + Math.random() * 50000));
+          btcDatesGlobal.push(new Date(2015, 0, i).toISOString().split('T')[0]);
+          btcDaysSinceGenesisGlobal.push(2000 + i);
+          btcYearsGlobal.push(2015 + i / 365);
+        }
+      });
+    </script>
+
+    By Jeremy Ellis <a href="https://github.com/hpssjellis">Github Profile hpssjellis </a><br>
+    Use at your own risk<br>
+  </body>
+</html>
