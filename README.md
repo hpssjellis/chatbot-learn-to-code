@@ -36,3 +36,32 @@ latest power-lw
 
 ![image](https://github.com/user-attachments/assets/6f4ba2e3-b102-4d73-9ba5-7dfa9a58ad73)
 
+
+
+
+
+Try other models
+
+```
+// Layer 1: Bi-LSTM (must return sequences to pass to the next LSTM)
+mlModel.add(tf.layers.bidirectional({
+  layer: tf.layers.lstm({ units: 64, returnSequences: true }),
+  inputShape: [N_LOOKBACK, 1] 
+}));
+
+// Optional: Dropout layer for regularization
+mlModel.add(tf.layers.dropout({ rate: 0.2 }));
+
+// Layer 2: Bi-LSTM (this layer stops returning sequences)
+mlModel.add(tf.layers.bidirectional({
+  layer: tf.layers.lstm({ units: 64, returnSequences: false })
+}));
+
+// Dense Layer
+mlModel.add(tf.layers.dense({ units: 32, activation: 'relu' }));
+
+// Output Layer
+mlModel.add(tf.layers.dense({ units: 1 }));
+
+```
+
