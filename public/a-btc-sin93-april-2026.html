@@ -635,8 +635,8 @@ let mlTrainingStartTime = null;
           document.getElementById('liveUpdateToggle').checked = livePlotUpdateEnabled;
 
           // Set initial Keras layers code
-          document.getElementById('kerasLayersInput').value = `mlModel.add(tf.layers.lstm({ units: 64, inputShape: [N_LOOKBACK, 1], returnSequences: false }));
-mlModel.add(tf.layers.dense({ units: 32, activation: 'relu' }));
+          document.getElementById('kerasLayersInput').value = `   mlModel.add(tf.layers.dense({ units: 128, activation: 'tanh', inputShape: [N_FEATURES], kernelRegularizer: tf.regularizers.l2({ l2: 1e-4 }) }));
+   mlModel.add(tf.layers.dense({ units: 64, activation: 'tanh', kernelRegularizer: tf.regularizers.l2({ l2: 1e-4 }) }));
 mlModel.add(tf.layers.dense({ units: 1 }));`;
       }
       
