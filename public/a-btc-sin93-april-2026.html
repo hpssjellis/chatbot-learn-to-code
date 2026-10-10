@@ -365,13 +365,13 @@
 <div class="optimization-controls">
     <button onclick="mlTrainModel()" id="mlTrainBtn">ML-Training</button>
     <label for="mlEpochsInput">Epochs:</label>
-    <input type="number" id="mlEpochsInput" value="50" min="1" size="5">
+    <input type="number" id="mlEpochsInput" value="400" min="1" size="5">
     
     <label for="mlBatchSizeInput">Batch:</label>
     <input type="number" id="mlBatchSizeInput" value="32" min="1" max="128" size="4">
     
     <label for="mlLearningRateInput">LR:</label>
-    <input type="number" id="mlLearningRateInput" value="0.001" min="0.0001" max="1" step="0.0001" size="6">
+    <input type="number" id="mlLearningRateInput" value="0.002" min="0.0001" max="1" step="0.0001" size="6">
     
     <label for="mlOptimizerSelect">Optimizer:</label>
     <select id="mlOptimizerSelect">
@@ -379,6 +379,12 @@
         <option value="sgd">SGD</option>
         <option value="rmsprop">RMSprop</option>
     </select>
+
+
+   <label for="mlHoldoutInput">Holdout % (latest weeks):</label>
+   <input type="number" id="mlHoldoutInput" value="10" min="0" max="50" size="3">
+
+  
     
     <button onclick="mlStopTraining()" id="mlStopBtn" disabled>Stop</button>
 </div>
@@ -1336,7 +1342,7 @@ mlModel.add(tf.layers.dense({ units: 1 }));`;
               wave4FreqGrowth: wave4FreqGrowth, wave4AmpGrowth: wave4AmpGrowth, wave4AmpGrowthStrength: wave4AmpGrowthStrength,
               wave4PowerLawAmplitude: wave4PowerLawAmplitude,
               wave4PowerLawExponent: wave4PowerLawExponent,
-              wave5Freq: wave5Freq, wave5Amp: wave5Amp, wave5Phase: wave5Amp, // Corrected typo here, was wave5Amp, should be wave5Phase
+              wave5Freq: wave5Freq, wave5Amp: wave5Amp, wave5Phase: wave5Phase, // Corrected typo here, was wave5Amp, should be wave5Phase
               wave5FreqGrowth: wave5FreqGrowth, wave5AmpGrowth: wave5AmpGrowth, wave5AmpGrowthStrength: wave5AmpGrowthStrength,
               wave5PowerLawAmplitude: wave5PowerLawAmplitude,
               wave5PowerLawExponent: wave5PowerLawExponent
