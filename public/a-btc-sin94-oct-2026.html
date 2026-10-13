@@ -1603,13 +1603,21 @@ function mlWeeklySeries() {
     return [...bins.keys()].sort((a, b) => a - b).map(k => bins.get(k));
 }
 
-function mlComputeMeta(series) {
-    let n = series.length, sx = 0, sy = 0, sxx = 0, sxy = 0;
-    series.forEach(s => { const x = Math.log(s.d); sx += x; sy += s.lp; sxx += x * x; sxy += x * s.lp; });
-    const b = (n * sxy - sx * sy) / (n * sxx - sx * sx), a = (sy - b * sx) / n;
+function mlRecency(series, halfLifeYears, maxReps = 8) {
+    // repeat count per week: newest weeks x maxReps, halving every halfLifeYears back in time (min 1)
+    if (!(halfLifeYears > 0)) return series.map(() => 1);
+    const lastD = series[series.length - 1].d;
+    return series.map(s => Math.max(1, Math.round(maxReps * Math.pow(0.5, (lastD - s.d) / 365.25 / halfLifeYears))));
+}
+
+function mlComputeMeta(series, w) {
+    w = w || series.map(() => 1);
+    let sw = 0, sx = 0, sy = 0, sxx = 0, sxy = 0;
+    series.forEach((s, i) => { const x = Math.log(s.d); sw += w[i]; sx += w[i] * x; sy += w[i] * s.lp; sxx += w[i] * x * x; sxy += w[i] * x * s.lp; });
+    const b = (sw * sxy - sx * sy) / (sw * sxx - sx * sx), a = (sy - b * sx) / sw;
     const res = series.map(s => s.lp - (a + b * Math.log(s.d)));
-    const mean = res.reduce((p, c) => p + c, 0) / n;
-    const std = Math.sqrt(res.reduce((p, c) => p + (c - mean) * (c - mean), 0) / n) || 1;
+    const mean = res.reduce((p, c, i) => p + w[i] * c, 0) / sw;
+    const std = Math.sqrt(res.reduce((p, c, i) => p + w[i] * (c - mean) * (c - mean), 0) / sw) || 1;
     const us = series.map(s => mlLogTime(s.d));
     const uMin = Math.min(...us), uMax = Math.max(...us);
     return { a: a, b: b, rMean: mean, rStd: std, rMin: Math.min(...res), rMax: Math.max(...res),
@@ -1663,12 +1671,20 @@ async function mlTrainModel() {
     try {
         const series = mlWeeklySeries();
         if (series.length < 60) throw new Error('Not enough data for training');
-        mlMeta = mlComputeMeta(series);
+       // mlMeta = mlComputeMeta(series);
+        const halfLife = parseFloat(document.getElementById('mlHalfLifeInput').value);
+        const reps = mlRecency(series, halfLife);
+        mlMeta = mlComputeMeta(series, reps);
+      
         const X = series.map(s => mlFeatures(s.d, mlMeta));
         const Y = series.map(s => [(s.lp - mlTrend(s.d, mlMeta) - mlMeta.rMean) / mlMeta.rStd]);
         const nVal = Math.floor(series.length * holdoutPct / 100);
         const nTr = series.length - nVal;       // chronological split: hold out the most recent weeks
-        xTr = tf.tensor2d(X.slice(0, nTr)); yTr = tf.tensor2d(Y.slice(0, nTr));
+
+        //    xTr = tf.tensor2d(X.slice(0, nTr)); yTr = tf.tensor2d(Y.slice(0, nTr));
+        const trIdx = [];
+        for (let i = 0; i < nTr; i++) for (let r = 0; r < reps[i]; r++) trIdx.push(i);
+        xTr = tf.tensor2d(trIdx.map(i => X[i])); yTr = tf.tensor2d(trIdx.map(i => Y[i]));
         if (nVal > 0) { xVa = tf.tensor2d(X.slice(nTr)); yVa = tf.tensor2d(Y.slice(nTr)); }
 
         const code = document.getElementById('kerasLayersInput').value.trim();
