@@ -138,8 +138,16 @@
   <body>
     <div class="container">
       <h2>Minimal BTC Sinusoid Optimizer</h2>
-      <p>This streamlined page focuses on optimizing up to five sinusoidal waves against real Bitcoin price data. Adjust the wave parameters and QCBD settings, then click "Optimize" to find the best fit.</p>
-      <p> The <a href="https://charts.bitbo.io/long-term-power-law/">power-law BTC equation</a> plotting BTC on a price-date log-log graph with max-min parameters. This is interesting, but anyone should be able to see the complex sinusoidal potential in that graph. This page is my attempt to give people their own control of this complexity.</p>
+      <p>This streamlined page focuses on optimizing up to five sinusoidal waves against real Bitcoin price data. Adjust the wave parameters and QCBD (Quantum Crash Bitcoin Date) settings,
+        then click "Optimize" to find the best fit.</p>
+      <p> The <a href="https://charts.bitbo.io/long-term-power-law/">power-law BTC equation</a> plotting BTC on a price-date log-log graph with max-min parameters. 
+        This is interesting, but anyone should be able to see the complex sinusoidal potential in that graph. This page is my attempt to give people their own control 
+        of this complexity.<br><br>
+        Note: This project was started around 2024 to determine how good LLM's really were for advanced coding. I picked a project I thought would be really difficult
+        (a Bitcoin Log-Log Sinusoidal chart), and it did struggle with the more complex parts, but lately as of Oct, 2026 Claude produced a much more bareable machine 
+        learning algorithm which I am fairly pleased with. <br><br>
+        By Jeremy Ellis <a href="https://github.com/hpssjellis">Github Profile</a><br><br>
+      Reminder, just becausse an AI tool can estimate a continuation of a line, does not mean reality needs to follow that line. Use this page at your own risk!.</p>
 
       <div class="parameters-grid">
         <div class="param-section">
@@ -384,7 +392,8 @@
    <label for="mlHoldoutInput">Holdout % (latest weeks):</label>
    <input type="number" id="mlHoldoutInput" value="10" min="0" max="50" size="3">
 
-  
+    <label for="mlHalfLifeInput">Recency half-life (yrs, 0 = off):</label>
+    <input type="number" id="mlHalfLifeInput" value="4" min="0" step="0.5" size="3">
     
     <button onclick="mlStopTraining()" id="mlStopBtn" disabled>Stop</button>
 </div>
@@ -1603,13 +1612,21 @@ function mlWeeklySeries() {
     return [...bins.keys()].sort((a, b) => a - b).map(k => bins.get(k));
 }
 
-function mlComputeMeta(series) {
-    let n = series.length, sx = 0, sy = 0, sxx = 0, sxy = 0;
-    series.forEach(s => { const x = Math.log(s.d); sx += x; sy += s.lp; sxx += x * x; sxy += x * s.lp; });
-    const b = (n * sxy - sx * sy) / (n * sxx - sx * sx), a = (sy - b * sx) / n;
+function mlRecency(series, halfLifeYears, maxReps = 8) {
+    // repeat count per week: newest weeks x maxReps, halving every halfLifeYears back in time (min 1)
+    if (!(halfLifeYears > 0)) return series.map(() => 1);
+    const lastD = series[series.length - 1].d;
+    return series.map(s => Math.max(1, Math.round(maxReps * Math.pow(0.5, (lastD - s.d) / 365.25 / halfLifeYears))));
+}
+
+function mlComputeMeta(series, w) {
+    w = w || series.map(() => 1);
+    let sw = 0, sx = 0, sy = 0, sxx = 0, sxy = 0;
+    series.forEach((s, i) => { const x = Math.log(s.d); sw += w[i]; sx += w[i] * x; sy += w[i] * s.lp; sxx += w[i] * x * x; sxy += w[i] * x * s.lp; });
+    const b = (sw * sxy - sx * sy) / (sw * sxx - sx * sx), a = (sy - b * sx) / sw;
     const res = series.map(s => s.lp - (a + b * Math.log(s.d)));
-    const mean = res.reduce((p, c) => p + c, 0) / n;
-    const std = Math.sqrt(res.reduce((p, c) => p + (c - mean) * (c - mean), 0) / n) || 1;
+    const mean = res.reduce((p, c, i) => p + w[i] * c, 0) / sw;
+    const std = Math.sqrt(res.reduce((p, c, i) => p + w[i] * (c - mean) * (c - mean), 0) / sw) || 1;
     const us = series.map(s => mlLogTime(s.d));
     const uMin = Math.min(...us), uMax = Math.max(...us);
     return { a: a, b: b, rMean: mean, rStd: std, rMin: Math.min(...res), rMax: Math.max(...res),
@@ -1663,12 +1680,20 @@ async function mlTrainModel() {
     try {
         const series = mlWeeklySeries();
         if (series.length < 60) throw new Error('Not enough data for training');
-        mlMeta = mlComputeMeta(series);
+       // mlMeta = mlComputeMeta(series);
+        const halfLife = parseFloat(document.getElementById('mlHalfLifeInput').value);
+        const reps = mlRecency(series, halfLife);
+        mlMeta = mlComputeMeta(series, reps);
+      
         const X = series.map(s => mlFeatures(s.d, mlMeta));
         const Y = series.map(s => [(s.lp - mlTrend(s.d, mlMeta) - mlMeta.rMean) / mlMeta.rStd]);
         const nVal = Math.floor(series.length * holdoutPct / 100);
         const nTr = series.length - nVal;       // chronological split: hold out the most recent weeks
-        xTr = tf.tensor2d(X.slice(0, nTr)); yTr = tf.tensor2d(Y.slice(0, nTr));
+
+        //    xTr = tf.tensor2d(X.slice(0, nTr)); yTr = tf.tensor2d(Y.slice(0, nTr));
+        const trIdx = [];
+        for (let i = 0; i < nTr; i++) for (let r = 0; r < reps[i]; r++) trIdx.push(i);
+        xTr = tf.tensor2d(trIdx.map(i => X[i])); yTr = tf.tensor2d(trIdx.map(i => Y[i]));
         if (nVal > 0) { xVa = tf.tensor2d(X.slice(nTr)); yVa = tf.tensor2d(Y.slice(nTr)); }
 
         const code = document.getElementById('kerasLayersInput').value.trim();
