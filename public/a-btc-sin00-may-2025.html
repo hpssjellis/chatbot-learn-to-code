@@ -370,7 +370,7 @@
         </div>
       </div>
 
-<div class="optimization-controls">
+<div class="optimization-controls" style="flex-wrap: wrap;">
     <button onclick="mlTrainModel()" id="mlTrainBtn">ML-Training</button>
     <label for="mlEpochsInput">Epochs:</label>
     <input type="number" id="mlEpochsInput" value="400" min="1" size="5">
@@ -386,11 +386,12 @@
         <option value="adam">Adam</option>
         <option value="sgd">SGD</option>
         <option value="rmsprop">RMSprop</option>
-    </select> <br>
+    </select>
 
+    <div style="flex-basis: 100%; height: 0;"></div>  <!-- line break -->
 
-   <label for="mlHoldoutInput">Holdout % (latest weeks):</label>
-   <input type="number" id="mlHoldoutInput" value="10" min="0" max="50" size="3">
+    <label for="mlHoldoutInput">Holdout % (latest weeks):</label>
+    <input type="number" id="mlHoldoutInput" value="10" min="0" max="50" size="3">
 
     <label for="mlHalfLifeInput">Recency half-life (yrs, 0 = off):</label>
     <input type="number" id="mlHalfLifeInput" value="4" min="0" step="0.5" size="3">
